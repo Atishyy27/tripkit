@@ -65,9 +65,19 @@ def extract_json(text: str):
         except json.JSONDecodeError:
             s = fence.group(1).strip()
 
+    # Which structure did the model actually intend? Whichever bracket comes first.
+    # This matters more than it looks: a TRUNCATED array fails to bracket-match, and
+    # falling through to "{" then returns the first complete object inside it. That
+    # looks like a clean parse, reports success, and silently discards every other
+    # entry. Observed live: a 30-place slice arrived as 1 place and was logged "ok".
+    first_arr, first_obj = s.find("["), s.find("{")
+    intended = "[" if (first_arr >= 0 and (first_obj < 0 or first_arr < first_obj)) else "{"
+
     for opener, closer in (("[", "]"), ("{", "}")):
         start = s.find(opener)
         if start < 0:
+            continue
+        if opener != intended:
             continue
         depth, in_str, esc = 0, False, False
         for i in range(start, len(s)):
@@ -91,6 +101,11 @@ def extract_json(text: str):
                         return json.loads(s[start:i + 1])
                     except json.JSONDecodeError:
                         break
+    if intended == "[":
+        raise LLMError(
+            f"the response opens an array but never closes it - almost certainly "
+            f"truncated at {len(text)} chars. Refusing to return the first element as "
+            f"if it were the whole list.")
     raise LLMError(f"no parseable JSON in {len(text)} chars; starts: {text[:160]!r}")
 
 
@@ -142,7 +157,7 @@ def _via_cli(prompt: str, model: str, max_tokens: int, timeout: int,
     return out
 
 
-def ask(prompt: str, auth: Auth, model: str = "sonnet", max_tokens: int = 16000,
+def ask(prompt: str, auth: Auth, model: str = "sonnet", max_tokens: int = 32000,
         timeout: int = 900, allow_tools: bool = False) -> str:
     if auth.mode == "api":
         return _via_api(prompt, model, max_tokens, timeout)

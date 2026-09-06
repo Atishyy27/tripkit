@@ -158,8 +158,19 @@ def cmd_research(args):
         done["n"] += 1
         tag = f"[{done['n']}/{len(jobs)}]"
         if r.ok:
-            size = len(r.data) if isinstance(r.data, list) else 1
-            ok(f"{tag} {r.name:<12} {size:>3} entries  {r.seconds}s")
+            # Shape guard. Every slice except `conditions` must be a list; a dict here
+            # means the model returned one entry where a list was asked for, and logging
+            # that as a tidy success is how a slice quietly loses most of its content.
+            wants_list = SHAPE_OF.get(r.name, "places") != "conditions"
+            if wants_list and not isinstance(r.data, list):
+                bad(f"{tag} {r.name:<12} returned a {type(r.data).__name__}, expected a list "
+                    f"- saving it anyway so you can look, but treat this slice as failed")
+            elif wants_list and len(r.data) <= 2:
+                warn(f"{tag} {r.name:<12} only {len(r.data)} entries in {r.seconds}s "
+                     f"- suspiciously few, likely truncated. Re-run with --only {r.name}")
+            else:
+                size = len(r.data) if isinstance(r.data, list) else 1
+                ok(f"{tag} {r.name:<12} {size:>3} entries  {r.seconds}s")
             with open(os.path.join(outdir, r.name + ".json"), "w", encoding="utf-8") as f:
                 json.dump(r.data, f, ensure_ascii=False, indent=1)
         else:
