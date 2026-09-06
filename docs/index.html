@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b12">
+<title>tripkit — what's open right now</title>
+<meta name="description" content="A travel guide that reads the clock. Built from OpenStreetMap and Wikivoyage, in your browser. No account, no key, no AI.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ 1. where ============ -->
+<div class="screen on" id="s1">
+  <div class="hero"><div class="wrap">
+    <h1>What's open right now.</h1>
+    <p class="lead">Type where you are. You get a guide that reads the clock: what's open
+    this minute, what the light is doing, and what still fits before you have to leave.</p>
+  </div></div>
+  <div class="wrap">
+    <input class="search" id="q" type="search" autocomplete="off" placeholder="A town or city…" aria-label="Where are you going?">
+    <div id="hits"></div>
+
+    <div class="card cool" id="resume" style="display:none">
+      <h3>Carry on with <span id="resumeName"></span></h3>
+      <p class="sub" style="margin:6px 0 0">Already saved on this device. Opens with no signal.</p>
+      <button class="big" id="resumeBtn" style="margin-top:10px">Open it</button>
+    </div>
+
+    <h2><span class="n">01</span> How this works</h2>
+    <div class="card">
+      <p class="sub">Everything happens in this tab. Your browser asks
+      <b>OpenStreetMap</b> what's nearby and when it opens, asks <b>Wikivoyage</b> what
+      travellers have written about those places, and works out sunrise and sunset from
+      orbital maths on your own device.</p>
+      <p class="sub">There is no account, no server of ours, no API key, and no AI. Every
+      sentence you'll read about a place was written by a person, not generated.</p>
+      <p class="tiny">Once it's loaded it works offline, and you can add it to your home
+      screen like an app. Nothing is sent anywhere; the trip is stored only on this device.</p>
+    </div>
+
+    <h2><span class="n">02</span> What it's for</h2>
+    <div class="card flat">
+      <p class="sub">You land somewhere with a few hours. A normal guide lists two hundred
+      things with no sense of time. Half are shut, some are an hour away, a few take longer
+      than you've got. This one answers a narrower question: <b>it's 3pm and I leave at 7,
+      so what now?</b></p>
+    </div>
+    <p class="src">Places and hours from OpenStreetMap contributors (ODbL). Descriptions
+    from Wikivoyage (CC BY-SA 4.0). Search by Nominatim. Open source, MIT.</p>
+  </div>
+</div>
+
+<!-- ============ 2. when ============ -->
+<div class="screen" id="s2">
+  <div class="hero"><div class="wrap">
+    <h1 id="destName">…</h1>
+    <p class="lead" id="destSub"></p>
+  </div></div>
+  <div class="wrap">
+    <h2><span class="n">01</span> Your hours there</h2>
+    <p class="sub">This is the whole point, so it's worth getting roughly right. Everything
+    gets ranked against the time you have left.</p>
+    <div class="timeset">
+      <div><label for="arrive">Arrive</label><input id="arrive" type="time" value="09:00"></div>
+      <div><label for="depart">Leave</label><input id="depart" type="time" value="21:00"></div>
+    </div>
+    <button class="big ghost" id="nowBtn">I'm already here, start from now</button>
+
+    <h2><span class="n">02</span> Local time</h2>
+    <div class="card">
+      <p class="sub">Guessed <b>UTC<span id="tzGuess"></span></b> from longitude. The guide
+      runs on the destination's clock, not your phone's, which matters if you've just
+      landed and your phone hasn't caught up.</p>
+      <label class="tiny" for="tz">Minutes offset from UTC — change it if the guess is wrong</label>
+      <input id="tz" type="number" step="15" style="width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font-size:16px;font-family:inherit;margin-top:6px">
+      <p class="tiny" style="margin-top:8px">It's an estimate from where the place sits east
+      or west, not a lookup. Half-hour zones like India are handled; oddities may not be.</p>
+    </div>
+
+    <button class="big" id="goBtn">Build my guide</button>
+    <button class="big ghost" id="backBtn">Somewhere else</button>
+  </div>
+</div>
+
+<!-- ============ 3. building ============ -->
+<div class="screen" id="s3">
+  <div class="hero"><div class="wrap">
+    <h1>Building.</h1>
+    <p class="lead">Asking other people's open databases, not a model.</p>
+  </div></div>
+  <div class="wrap">
+    <div class="bar"><div></div></div>
+    <div class="card">
+      <div class="step" id="stGeo"><i>○</i><span>finding the place</span></div>
+      <div class="step" id="stOsm"><i>○</i><span>OpenStreetMap: places and opening hours</span></div>
+      <div class="step" id="stWv"><i>○</i><span>Wikivoyage: what people wrote about them</span></div>
+      <div class="step" id="stSun"><i>○</i><span>sunrise and sunset</span></div>
+      <div class="step" id="stDone"><i>○</i><span>saving to this device</span></div>
+    </div>
+    <p class="tiny">OpenStreetMap's free servers are shared by everyone and occasionally
+    slow. If a step fails it says so rather than quietly giving you less.</p>
+  </div>
+</div>
+
+<!-- ============ 4. the guide ============ -->
+<div class="screen" id="s4">
+  <div class="top"><div class="wrap">
+    <div><div class="tnow" id="clock">--:--</div><div class="tphase" id="phase"></div></div>
+    <div class="tcd" id="sun"></div>
+  </div></div>
+  <div class="hero"><div class="wrap">
+    <h1 id="gName">…</h1>
+    <p class="lead" id="phaseLine"></p>
+  </div></div>
+  <div class="wrap">
+    <div id="alerts"></div>
+    <input class="search" id="filter" type="search" placeholder="Filter by name…" aria-label="Filter" style="margin-bottom:4px">
+    <div class="chips" id="cats"></div>
+    <p class="tiny" id="count"></p>
+    <div id="list"></div>
+    <div class="btns" style="margin:18px 0 8px">
+      <button class="btn" id="aboutBtn">Where this came from</button>
+      <button class="btn" id="newBtn">Somewhere else</button>
+    </div>
+  </div>
+</div>
+
+<dialog id="about" style="background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;max-width:620px;width:92%;padding:18px">
+  <div id="aboutBody"></div>
+  <button class="big" id="closeAbout" style="margin-top:14px">Close</button>
+</dialog>
+
+<script src="sun.js"></script>
+<script src="sources.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "tripkit — what's open right now",
+  "short_name": "tripkit",
+  "description": "A travel guide that reads the clock. Works offline. No account, no tracking.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0b12",
+  "theme_color": "#0d0b12",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

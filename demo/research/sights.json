@@ -1,0 +1,1003 @@
+[
+ {
+  "id": "torre-de-belem",
+  "name": "Belém Tower",
+  "cat": "do",
+  "town": "lisbon",
+  "lat": 38.6916,
+  "lng": -9.216,
+  "loose": true,
+  "open": "09:30",
+  "close": "17:30",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 15,
+  "hi": 15,
+  "priceNote": "per person, interior only",
+  "dur": 45,
+  "why": "16th-century fortified tower guarding the Tagus, UNESCO-listed and one of the most photographed things in Lisbon; the exterior and riverside walk around it are free and arguably better than the cramped, steep-staircase interior. Early 2026 saw the interior closed for conservation works with a planned reopening around May 2026 under timed entry capped near 900 visitors/day - by this trip's October dates it should be open again but slots can sell out on busy days.",
+  "warn": "Book a timed slot online in advance; queues without one have been turned away on weekends. Interior involves narrow spiral stairs, not ideal for anyone with mobility issues or claustrophobia.",
+  "best": [
+   "09:30",
+   "17:00"
+  ],
+  "tags": [
+   "photo",
+   "view",
+   "walk",
+   "sunset"
+  ],
+  "src": "https://culturaportugal.gov.pt/pt/conhecer/local/mmp-locais/torre-de-belem/"
+ },
+ {
+  "id": "mosteiro-dos-jeronimos",
+  "name": "Jerónimos Monastery",
+  "cat": "do",
+  "town": "lisbon",
+  "lat": 38.6979,
+  "lng": -9.2065,
+  "loose": true,
+  "open": "09:30",
+  "close": "17:30",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 18,
+  "hi": 18,
+  "priceNote": "per person, cloister",
+  "dur": 75,
+  "why": "Manueline-style monastery from 1501, the grandest single building in Lisbon and the burial place of Vasco da Gama and Luís de Camões; the cloister (paid, €18) is genuinely worth it for the carved stonework, but the church itself is free and often overlooked by people queueing for the paid entrance.",
+  "warn": "Online booking strongly recommended - walk-up queues in season have run past an hour. Church has separate, shorter hours (roughly 10:00-17:00, later opening Sundays) from the monastery/cloister.",
+  "best": [
+   "09:30",
+   "10:00"
+  ],
+  "tags": [
+   "photo",
+   "view",
+   "indoor",
+   "walk"
+  ],
+  "src": "https://www.patrimoniocultural.gov.pt/publicacao/mosteiro-dos-jeronimos/"
+ },
+ {
+  "id": "castelo-sao-jorge",
+  "name": "Castelo de São Jorge",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7139,
+  "lng": -9.1335,
+  "loose": true,
+  "open": "09:00",
+  "close": "21:00",
+  "shut": null,
+  "days": null,
+  "lo": 17,
+  "hi": 17,
+  "priceNote": "per adult",
+  "dur": 90,
+  "why": "Moorish-era hilltop castle above Alfama with the widest free-standing view over the city and river anywhere in Lisbon; the walls and towers are the draw, the small archaeological site and camera obscura are minor extras included in the ticket. Hours are 9:00-21:00 March-October (last admission 20:30) and 9:00-18:00 November-February (last admission 17:30) - it's open every day except five fixed holidays.",
+  "warn": "Closed only Jan 1, May 1, Dec 24, 25 and 31 - open all three days of this trip. Steep cobbled approach from Alfama; wear proper shoes, not sandals.",
+  "best": [
+   "09:00",
+   "18:30"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "sunset",
+   "walk"
+  ],
+  "src": "https://castelodesaojorge.pt/en/plan-your-visit/schedules/"
+ },
+ {
+  "id": "convento-do-carmo",
+  "name": "Carmo Convent ruins",
+  "cat": "do",
+  "town": "lisbon",
+  "lat": 38.7115,
+  "lng": -9.1403,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": "closed Sun",
+  "lo": 7,
+  "hi": 7,
+  "priceNote": "per adult",
+  "dur": 30,
+  "why": "Gothic church left roofless by the 1755 earthquake and never rebuilt - open sky where the vault used to be, arches standing on nothing, now doubling as a small archaeology museum. It's one of the few places in Lisbon where the earthquake's damage is still visible rather than restored away, and it's small enough to see properly in half an hour.",
+  "warn": "Closed Sundays - this only works on the Friday or Saturday of the trip, not the Sunday before the 17:00 departure. Hours are 10:00-18:00 in winter (Oct-Mar) rising to 10:00-19:00 in summer; October likely still on the shorter winter hours, so check on arrival.",
+  "best": [
+   "10:00",
+   "17:00"
+  ],
+  "tags": [
+   "photo",
+   "walk",
+   "quiet"
+  ],
+  "src": "https://www.storyhunt.io/en/articles/carmo-convent"
+ },
+ {
+  "id": "padrao-dos-descobrimentos",
+  "name": "Padrão dos Descobrimentos",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.6933,
+  "lng": -9.2059,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": null,
+  "lo": 10,
+  "hi": 10,
+  "priceNote": "per adult, viewpoint+exhibition+film",
+  "dur": 45,
+  "why": "1960 monument shaped like a caravel's prow, built for the 500th anniversary of Henry the Navigator's death - the compass-rose pavement mosaic in front of it (a gift from South Africa) is the actual photo everyone takes, and it's free to see without paying for the lift up. The viewing platform at the top gives a flatter, more open view over the river than the castle's, useful if you want both perspectives.",
+  "warn": "Closed Jan 1, May 1, Dec 24/25/31 only - open throughout this trip. October falls in the shorter Oct-Feb hours (10:00-18:00, last entry 17:30), not the summer 19:00 close.",
+  "best": [
+   "10:00",
+   "17:00"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "walk"
+  ],
+  "src": "https://padraodosdescobrimentos.pt/en/tickets/"
+ },
+ {
+  "id": "arco-da-rua-augusta",
+  "name": "Arco da Rua Augusta",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7078,
+  "lng": -9.1366,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": null,
+  "lo": 3.5,
+  "hi": 3.5,
+  "priceNote": "per person, viewpoint",
+  "dur": 30,
+  "why": "Triumphal arch closing off Praça do Comércio, built to mark the city's rebuilding after 1755; climbing it gets a compact, elevated view straight down the Baixa grid and across the square to the river, cheaper and quicker than either the castle or the discoveries monument. The square itself (Praça do Comércio) is free, open all hours, and is the actual historic centrepiece here - the arch viewpoint is a paid add-on to it.",
+  "warn": "Rooftop platform holds only ~35 people at a time, so it can queue on the half-hour in high season.",
+  "best": [
+   "10:00",
+   "18:30"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "walk",
+   "cheap"
+  ],
+  "src": "https://www.storyhunt.io/en/articles/arco-da-rua-augusta"
+ },
+ {
+  "id": "panteao-nacional",
+  "name": "National Pantheon (Santa Engrácia)",
+  "cat": "do",
+  "town": "lisbon",
+  "lat": 38.7139,
+  "lng": -9.1265,
+  "loose": true,
+  "open": "10:00",
+  "close": "17:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 3,
+  "hi": 3,
+  "priceNote": "per adult",
+  "dur": 30,
+  "why": "17th-century domed church in Alfama, secularised into Portugal's national pantheon; Amália Rodrigues, Eusébio and the cenotaph of Camões are here under one polychrome-marble dome, and the rooftop terrace gives a free-feeling view over Alfama's rooftops for a €3 ticket, the cheapest paid view in this list. Genuinely quiet compared to the castle and monastery, which is either a plus or a sign most people skip it.",
+  "warn": "October hours run 10:00-17:00 (last admission 16:40); the later 18:00 close only applies April-September. Free first Sunday of the month before roughly 14:00 for Portuguese residents - doesn't help a foreign first-time visitor.",
+  "best": [
+   "10:00",
+   "16:00"
+  ],
+  "tags": [
+   "view",
+   "quiet",
+   "indoor",
+   "cheap"
+  ],
+  "src": "https://www.panteaonacional.gov.pt/en/visitar"
+ },
+ {
+  "id": "palacio-nacional-da-ajuda",
+  "name": "Palácio Nacional da Ajuda",
+  "cat": "do",
+  "town": "lisbon",
+  "lat": 38.7062,
+  "lng": -9.1972,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Wed",
+  "lo": 15,
+  "hi": 15,
+  "priceNote": "per adult",
+  "dur": 60,
+  "why": "The Portuguese royal family's unfinished neoclassical palace, still decked out with its original 19th-century state rooms and the crown jewels in the treasury wing - less crowded than the Belém sites ten minutes' walk downhill from it, since most people don't realise it's there. Worth it mainly if the traveller has already done Belém Tower and Jerónimos and wants one more indoor stop rather than a third queue at the riverfront.",
+  "warn": "Closed Wednesdays, not Mondays - unusual for a Lisbon monument and easy to get wrong when planning around it; open every day of this trip though. Last admission 17:15, 45 minutes before close.",
+  "best": [
+   "10:00",
+   "11:00"
+  ],
+  "tags": [
+   "indoor",
+   "quiet",
+   "rainy-day"
+  ],
+  "src": "https://lisbonlisboaportugal.com/belem-lisbon/Ajuda-Palacio-Nacional-Lisbon.html"
+ },
+ {
+  "id": "miradouro-portas-do-sol",
+  "name": "Miradouro das Portas do Sol",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7128,
+  "lng": -9.1302,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 20,
+  "why": "The classic Alfama terrace over the Tagus and the red rooftops down to the river, with the São Vicente statue and a small café right on the platform. It's a public street terrace, not a gated garden, so there is no ticket and no fixed closing time; it's also the tram 28 stop everyone photographs, so mid-morning to early afternoon it's genuinely crowded.",
+  "warn": "Pickpockets work this stop specifically because tourists are distracted by the view and the tram; keep bags zipped and to the front.",
+  "best": [
+   "08:00",
+   "18:30"
+  ],
+  "tags": [
+   "free",
+   "sunrise",
+   "sunset",
+   "view",
+   "photo",
+   "walk",
+   "solo-ok"
+  ],
+  "src": "https://www.visitlisboa.com/en/places/miradouro-das-portas-do-sol"
+ },
+ {
+  "id": "miradouro-santa-luzia",
+  "name": "Miradouro de Santa Luzia",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7118,
+  "lng": -9.1308,
+  "loose": true,
+  "open": null,
+  "close": null,
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 15,
+  "why": "A small bougainvillea-covered terrace one minute from Portas do Sol, with azulejo panels on the church wall showing old Lisbon and the 1147 siege of the castle - worth the minute it takes to actually read them, most people walk past. Free and outdoor.",
+  "warn": "Sources genuinely disagree on closing time - one says open 24h, another 08:00-20:00, another 10:00-midnight - so treat it as a daylight/early-evening stop rather than assuming late-night access; it isn't well lit.",
+  "best": [
+   "08:00",
+   "18:00"
+  ],
+  "tags": [
+   "free",
+   "view",
+   "photo",
+   "walk",
+   "quiet",
+   "solo-ok"
+  ],
+  "src": "https://thirdeyetraveller.com/miradouro-de-santa-luzia-lisbon-viewpoint/"
+ },
+ {
+  "id": "miradouro-senhora-do-monte",
+  "name": "Miradouro da Senhora do Monte",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7157,
+  "lng": -9.1281,
+  "loose": true,
+  "open": null,
+  "close": null,
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 25,
+  "why": "The highest of the free miradouros and the widest view in the city - castle, river and the whole Baixa laid out below - but it's a small platform that fills up fast at golden hour. Genuinely best early, when it's empty and the light is soft, not at the sunset everyone recommends.",
+  "warn": "It's a 10-15 minute uphill walk from the tram 28 stop on cobblestones - wear real shoes, not sandals.",
+  "best": [
+   "08:00",
+   "09:00"
+  ],
+  "tags": [
+   "free",
+   "sunrise",
+   "view",
+   "photo",
+   "walk",
+   "quiet",
+   "solo-ok"
+  ],
+  "src": "https://lovelisbon.com/miradouro-da-senhora-do-monte"
+ },
+ {
+  "id": "miradouro-da-graca",
+  "name": "Miradouro da Graça (Sophia de Mello Breyner Andresen)",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7157,
+  "lng": -9.1319,
+  "loose": true,
+  "open": null,
+  "close": null,
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 25,
+  "why": "Old churchyard of the Graça Convent, renamed for the poet Sophia de Mello Breyner Andresen; the castle sits in the foreground here rather than in the distance, which is the actual reason people prefer it to Senhora do Monte a few minutes' walk away. There's a shaded kiosk terrace (Esplanada da Graça) if you want a coffee with the view rather than just the photo.",
+  "warn": null,
+  "best": [
+   "09:00",
+   "17:00"
+  ],
+  "tags": [
+   "free",
+   "view",
+   "photo",
+   "walk",
+   "shade",
+   "solo-ok"
+  ],
+  "src": "https://lisbonlisboaportugal.com/Alfama-Lisbon/miradouro-da-graca-viewpoint-lisbon-sophia-andresen.html"
+ },
+ {
+  "id": "miradouro-sao-pedro-de-alcantara",
+  "name": "Miradouro de São Pedro de Alcântara",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7146,
+  "lng": -9.1447,
+  "loose": true,
+  "open": null,
+  "close": null,
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 20,
+  "why": "A formal garden terrace at the top of the Glória funicular line, looking across the valley to the castle - one of the few miradouros where you get the castle and the river in the same frame. The garden itself is open access; only the kiosk on site keeps set hours.",
+  "warn": "Kiosk hours are Sun-Thu 10:00-21:00, Fri-Sat 10:00-02:00 - on weekend nights the terrace shifts into a loud outdoor-bar scene, which changes the feel for a solo first-timer wanting a quiet view.",
+  "best": [
+   "09:00",
+   "18:00"
+  ],
+  "tags": [
+   "free",
+   "view",
+   "photo",
+   "walk",
+   "evening",
+   "solo-ok"
+  ],
+  "src": "https://www.getyourguide.com/miradouro-de-sao-pedro-de-alcantara-l4911/"
+ },
+ {
+  "id": "jardim-do-principe-real",
+  "name": "Jardim do Príncipe Real",
+  "cat": "park",
+  "town": "lisbon",
+  "lat": 38.7169,
+  "lng": -9.1487,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 30,
+  "why": "A 19th-century romantic garden, officially Jardim França Borges, built around a huge cypress with a 20-metre canopy - it's shade and benches rather than a view, a good place to sit down between miradouros. An organic farmers' market runs here on Saturdays. The underground 19th-century water reservoir (Reservatório da Patriarcal) on the same square is a separate paid visit, Mon-Sat 10:00-18:00, not part of the free garden.",
+  "warn": null,
+  "best": [
+   "10:00",
+   "17:00"
+  ],
+  "tags": [
+   "free",
+   "shade",
+   "quiet",
+   "walk",
+   "solo-ok",
+   "rainy-day"
+  ],
+  "src": "https://pt.wikipedia.org/wiki/Jardim_do_Pr%C3%ADncipe_Real"
+ },
+ {
+  "id": "parque-eduardo-vii",
+  "name": "Parque Eduardo VII",
+  "cat": "park",
+  "town": "lisbon",
+  "lat": 38.7259,
+  "lng": -9.1542,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 3.6,
+  "priceNote": "park is free; Estufa Fria greenhouse entry is €3.60",
+  "dur": 45,
+  "why": "Lisbon's big central park, a long geometric lawn running uphill from Marquês de Pombal with a formal view straight down Avenida da Liberdade to the river - it's a city-planning view rather than a river one, worth knowing before you climb it expecting Tagus panoramas. Inside the park, the Estufa Fria is a sunken greenhouse complex (cold, tropical and interior sections) that's genuinely worth the small fee and is shaded on a hot day.",
+  "warn": "Estufa Fria closes for the day at 19:00 in early October (summer schedule runs to the last weekend of that month) - free on Sundays and public holidays; closed 1 Jan, 1 May, 25 Dec.",
+  "best": [
+   "10:00",
+   "16:00"
+  ],
+  "tags": [
+   "free",
+   "walk",
+   "shade",
+   "photo",
+   "solo-ok",
+   "rainy-day"
+  ],
+  "src": "https://www.discover-portugal.com/estufa-fria/"
+ },
+ {
+  "id": "ribeira-das-naus",
+  "name": "Ribeira das Naus",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.7069,
+  "lng": -9.1421,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 30,
+  "why": "A flat riverside promenade between Praça do Comércio and Cais do Sodré, built on the site of the old royal shipyards, with wide steps running down into the river and a big lawn to sit on - the honest riverside-park alternative when the miradouros are all crowded stairs and cobbles. Sunset here is over the 25 de Abril bridge, and it's flat, so it's the easiest of these entries for anyone tired of Lisbon's hills.",
+  "warn": null,
+  "best": [
+   "18:00",
+   "19:30"
+  ],
+  "tags": [
+   "free",
+   "sunset",
+   "view",
+   "walk",
+   "solo-ok",
+   "evening"
+  ],
+  "src": "https://www.visitlisboa.com/en/places/ribeira-das-naus"
+ },
+ {
+  "id": "cristo-rei",
+  "name": "Cristo Rei (Sanctuary of Christ the King)",
+  "cat": "view",
+  "town": "lisbon",
+  "lat": 38.6786,
+  "lng": -9.1704,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 10,
+  "priceNote": "€10 adult (13+) for the lift to the platform; €3 age 8-12; free under 8; grounds and base terrace are free",
+  "dur": 90,
+  "why": "The 82m statue across the river gives the one view that includes the whole of Lisbon plus the 25 de Abril bridge in the same frame, which no miradouro on the Lisbon side can do - but it is genuinely a half-day detour, not a quick add-on: it's on the Almada side, reached by ferry from Cais do Sodré to Cacilhas plus a bus, and the last lift up is 20 minutes before closing. October is off-season hours (10:00-18:00), not the longer summer hours some pages still quote.",
+  "warn": "Given the 56-hour window with a 17:00 departure, this is a real trade-off against time in Alfama/Baixa - only worth it if the ferry crossing itself is wanted as an experience, not just the view.",
+  "best": [
+   "16:00",
+   "17:30"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "sunset"
+  ],
+  "src": "https://cristorei.pt/visitas/bilheteira/"
+ },
+ {
+  "id": "museu-nacional-arte-antiga",
+  "name": "Museu Nacional de Arte Antiga (MNAA)",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7057,
+  "lng": -9.1587,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 10,
+  "hi": 10,
+  "priceNote": "adult standard; free 1st Sun of month when open",
+  "dur": 90,
+  "why": "Portugal's top collection of old-master painting and decorative arts, including Nuno Gonçalves's Panels of St Vincent - normally the best indoor option on a rainy day in Lisbon. It has been fully closed to the public since 29 September 2025 for PRR-funded renovation, and as of this trip's dates the reopening (targeted for the second half of 2026) is still unconfirmed, so do not build a plan around it without checking first.",
+  "warn": "CLOSED for renovation since 29 Sep 2025, no confirmed reopening date - many travel blogs still list it as open with the old hours, which is wrong.",
+  "best": [
+   "10:00"
+  ],
+  "tags": [
+   "indoor",
+   "rainy-day",
+   "quiet",
+   "solo-ok"
+  ],
+  "src": "https://www.publico.pt/2025/09/22/culturaipsilon/noticia/prr-museu-nacional-arte-antiga-fecha-29-setembro-obras-2148059"
+ },
+ {
+  "id": "museu-calouste-gulbenkian",
+  "name": "Museu Calouste Gulbenkian",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7369,
+  "lng": -9.1541,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Tue",
+  "lo": 0,
+  "hi": 10,
+  "priceNote": "€10 adult (30+), €6 age 12-29, €9 senior 65+, free under 12; free for under-30s Sat 18:00-21:00",
+  "dur": 120,
+  "why": "Two proper museums in one calm, garden-set complex - the Founder's Collection (ancient Egypt to Lalique) and the separate Modern Collection of Portuguese art - genuinely one of the best small museums in Europe, not tourist hype. On Saturdays only it stays open to 21:00, which is worth knowing since most guides quote a flat 10:00-18:00 for every day.",
+  "warn": "Repeatedly misreported online as 'closed Monday' like most European museums - it is actually closed Tuesday and open Monday.",
+  "best": [
+   "10:00",
+   "18:30"
+  ],
+  "tags": [
+   "indoor",
+   "rainy-day",
+   "quiet",
+   "solo-ok",
+   "aircon",
+   "photo"
+  ],
+  "src": "https://gulbenkian.pt/informacoes-uteis/horarios/"
+ },
+ {
+  "id": "maat-lisbon",
+  "name": "MAAT (Museum of Art, Architecture and Technology)",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.6963,
+  "lng": -9.1946,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": "closed Tue",
+  "lo": 12,
+  "hi": 16,
+  "priceNote": "€12 Portugal residents, €16 non-residents; one ticket covers both the wave-roofed gallery and the old Tejo power station (MAAT Central) next door",
+  "dur": 90,
+  "why": "The undulating white gallery by the river is an attraction in its own right before you even see the art - climbing onto its roof for free (no ticket needed for the roof itself) gives one of the best low-angle river and 25 de Abril bridge views in the city. The power-station half (MAAT Central) is the more substantial indoor collection; the gallery building alone can feel thin if the current exhibition doesn't land for you.",
+  "warn": null,
+  "best": [
+   "17:00"
+  ],
+  "tags": [
+   "indoor",
+   "view",
+   "photo",
+   "sunset",
+   "rainy-day"
+  ],
+  "src": "https://www.maat.pt/en/plan-a-visit"
+ },
+ {
+  "id": "museu-nacional-azulejo",
+  "name": "Museu Nacional do Azulejo",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7286,
+  "lng": -9.1074,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 5,
+  "hi": 5,
+  "priceNote": "last known adult price pre-closure; may change on reopening",
+  "dur": 60,
+  "why": "Portugal's national tile museum, set inside a former convent with an azulejo-covered church and cloister - normally the single most-recommended indoor stop for anyone into tiles, and usually much quieter than the Torre de Belém queue. It has been shut to the public since November 2025 for PRR renovation work, with reopening only vaguely pencilled in for the second half of 2026.",
+  "warn": "CLOSED for renovation since Nov 2025, no confirmed reopening date - do not walk out to Xabregas for this without checking the official site first.",
+  "best": [
+   "10:00"
+  ],
+  "tags": [
+   "indoor",
+   "quiet",
+   "photo"
+  ],
+  "src": "https://www.idealista.pt/news/imobiliario/construcao/2026/04/13/74890-museu-nacional-do-azulejo-em-lisboa-alvo-de-reabilitacao"
+ },
+ {
+  "id": "museu-nacional-coches",
+  "name": "Museu Nacional dos Coches",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.6975,
+  "lng": -9.2011,
+  "loose": true,
+  "open": "10:00",
+  "close": "17:30",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 4,
+  "hi": 10,
+  "priceNote": "Picadeiro Real (old riding school) alone €4, New Building €8, combined ticket €10",
+  "dur": 75,
+  "why": "The world's largest and best royal-coach collection, split across a striking modern glass building and the original 18th-century riding school - genuinely worth it even if carriages sound dull, since some of these are gilded works of art. It sits right by Belém so pairs naturally with the tower and monastery.",
+  "warn": "Sources disagree on exact details: one set of listings gives the New Building hours as Tue-Sun 10:00-18:00 with the historic Picadeiro Real on a different Wed-Mon cycle, while the official museum portal states a single Tue-Sun 10:00-17:30 schedule for the whole site - confirm on the day, since the two buildings may not share the same closing day.",
+  "best": [
+   "10:00"
+  ],
+  "tags": [
+   "indoor",
+   "rainy-day",
+   "photo"
+  ],
+  "src": "https://www.museudoscoches-ipmuseus.pt/"
+ },
+ {
+  "id": "museu-do-fado",
+  "name": "Museu do Fado",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7096,
+  "lng": -9.1281,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 0,
+  "hi": 5,
+  "priceNote": "€5 standard, €2.50 age 13-25, €4 senior 65+, free under 12; free for Lisbon residents Sun/holidays until 14:00",
+  "dur": 60,
+  "why": "A small, well-made interactive museum on the history of fado in Alfama, right where the genre supposedly originated - worth it if you want to understand what you're paying for at a fado dinner show later, less essential if you're skipping the music entirely. Last admission is 17:30, half an hour before closing.",
+  "warn": null,
+  "best": [
+   "10:00",
+   "16:00"
+  ],
+  "tags": [
+   "indoor",
+   "quiet",
+   "solo-ok",
+   "rainy-day"
+  ],
+  "src": "https://www.museudofado.pt/visitar"
+ },
+ {
+  "id": "museu-do-oriente",
+  "name": "Museu do Oriente",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7025,
+  "lng": -9.1775,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 0,
+  "hi": 10,
+  "priceNote": "€10 standard, €3 age 6-12, €3.50 student, €4.50 senior; free Fri 18:00-20:00 and under 5",
+  "dur": 75,
+  "why": "A large, underrated collection on Portugal's historic trade links with Asia - Indo-Portuguese art, Macau, Chinese and Japanese pieces - housed in a converted riverside warehouse near Alcântara docks. Far less crowded than the big-name museums, which for a first-timer with limited hours cuts both ways: a calmer visit, but also easy to deprioritise if time is short.",
+  "warn": "Open until 20:00 on Fridays only (with free entry from 18:00), every other open day it closes at 18:00 - don't assume the late hours apply on a Saturday visit.",
+  "best": [
+   "10:00"
+  ],
+  "tags": [
+   "indoor",
+   "rainy-day",
+   "quiet"
+  ],
+  "src": "https://www.foriente.pt/static.php?id=EDD8EBBE-F5B8-4504-B998-C8CE7AE37DC0"
+ },
+ {
+  "id": "casa-dos-bicos-saramago",
+  "name": "Casa dos Bicos - Fundação José Saramago",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7086,
+  "lng": -9.1346,
+  "loose": true,
+  "open": "10:00",
+  "close": "18:00",
+  "shut": null,
+  "days": "closed Sun",
+  "lo": 0,
+  "hi": 3,
+  "priceNote": "€3 standard, free under 12 and senior 65+, €8 family ticket (max 2 adults)",
+  "dur": 40,
+  "why": "A small, quick permanent exhibition on Nobel laureate José Saramago inside one of Lisbon's most distinctive Renaissance facades (the diamond-studded 'spiky house') in Alfama - worth a look mainly for the building itself and as a 30-40 minute break, not a headline museum stop.",
+  "warn": "Closed on SUNDAY, not Monday like most Lisbon museums - since this trip leaves Sunday at 17:00, the only real windows to see it are Friday or Saturday.",
+  "best": [
+   "10:00"
+  ],
+  "tags": [
+   "indoor",
+   "quiet",
+   "solo-ok",
+   "cheap"
+  ],
+  "src": "https://www.josesaramago.org/en/contact-and-informations/"
+ },
+ {
+  "id": "jeronimos-monastery",
+  "name": "Mosteiro dos Jerónimos",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.6979,
+  "lng": -9.2062,
+  "loose": true,
+  "open": "10:00",
+  "close": "17:30",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 6,
+  "hi": 18,
+  "priceNote": "cloister ticket (reduced/full adult); the church itself is free",
+  "dur": 75,
+  "why": "A working Catholic church (Santa Maria de Belém) plus the UNESCO-listed cloister next door where Vasco da Gama and the poet Camões are buried; the double-height stone cloister carvings are the actual reason to pay, the church nave is free and takes 10 minutes.",
+  "warn": "Queues for the cloister run past an hour by mid-morning in good weather; book the timed cloister ticket online before arriving. Hours shift by season and sources disagree on the exact cutover month - confirm same-week on the official site before planning a specific slot.",
+  "best": [
+   "09:30",
+   "16:30"
+  ],
+  "tags": [
+   "photo",
+   "indoor",
+   "walk",
+   "quiet"
+  ],
+  "src": "https://www.jeronimosmonasterytickets.com/hours/"
+ },
+ {
+  "id": "se-cathedral-lisboa",
+  "name": "Sé de Lisboa (Lisbon Cathedral)",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7098,
+  "lng": -9.1332,
+  "loose": true,
+  "open": "09:30",
+  "close": "19:00",
+  "shut": null,
+  "days": "closed Sun and holy days",
+  "lo": 0,
+  "hi": 7,
+  "priceNote": "nave free; €7 combo ticket covers cloister, treasury museum and high choir",
+  "dur": 30,
+  "why": "Lisbon's oldest church, a fortress-like Romanesque cathedral rebuilt repeatedly after earthquakes; the plain fortified facade undersells what's a genuinely atmospheric interior, and it's free to just walk in and look.",
+  "warn": "Sources disagree on whether the cloister has its own separate cheap ticket (€2.50) or is only sold as part of the €7 combo - the cathedral's own current ticket page shows one bundled €7 ticket, so treat the cloister-only price as unconfirmed. Closed Sundays, which rules it out for the last day of this trip.",
+  "best": [
+   "09:30",
+   "11:00"
+  ],
+  "tags": [
+   "photo",
+   "indoor",
+   "free",
+   "quiet"
+  ],
+  "src": "https://www.sedelisboa.pt/tickets/?lang=en"
+ },
+ {
+  "id": "igreja-sao-roque",
+  "name": "Igreja de São Roque",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7145,
+  "lng": -9.1428,
+  "loose": true,
+  "open": "09:30",
+  "close": "17:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 2.5,
+  "priceNote": "church free; museum €2.50 (free Sun until 14:00)",
+  "dur": 25,
+  "why": "Looks like a plain barn from outside on purpose - the Jesuits deliberately kept the facade austere - then opens into one of the most gold-and-azulejo-saturated interiors in Europe, including a chapel that was literally built in Rome, blessed by the Pope, dismantled and shipped to Lisbon as the most expensive chapel of its era. The church costs nothing; only the side museum charges.",
+  "warn": "Church and museum are both closed Mondays and on Jan 1, Easter Sunday, May 1 and Dec 25.",
+  "best": [
+   "10:00",
+   "12:00"
+  ],
+  "tags": [
+   "free",
+   "photo",
+   "indoor",
+   "quiet"
+  ],
+  "src": "https://lisbontouristinformation.com/things-to-do/igreja-de-sao-roque-church/"
+ },
+ {
+  "id": "basilica-da-estrela",
+  "name": "Basílica da Estrela",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7139,
+  "lng": -9.1595,
+  "loose": true,
+  "open": "09:30",
+  "close": "19:30",
+  "shut": [
+   "13:00",
+   "15:00"
+  ],
+  "days": null,
+  "lo": 0,
+  "hi": 4,
+  "priceNote": "basilica free; rooftop/dome climb ~€4",
+  "dur": 30,
+  "why": "A huge white Baroque dome you can see from several viewpoints across the city; the basilica itself is free and usually near-empty compared to the Sé or Jerónimos, and the rooftop climb (112 narrow stone steps) gets you level with the dome for one of the less-crowded views in Lisbon.",
+  "warn": "Genuine midday closure most tourist pages skip - shut roughly 13:00-15:00 and the rooftop closes earlier than the church, around 18:40. Confirm rooftop opening the day of, since access has reportedly been limited at times.",
+  "best": [
+   "10:30",
+   "17:00"
+  ],
+  "tags": [
+   "free",
+   "view",
+   "photo",
+   "quiet"
+  ],
+  "src": "https://www.thegeographicalcure.com/post/lisbon-s-basilica-da-estrela"
+ },
+ {
+  "id": "convento-do-carmo",
+  "name": "Convento do Carmo (Carmo Archaeological Museum)",
+  "cat": "museum",
+  "town": "lisbon",
+  "lat": 38.7107,
+  "lng": -9.1403,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": "closed Sun",
+  "lo": 7,
+  "hi": 7,
+  "priceNote": "per adult",
+  "dur": 30,
+  "why": "Not a functioning church despite how it's usually listed - it's a roofless Gothic ruin left exactly as the 1755 earthquake and fire left it, now the Carmo Archaeological Museum with medieval tombs and two Peruvian mummies inside. Worth correcting: you are paying to see a ruin and small museum, not to attend or view an active place of worship.",
+  "warn": "Closed Sundays and on Jan 1, May 1 and Dec 25 - easy to walk up to on a Sunday and find it shut.",
+  "best": [
+   "10:00",
+   "11:30"
+  ],
+  "tags": [
+   "photo",
+   "quiet",
+   "indoor"
+  ],
+  "src": "https://www.storyhunt.io/en/articles/carmo-convent"
+ },
+ {
+  "id": "panteao-nacional",
+  "name": "Panteão Nacional (former Igreja de Santa Engrácia)",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7139,
+  "lng": -9.1258,
+  "loose": true,
+  "open": "10:00",
+  "close": "17:00",
+  "shut": null,
+  "days": "closed Mon",
+  "lo": 4,
+  "hi": 4,
+  "priceNote": "per adult",
+  "dur": 30,
+  "why": "A domed 17th-century church that took so long to finish it gave Portuguese the saying 'obras de Santa Engrácia' for a never-ending project; deconsecrated and turned into the national pantheon holding tombs and cenotaphs of figures like Amália Rodrigues, with a rooftop terrace over Alfama.",
+  "warn": "The widely repeated 'free on Sundays' claim only applies to residents of Portugal, not to visiting tourists - budget the €4 regardless of day. Closed Mondays.",
+  "best": [
+   "10:00",
+   "11:00"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "quiet"
+  ],
+  "src": "https://www.panteaonacional.gov.pt/en/visitar"
+ },
+ {
+  "id": "igreja-santo-antonio-lisboa",
+  "name": "Igreja de Santo António de Lisboa",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7091,
+  "lng": -9.1334,
+  "loose": true,
+  "open": "07:00",
+  "close": "19:00",
+  "shut": [
+   "12:30",
+   "15:00"
+  ],
+  "days": null,
+  "lo": 0,
+  "hi": 3,
+  "priceNote": "church free; adjoining museum €3 (free Sun until 14:00)",
+  "dur": 15,
+  "why": "A small 18th-century church built over what's said to be the birthplace of Saint Anthony, a few steps below the Sé - quick to visit, genuinely free, and skipped by most first-timers who only do the cathedral next door.",
+  "warn": "Sources disagree on exact hours (one gives 07:00-12:30 and 15:00-19:00 with a midday close, another gives a straight 08:00-19:00/20:00 with no gap) - treat the midday closure as real but unconfirmed and don't plan a tight 13:00 visit around it.",
+  "best": [
+   "09:00",
+   "11:00"
+  ],
+  "tags": [
+   "free",
+   "quiet",
+   "indoor"
+  ],
+  "src": "https://stoantoniolisboa.com/"
+ },
+ {
+  "id": "mosteiro-sao-vicente-de-fora",
+  "name": "Mosteiro de São Vicente de Fora",
+  "cat": "temple",
+  "town": "lisbon",
+  "lat": 38.7148,
+  "lng": -9.1268,
+  "loose": true,
+  "open": "10:00",
+  "close": "19:00",
+  "shut": null,
+  "days": null,
+  "lo": 4,
+  "hi": 8,
+  "priceNote": "full adult €8, reduced (under 25) €4; church nave free",
+  "dur": 50,
+  "why": "A working monastery church with azulejo-lined cloister galleries telling the story of La Fontaine's fables, plus the Braganza royal pantheon in the old refectory and a rooftop terrace that looks straight across at the National Pantheon's dome and the river - one of the better view-plus-history combinations in Alfama and usually less crowded than the Sé.",
+  "warn": "Open daily (no weekly closure) but shut on Jan 1, Good Friday, Easter, May 1 and Dec 24/25/31 - worth checking against these dates rather than assuming it's always open just because there's no listed weekly closure.",
+  "best": [
+   "10:00",
+   "12:00",
+   "17:00"
+  ],
+  "tags": [
+   "view",
+   "photo",
+   "walk"
+  ],
+  "src": "https://mosteirodesaovicentedefora.com/en/tickets/"
+ }
+]
