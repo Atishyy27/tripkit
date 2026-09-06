@@ -3,7 +3,7 @@ OpenStreetMap as a first-class source, via Overpass.
 
 Measured on 2026-09-06 with the query below, and the numbers decide the design:
 
-    Munich  amenity=restaurant   1, 924 / 2, 249 carry opening_hours   85.5%
+    Munich  amenity=restaurant   1,924 / 2,249 carry opening_hours   85.5%
     Jaipur  amenity=restaurant      15 /   168 carry opening_hours    8.9%
 
 So OSM cannot be the only source for a tool aimed at places like Jaipur. It is
@@ -50,10 +50,10 @@ def build_query(lat: float, lng: float, radius_m: int, timeout: int = 90) -> str
                     ("historic", HISTORIC), ("leisure", LEISURE)):
         v = "|".join(sorted(vals))
         for t in ("node", "way"):
-            sel.append(f'  {t}["{k}"~"^({v})$"](around:{radius_m}, {lat}, {lng});')
+            sel.append(f'  {t}["{k}"~"^({v})$"](around:{radius_m},{lat},{lng});')
     v = "|".join(sorted(SHOP_OK))
     for t in ("node", "way"):
-        sel.append(f'  {t}["shop"~"^({v})$"](around:{radius_m}, {lat}, {lng});')
+        sel.append(f'  {t}["shop"~"^({v})$"](around:{radius_m},{lat},{lng});')
     return (f"[out:json][timeout:{timeout}];\n(\n" + "\n".join(sel) +
             "\n);\nout center tags;")
 
@@ -108,8 +108,8 @@ def _hours(oh: str | None):
 
     # a single day-range with one or two time spans, which is the bulk of real data
     m = re.fullmatch(
-        r"(?:[A-Za-z, \-]+\s+)?(\d{1, 2}:\d{2})\s*-\s*(\d{1, 2}:\d{2})"
-        r"(?:\s*, \s*(\d{1, 2}:\d{2})\s*-\s*(\d{1, 2}:\d{2}))?\s*;?", s)
+        r"(?:[A-Za-z,\-\s]+\s+)?(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})"
+        r"(?:\s*,\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2}))?\s*;?", s)
     if not m:
         return None, None, None, s          # keep the raw string, flag as unparsed
     a, b, c, d = m.groups()
