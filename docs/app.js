@@ -65,14 +65,29 @@ function pick(p) {
   $("#destSub").textContent = p.label;
   $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
   $("#tz").value = tz;
-  const now = new Date();
   $("#arrive").value = "09:00";
   $("#depart").value = "21:00";
+  const suggested = radiusFor(p);
+  $("#radius").value = suggested;
+  updateRadius();
   show("s2");
 }
 
 /* ---------- screen 2: the clock ---------- */
+function updateRadius() {
+  const r = +$("#radius").value;
+  $("#radiusV").textContent = r >= 1000 ? (r / 1000).toFixed(1).replace(/\.0$/, "") + " km" : r + " m";
+  const walk = Math.round(r / 80);   // roughly 4.8 km/h
+  $("#radiusNote").textContent =
+    `About ${walk} minutes' walk from the centre to the edge. ` +
+    (r <= 1200 ? "Tight: an old town or a single district."
+     : r <= 3500 ? "A town, or the middle of a city."
+     : r <= 7000 ? "A spread out city. Expect more places than you can use."
+     : "Very wide. Slow to fetch, and much of it will be too far to reach.");
+}
+
 function wireTimes() {
+  $("#radius").addEventListener("input", updateRadius);
   $("#nowBtn").onclick = () => {
     const off = +$("#tz").value;
     const d = new Date();
@@ -132,7 +147,7 @@ async function runBuild() {
 
   /* --- OpenStreetMap --- */
   let places = [];
-  const r = radiusFor(PLACE);
+  const r = (+($("#radius") || {}).value) || radiusFor(PLACE);
   step("stOsm", "now", `asking OpenStreetMap, ${(r / 1000).toFixed(1)} km around the centre…`);
   try {
     const els = await overpass(PLACE.lat, PLACE.lng, r, m => notes.push(m));
@@ -178,7 +193,7 @@ async function runBuild() {
 
   /* --- everything else, in parallel, each with its own fallback chain --- */
   step("stLive", "now", "weather, air, transport, photos…");
-  const R = radiusFor(PLACE);
+  const R = r;
   const [wx, air, country, transit, photos] = await Promise.all([
     getWeather(PLACE.lat, PLACE.lng, m => notes.push(m)),
     getAir(PLACE.lat, PLACE.lng, m => notes.push(m)),
@@ -186,6 +201,9 @@ async function runBuild() {
     getTransit(PLACE.lat, PLACE.lng, Math.min(R, 4000), m => notes.push(m)),
     getPhotos(PLACE.lat, PLACE.lng, Math.min(R, 6000), m => notes.push(m)),
   ]);
+  if (photos.value && photos.value.length) {
+    await attachPhotos(places, photos.value, m => notes.push(m));
+  }
   const got = [
     wx.value && `weather (${wx.source})`,
     air.value && "air quality",
@@ -211,6 +229,7 @@ async function runBuild() {
   GUIDE = {
     v: 1, built: Date.now(),
     place: PLACE, notes, intro, cautions, wvTitle,
+    radius: r,
     config: {
       dest: PLACE.name, country: PLACE.country,
       arrive: M(arrive), depart: M(depart),
@@ -267,7 +286,7 @@ function open(trip) {
   GUIDE = trip;
   init({ config: trip.config, conditions: trip.conditions, places: trip.places });
   show("s4");
-  $("#gName").textContent = trip.place.name;
+  drawHero();
   buildCats();
   render();
   setView("list");
@@ -290,6 +309,21 @@ function buildCats() {
   });
 }
 
+const CAT_ICON = {
+  view: "\u{1F304}", museum: "\u{1F5BC}\uFE0F", temple: "\u{1F6D5}", ghat: "\u{1F6B6}",
+  park: "\u{1F333}", outdoor: "\u26F0\uFE0F", food: "\u{1F37D}\uFE0F", cafe: "\u2615",
+  sweet: "\u{1F368}", street: "\u{1F32E}", bar: "\u{1F378}", shop: "\u{1F6CD}\uFE0F",
+  do: "\u{1F3AA}", wellness: "\u{1F9D8}", stay: "\u{1F6CF}\uFE0F", move: "\u{1F68C}",
+  practical: "\u2139\uFE0F", hub: "\u{1F6A9}"
+};
+const CAT_TINT = {
+  view: "#b98cff", museum: "#8ab8ff", temple: "#ffc857", ghat: "#8ab8ff",
+  park: "#7ee0a8", outdoor: "#7ee0a8", food: "#6ee7d0", cafe: "#6ee7d0",
+  sweet: "#ff7ab8", street: "#6ee7d0", bar: "#ff7ab8", shop: "#ff7ab8",
+  do: "#ff8a4c", wellness: "#b98cff", stay: "#ffc857", move: "#ff5f6d",
+  practical: "#a99fc4", hub: "#a99fc4"
+};
+
 function card(r, i) {
   const p = r.p, st = r.st;
   const badge = { open: '<span class="tag t-open">open now</span>',
@@ -301,19 +335,38 @@ function card(r, i) {
     : p.from === "OpenStreetMap + Wikivoyage" ? '<span class="src-badge src-wv">OSM + Wikivoyage</span>'
     : '<span class="src-badge src-osm">OpenStreetMap</span>';
   const price = p.priceNote ? esc(p.priceNote) : ((p.lo === 0 && p.hi === 0) ? "free" : "");
-  const g = `https://www.google.com/maps/dir/?api=1&destination=${p.lat}, ${p.lng}&travelmode=walking`;
+  // No spaces inside a coordinate pair. A cosmetic sweep once put one here and every
+  // "walk there" link silently pointed nowhere.
+  const g = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
   const o = `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`;
-  return `<div class="card${i === 0 ? " hi" : ""}">
-    <h3>${esc(p.name)}${price ? `<span class="money">${price}</span>` : ""}</h3>
-    <div>${badge}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
-    ${p.why ? `<p class="sub" style="margin:6px 0 0">${esc(p.why).slice(0, 320)}</p>` : ""}
-    ${p.warn ? `<p class="tiny" style="color:#ff9aa2;margin:5px 0 0">⚠ ${esc(p.warn)}</p>` : ""}
-    ${r.why && r.why.length ? `<div class="why">→ ${esc(r.why[0])}</div>` : ""}
-    <div class="btns">
-      <a class="btn g" target="_blank" rel="noopener" href="${g}">Walk there</a>
-      <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
-      ${p.website ? `<a class="btn b" target="_blank" rel="noopener" href="${esc(p.website)}">Website</a>` : ""}
-    </div></div>`;
+  const tint = CAT_TINT[p.cat] || "#a99fc4";
+  const icon = CAT_ICON[p.cat] || "\u{1F4CD}";
+  const dim = st.state === "shut";
+
+  const media = p.photo
+    ? `<div class="pc-img"><img src="${esc(p.photo)}" loading="lazy" decoding="async"
+         alt="${esc(p.name)}" onerror="this.closest('.pc-img').classList.add('pc-glyph');this.remove()">
+       ${p.photoExact ? "" : '<span class="pc-near">nearby</span>'}</div>`
+    : `<div class="pc-img pc-glyph"><span>${icon}</span></div>`;
+
+  return `<article class="pc${i === 0 ? " pc-top" : ""}${dim ? " pc-dim" : ""}" style="--tint:${tint}">
+    ${media}
+    <div class="pc-body">
+      <div class="pc-head">
+        <h3>${esc(p.name)}</h3>
+        ${price ? `<span class="pc-price">${price}</span>` : ""}
+      </div>
+      <div class="pc-tags">${badge}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
+      ${p.why ? `<p class="pc-why">${esc(p.why).slice(0, 260)}</p>` : ""}
+      ${p.warn ? `<p class="pc-warn">\u26A0 ${esc(p.warn)}</p>` : ""}
+      ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
+      <div class="btns">
+        <a class="btn g" target="_blank" rel="noopener" href="${g}">Walk there</a>
+        <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
+        ${p.website ? `<a class="btn b" target="_blank" rel="noopener" href="${esc(p.website)}">Website</a>` : ""}
+      </div>
+    </div>
+  </article>`;
 }
 
 function render() {
@@ -406,6 +459,30 @@ function drawDay() {
     <p class="tiny" style="margin:10px 0 0">Sunrise and sunset were calculated on this device
     from the date and your coordinates. Nothing was fetched to work them out, so they are right
     even with no signal.</p>`;
+}
+
+/* ---------- the destination header ---------- */
+function drawHero() {
+  const g = GUIDE, ph = (g.photos || []).filter(p => p.thumb);
+  const shot = ph[0];
+  const open = (g.places || []).filter(p => ["open", "closing"].includes(openState(p, localMins()).state)).length;
+  const w = g.weather && g.weather.now;
+  const el = $("#hero");
+  el.innerHTML = `
+    <div class="dhero">
+      ${shot ? `<img src="${esc(shot.thumb)}" alt="${esc(g.place.name)}" loading="eager">` : ""}
+      <div class="in">
+        <h1>${esc(g.place.name)}</h1>
+        <p class="sub" style="margin:0;color:#cfc6e6" data-liveline></p>
+        <div class="meta">
+          ${w ? `<span class="m">${wmo(w.code)[1]} <b>${w.temp}\u00B0</b></span>` : ""}
+          <span class="m"><b>${open}</b> open now</span>
+          <span class="m"><b>${(g.places || []).length}</b> places</span>
+          ${g.country && g.country.currency ? `<span class="m">${esc(g.country.flag || "")} ${esc(g.country.currency.code)}</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${shot ? `<p class="dcredit">photo: ${esc(shot.title).slice(0, 54)}${shot.licence ? ", " + esc(shot.licence) : ""}, via Wikimedia Commons</p>` : ""}`;
 }
 
 /* ---------- weather ---------- */
@@ -573,6 +650,36 @@ function wireGuide() {
       if (navigator.share) await navigator.share({ title: text, url });
       else { await navigator.clipboard.writeText(url); $("#shareBtn").textContent = "Link copied"; setTimeout(() => $("#shareBtn").textContent = "Share this guide", 1800); }
     } catch (e) { /* the user closed the sheet; nothing to report */ }
+  };
+
+  $("#widerBtn").onclick = async () => {
+    const btn = $("#widerBtn");
+    const from = GUIDE.radius || 2500, to = Math.min(from + 2500, 15000);
+    if (to <= from) { btn.textContent = "Already as wide as it goes"; return; }
+    btn.textContent = `Looking out to ${(to / 1000).toFixed(1)} km…`;
+    btn.disabled = true;
+    try {
+      const els = await overpass(GUIDE.place.lat, GUIDE.place.lng, to, () => {});
+      const fresh = osmToPlaces(els, GUIDE.place.name.toLowerCase());
+      // append rather than replace: nothing already on screen should disappear
+      // because someone asked to see more
+      const have = new Set(GUIDE.places.map(p => p.id));
+      const added = fresh.filter(p => !have.has(p.id));
+      const room = Math.max(0, 2400 - GUIDE.places.length);
+      const keep = capPlaces(added, room || 400).kept;
+      if (GUIDE.photos && GUIDE.photos.length) await attachPhotos(keep, GUIDE.photos, () => {});
+      GUIDE.places = GUIDE.places.concat(keep);
+      GUIDE.radius = to;
+      save(GUIDE);
+      init({ config: GUIDE.config, conditions: GUIDE.conditions, places: GUIDE.places });
+      buildCats(); render(); drawHero();
+      btn.textContent = `Added ${keep.length}, now ${(to / 1000).toFixed(1)} km`;
+    } catch (e) {
+      btn.textContent = "Could not reach the map service";
+    } finally {
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = "Look further out"; }, 4000);
+    }
   };
 
   $("#rebuildBtn").onclick = () => {

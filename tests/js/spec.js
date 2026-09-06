@@ -447,6 +447,22 @@ describe("the page loads as a browser would", () => {
     ok(src.includes("AbortController"), "there is no timeout mechanism at all");
   });
 
+  it("no url template has a space inside a coordinate pair", () => {
+    // A cosmetic sweep put a space after every comma, including inside
+    // "destination=${lat},${lng}". It stayed valid JavaScript, every test passed,
+    // and every "walk there" link in the app pointed nowhere for a day.
+    const bad = [];
+    for (const f of ["app.js", "sources.js", "engine.js"]) {
+      const src = fs.readFileSync(path.join(DOCS, f), "utf8");
+      src.split("\n").forEach((line, n) => {
+        if (!/https?:\/\//.test(line)) return;
+        if (/(?:destination|query|mlat|pickup|dropoff|ggscoord|around)[^"'`\n]*,\s+/.test(line))
+          bad.push(`${f}:${n + 1}`);
+      });
+    }
+    eq(bad, [], "a space inside a coordinate pair breaks the link silently");
+  });
+
   it("index.html loads every script the app needs, in an order that works", () => {
     const html = fs.readFileSync(path.join(DOCS, "index.html"), "utf8");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);

@@ -1,6 +1,6 @@
 /* Cache the shell so the app opens with no signal. Trip data lives in
    localStorage, not here, so a stale cache can never serve stale places. */
-const V = "tripkit-v5";
+const V = "tripkit-v6";
 const SHELL = ["./", "./index.html", "./style.css", "./engine.js",
                "./sources.js", "./sun.js", "./app.js", "./manifest.webmanifest", "./icon.svg",
                "./vendor/leaflet.js", "./vendor/leaflet.css",

@@ -59,9 +59,16 @@ const ok = (cond, what) => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 
-  const errors = [];
+  // A thrown exception is a bug. A third party image or map tile returning 503 is
+  // the internet, and the app already handles it by swapping in a category glyph.
+  // Counting them as the same thing makes the suite fail for reasons nobody can fix.
+  const errors = [];     // real exceptions
+  const subres = [];     // failed downloads
   page.on("pageerror", e => errors.push(String(e.message)));
-  page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("console", m => {
+    if (m.type() !== "error") return;
+    (/(Failed to load resource|net::ERR_)/.test(m.text()) ? subres : errors).push(m.text());
+  });
 
   try {
     console.log("\n  the page loads");
@@ -125,7 +132,7 @@ const ok = (cond, what) => {
       console.log("      upstreams that fell back: " + degraded.notes.length);
 
     console.log("\n  the guide is usable");
-    const n = await page.locator("#list .card").count();
+    const n = await page.locator("#list .pc").count();
     const empty = await page.locator("#list .empty").count();
     ok(n > 0 || empty > 0,
        `${n} place cards rendered` + (n === 0 ? " (or an honest empty state, if upstreams were down)" : ""));
@@ -151,6 +158,31 @@ const ok = (cond, what) => {
     ok(map.tiles > 0, `map tiles loaded (${map.tiles})`);
     ok(map.pins > 0, `pins were drawn (${map.pins})`);
     ok(map.note.includes("real pin"), "the map explains what it is showing");
+
+    console.log("\n  it looks like a product");
+    const look = await page.evaluate(() => ({
+      hero: !!document.querySelector(".dhero"),
+      heroImg: !!document.querySelector(".dhero img"),
+      heroTitle: (document.querySelector(".dhero h1") || {}).textContent || "",
+      meta: document.querySelectorAll(".dhero .m").length,
+      cardsWithPhotos: document.querySelectorAll("#list .pc-img img").length,
+      cardsWithGlyph: document.querySelectorAll("#list .pc-glyph").length,
+      totalCards: document.querySelectorAll("#list .pc").length,
+    }));
+    ok(look.hero, "there is a destination header");
+    ok(look.heroTitle.length > 0, `the header names the place (${look.heroTitle})`);
+    ok(look.meta >= 2, `the header carries live facts (${look.meta} of them)`);
+    ok(look.cardsWithPhotos + look.cardsWithGlyph === look.totalCards,
+       `every card has an image or a proper fallback (${look.cardsWithPhotos} photos, ${look.cardsWithGlyph} glyphs, ${look.totalCards} cards)`);
+    ok(look.cardsWithPhotos > 0, `${look.cardsWithPhotos} cards carry a real photograph`);
+
+    console.log("\n  the search radius is adjustable");
+    const rad = await page.evaluate(() => ({
+      widen: !!document.getElementById("widerBtn"),
+      saved: GUIDE.radius,
+    }));
+    ok(rad.widen, "there is a way to look further out");
+    ok(rad.saved > 0, `the chosen radius was remembered (${rad.saved} m)`);
 
     console.log("\n  places to sleep are there");
     const stay = await page.evaluate(() => {
@@ -202,8 +234,13 @@ const ok = (cond, what) => {
     await page.reload({ waitUntil: "networkidle" });
     ok(await page.locator("#resume").isVisible(), "the saved trip is offered on return");
 
-    ok(errors.length === 0, "still no javascript errors after using it" +
+    ok(errors.length === 0, "no javascript exceptions after using it" +
        (errors.length ? "\n        " + errors.slice(0, 3).join("\n        ") : ""));
+    if (subres.length)
+      console.log(`      (${subres.length} third party downloads failed, handled by fallbacks)`);
+    const broken = await page.evaluate(() =>
+      [...document.querySelectorAll("#list img")].filter(i => i.complete && i.naturalWidth === 0).length);
+    ok(broken === 0, `no broken image is left visible (${broken})`);
   } catch (e) {
     fail++;
     console.log("    \x1b[31m✗\x1b[0m " + e.message.split("\n")[0]);

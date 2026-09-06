@@ -83,7 +83,19 @@
     </div>
     <button class="big ghost" id="nowBtn">I'm already here, start from now</button>
 
-    <h2><span class="n">02</span> Local time</h2>
+    <h2><span class="n">02</span> How far to look</h2>
+    <div class="card">
+      <p class="sub">Starts from how big the place actually is. Widen it for a spread out
+      city, narrow it for a old town you will only walk. You can widen it again later
+      without losing what you already have.</p>
+      <div class="rangerow">
+        <input id="radius" type="range" min="500" max="12000" step="250" value="2500">
+        <b id="radiusV">2.5 km</b>
+      </div>
+      <p class="tiny" id="radiusNote"></p>
+    </div>
+
+    <h2><span class="n">03</span> Local time</h2>
     <div class="card">
       <p class="sub">Guessed <b>UTC<span id="tzGuess"></span></b> from longitude. The guide
       runs on the destination's clock, not your phone's, which matters if you've just
@@ -126,11 +138,9 @@
     <div><div class="tnow" id="clock">--:--</div><div class="tphase" id="phase"></div></div>
     <div class="tcd" id="sun"></div>
   </div></div>
-  <div class="hero"><div class="wrap">
-    <h1 id="gName">…</h1>
-    <p class="lead" id="phaseLine"></p>
-  </div></div>
-  <div class="wrap">
+  <div class="wrap" style="padding-top:12px">
+    <div id="hero"></div>
+    <p class="lead" id="phaseLine" style="margin:-6px 0 12px"></p>
     <div id="alerts"></div>
     <div class="chips" id="views">
       <button class="chip" data-v="list" aria-pressed="true">List</button>
@@ -164,6 +174,7 @@
     <div class="btns" style="margin:18px 0 8px">
       <button class="btn" id="aboutBtn">Where this came from</button>
       <button class="btn" id="shareBtn">Share this guide</button>
+      <button class="btn o" id="widerBtn">Look further out</button>
       <button class="btn" id="rebuildBtn">Refresh the data</button>
       <button class="btn" id="newBtn">Somewhere else</button>
     </div>

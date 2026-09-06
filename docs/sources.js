@@ -627,17 +627,19 @@ async function getPhotos(lat, lng, radius, onNote) {
     ["Wikimedia Commons", async () => {
       const d = await jget("https://commons.wikimedia.org/w/api.php?" + new URLSearchParams({
         action: "query", generator: "geosearch", ggscoord: `${lat}|${lng}`,
-        ggsradius: String(Math.min(radius, 10000)), ggslimit: "40", ggsnamespace: "6",
-        prop: "imageinfo", iiprop: "url|extmetadata", iiurlwidth: "640",
-        format: "json", formatversion: "2", origin: "*"
+        ggsradius: String(Math.min(radius, 10000)), ggslimit: "300", ggsnamespace: "6",
+        prop: "imageinfo|coordinates", iiprop: "url|extmetadata", iiurlwidth: "480",
+        colimit: "max", format: "json", formatversion: "2", origin: "*"
       }));
       const pages = (d.query || {}).pages || [];
       return pages.map(p => {
         const ii = (p.imageinfo || [])[0] || {};
         const meta = ii.extmetadata || {};
+        const co = (p.coordinates || [])[0] || {};
         return {
           title: (p.title || "").replace(/^File:/, "").replace(/\.[a-z]+$/i, ""),
           thumb: ii.thumburl, full: ii.descriptionurl,
+          lat: co.lat != null ? co.lat : null, lng: co.lon != null ? co.lon : null,
           author: clean((meta.Artist || {}).value || ""),
           licence: (meta.LicenseShortName || {}).value || ""
         };
@@ -680,4 +682,81 @@ async function getTransit(lat, lng, radius, onNote) {
       throw last || new Error("no mirror answered");
     }],
   ], onNote);
+}
+
+/* ============================================================
+   Pictures, attached to individual places.
+
+   Two routes, because they cover different things:
+     Wikidata  a place OSM has tagged with a wikidata id usually has a canonical
+               photograph on Commons. Exact, and it is a picture OF that place.
+     Geosearch everything else gets the nearest Commons photograph taken within a
+               short distance, which is usually of it and occasionally of the
+               street outside. Marked as nearby rather than presented as certain.
+   ============================================================ */
+
+async function imagesForWikidata(ids) {
+  const out = {};
+  for (let i = 0; i < ids.length; i += 45) {
+    const batch = ids.slice(i, i + 45);
+    try {
+      const d = await jget("https://www.wikidata.org/w/api.php?" + new URLSearchParams({
+        action: "wbgetentities", ids: batch.join("|"), props: "claims",
+        format: "json", formatversion: "2", origin: "*"
+      }), {}, 25000);
+      for (const [id, ent] of Object.entries(d.entities || {})) {
+        const claim = ((ent.claims || {}).P18 || [])[0];
+        const file = claim && claim.mainsnak && claim.mainsnak.datavalue &&
+                     claim.mainsnak.datavalue.value;
+        if (file) out[id] = commonsThumb(file, 480);
+      }
+    } catch (e) { /* a batch failing must not lose the batches that worked */ }
+  }
+  return out;
+}
+
+/* Commons serves a thumbnail straight from the file name, no API call needed. */
+function commonsThumb(file, w) {
+  const n = String(file).replace(/ /g, "_");
+  return "https://commons.wikimedia.org/wiki/Special:FilePath/" +
+         encodeURIComponent(n) + "?width=" + (w || 480);
+}
+
+const R_EARTH = 6371000;
+function metres(a, b, c, d) {
+  const p = Math.PI / 180, x = (c - a) * p, y = (d - b) * p;
+  const h = Math.sin(x / 2) ** 2 +
+            Math.cos(a * p) * Math.cos(c * p) * Math.sin(y / 2) ** 2;
+  return 2 * R_EARTH * Math.asin(Math.sqrt(h));
+}
+
+/* Give each place its best available picture, without inventing one. */
+async function attachPhotos(places, commons, onNote) {
+  const withId = places.filter(p => p.wikidata).slice(0, 180);
+  let exact = {};
+  if (withId.length) {
+    try { exact = await imagesForWikidata(withId.map(p => p.wikidata)); }
+    catch (e) { onNote && onNote("Photos: Wikidata declined, falling back to nearby ones"); }
+  }
+  let named = 0, near = 0;
+  const pool = (commons || []).filter(c => c.lat != null && c.lng != null);
+  for (const p of places) {
+    if (p.wikidata && exact[p.wikidata]) { p.photo = exact[p.wikidata]; p.photoExact = true; named++; continue; }
+    let best = null, bestD = 1e9;
+    for (const c of pool) {
+      const d = metres(p.lat, p.lng, c.lat, c.lng);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    // 120 m was far too generous. It attached a photograph of a monkey to a pizzeria,
+    // which is the fabrication problem in visual form: a confidently wrong picture is
+    // worse than an honest blank. Inside 40 m a Commons photo is usually of the thing
+    // itself, and it is still labelled as nearby rather than claimed as certain.
+    if (best && bestD < 40) {
+      p.photo = best.thumb; p.photoExact = false;
+      p.photoTitle = best.title; p.photoDist = Math.round(bestD); near++;
+    }
+  }
+  if (onNote && (named || near))
+    onNote(`Photos: ${named} matched exactly through Wikidata, ${near} from a picture taken within 120 m`);
+  return { named, near };
 }
