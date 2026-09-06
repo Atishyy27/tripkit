@@ -5,6 +5,42 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-07
+
+More data, from more places, and a real answer when one of them is down.
+
+### Added
+- **Live weather**, hourly, from Open-Meteo with MET Norway behind it. Current
+  conditions, feels-like, the next fourteen hours, rain probability and UV.
+- **The heat window is now measured rather than guessed.** It used to be a fixed
+  midday assumption. It is now read off today's actual forecast: Pushkar came back
+  11:00 to 18:00 and Lisbon 12:00 to 17:00 on the same day. The ranking already
+  pushed shade up during it, so this makes an existing behaviour correct rather
+  than plausible.
+- **Air quality** from Open-Meteo, with a plain sentence about whether it is worth
+  planning around instead of a bare number.
+- **Photos** of the area from Wikimedia Commons, credited and licensed.
+- **Getting around**, every station, stop, taxi rank and bike hire near the centre,
+  grouped by kind, from OpenStreetMap.
+- **Country facts**: currency, dialling code, which side traffic drives on,
+  languages, and emergency numbers as tappable links.
+- Two new screens, Weather and Local, and place search now falls back across
+  Nominatim, Photon and Open-Meteo rather than failing on the first refusal.
+
+### Changed
+- **Every source is now a chain, not a single provider.** If the first is down,
+  rate limited or simply does not know a place, the next is tried and the app says
+  which one answered. "Unable to fetch" is a useless thing to show someone standing
+  in a street.
+- Country facts ship with the app rather than being fetched. Currency and driving
+  side do not change week to week, so a network dependency for them is pure risk.
+  REST Countries proved the point during this work by deprecating itself and then
+  answering HTTP 200 with an error body.
+
+### Fixed
+- The heat window silently returned nothing whenever the destination's local date
+  differed from UTC, which near midnight in India is most of the time.
+
 ## [0.2.0] - 2026-09-07
 
 The release where the useful thing stopped requiring a terminal.
@@ -73,5 +109,6 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.3.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.1.0

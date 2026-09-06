@@ -101,6 +101,7 @@
       <div class="step" id="stGeo"><i>○</i><span>finding the place</span></div>
       <div class="step" id="stOsm"><i>○</i><span>OpenStreetMap: places and opening hours</span></div>
       <div class="step" id="stWv"><i>○</i><span>Wikivoyage: what people wrote about them</span></div>
+      <div class="step" id="stLive"><i>○</i><span>weather, air quality, transport, photos</span></div>
       <div class="step" id="stSun"><i>○</i><span>sunrise and sunset</span></div>
       <div class="step" id="stDone"><i>○</i><span>saving to this device</span></div>
     </div>
@@ -125,6 +126,8 @@
       <button class="chip" data-v="list" aria-pressed="true">List</button>
       <button class="chip" data-v="map" aria-pressed="false">Map</button>
       <button class="chip" data-v="day" aria-pressed="false">The day</button>
+      <button class="chip" data-v="weather" aria-pressed="false">Weather</button>
+      <button class="chip" data-v="local" aria-pressed="false">Local</button>
     </div>
 
     <div id="vList">
@@ -138,6 +141,9 @@
       <div id="map"></div>
       <p class="tiny" id="mapNote"></p>
     </div>
+
+    <div id="vWeather" hidden></div>
+    <div id="vLocal" hidden></div>
 
     <div id="vDay" hidden>
       <p class="sub">Not a plan to follow. What each stretch of today is good for here,

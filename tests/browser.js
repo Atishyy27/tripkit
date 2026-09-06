@@ -136,6 +136,37 @@ const ok = (cond, what) => {
     ok(map.pins > 0, `pins were drawn (${map.pins})`);
     ok(map.note.includes("real pin"), "the map explains what it is showing");
 
+    console.log("\n  the weather view works");
+    await page.click('#views .chip[data-v="weather"]');
+    await page.waitForTimeout(600);
+    const wx = await page.evaluate(() => {
+      const t = document.getElementById("vWeather").textContent || "";
+      return { hasTemp: /-?\d+\u00B0C/.test(t), hasSun: t.includes("sunrise"),
+               len: t.length, noFetchError: !t.includes("unable to fetch") };
+    });
+    ok(wx.len > 200, `the weather screen has content (${wx.len} chars)`);
+    ok(wx.hasTemp, "a temperature is shown");
+    ok(wx.hasSun, "sunrise and sunset are shown");
+    ok(wx.noFetchError, "no bare 'unable to fetch' anywhere");
+
+    console.log("\n  the local view works");
+    await page.click('#views .chip[data-v="local"]');
+    await page.waitForTimeout(600);
+    const loc = await page.evaluate(() => {
+      const el = document.getElementById("vLocal");
+      // Check the thing a user actually taps. Matching the digits in textContent
+      // failed while the numbers were rendering fine, because the markup puts a
+      // label straight after them and "112all" has no word boundary at the seam.
+      const tels = [...el.querySelectorAll('a[href^="tel:"]')].map(a => a.getAttribute("href"));
+      return { len: (el.textContent || "").length,
+               tels, currency: (el.textContent || "").includes("INR"),
+               photos: el.querySelectorAll("img").length };
+    });
+    ok(loc.len > 100, `the local screen has content (${loc.len} chars)`);
+    ok(loc.tels.length > 0, `emergency numbers are tappable (${loc.tels.join(", ")})`);
+    ok(loc.currency, "the local currency is shown");
+    ok(loc.photos > 0, `photos rendered (${loc.photos})`);
+
     console.log("\n  the day view works");
     await page.click('#views .chip[data-v="day"]');
     await page.waitForTimeout(400);

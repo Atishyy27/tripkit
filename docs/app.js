@@ -47,7 +47,8 @@ function wireSearch() {
 
 async function doSearch(q) {
   try {
-    const rows = await geocode(q);
+    const found = await findPlace(q, m => console.info(m));
+    const rows = found.value || [];
     if (!rows.length) { $("#hits").innerHTML = '<p class="tiny">Nothing found. Try the plain name of the town.</p>'; return; }
     $("#hits").innerHTML = rows.map((r, i) =>
       `<div class="hit" data-i="${i}"><b>${esc(r.name)}</b><span>${esc(r.label)}</span></div>`).join("");
@@ -119,7 +120,7 @@ async function build() {
 
 async function runBuild() {
   show("s3");
-  ["stGeo", "stOsm", "stWv", "stSun", "stDone"].forEach(i => step(i, "", null));
+  ["stGeo", "stOsm", "stWv", "stLive", "stSun", "stDone"].forEach(i => step(i, "", null));
   const notes = [];
 
   const tz = +$("#tz").value;
@@ -175,10 +176,36 @@ async function runBuild() {
   }
   progress(80);
 
+  /* --- everything else, in parallel, each with its own fallback chain --- */
+  step("stLive", "now", "weather, air, transport, photos…");
+  const R = radiusFor(PLACE);
+  const [wx, air, country, transit, photos] = await Promise.all([
+    getWeather(PLACE.lat, PLACE.lng, m => notes.push(m)),
+    getAir(PLACE.lat, PLACE.lng, m => notes.push(m)),
+    getCountry(PLACE.countryCode, m => notes.push(m)),
+    getTransit(PLACE.lat, PLACE.lng, Math.min(R, 4000), m => notes.push(m)),
+    getPhotos(PLACE.lat, PLACE.lng, Math.min(R, 6000), m => notes.push(m)),
+  ]);
+  const got = [
+    wx.value && `weather (${wx.source})`,
+    air.value && "air quality",
+    country.value && "country facts",
+    transit.value && `${transit.value.length} transport stops`,
+    photos.value && `${photos.value.length} photos`,
+  ].filter(Boolean);
+  step("stLive", got.length ? "done" : "fail",
+       got.length ? got.join(", ") : "none of these answered, the guide still works without them");
+  progress(88);
+
   /* --- sun, computed here --- */
   step("stSun", "now", "computing the sun…");
   const s = sunTimes(new Date(), PLACE.lat, PLACE.lng, tz);
-  step("stSun", "done", `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}, calculated on this device, not fetched`);
+  // The heat window used to be a guess. With a real hourly forecast it is measured.
+  const heat = wx.value ? heatWindowFrom(wx.value.hours, new Date().toISOString().slice(0, 10)) : null;
+  step("stSun", "done",
+       `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}` +
+       (heat ? `, hottest ${heat[0]} to ${heat[1]} from today's forecast` : "") +
+       ", calculated on this device");
   progress(95);
 
   GUIDE = {
@@ -193,8 +220,11 @@ async function runBuild() {
     conditions: {
       sunrise: s.sunrise, sunset: s.sunset,
       firstLight: s.firstLight, lastLight: s.lastLight,
-      heatWindow: null
+      heatWindow: heat ? [M(heat[0]), M(heat[1])] : null
     },
+    weather: wx.value, weatherSource: wx.source,
+    air: air.value, country: country.value,
+    transit: transit.value || [], photos: (photos.value || []).slice(0, 24),
     places
   };
   save(GUIDE);
@@ -246,6 +276,7 @@ function open(trip) {
     render();
     if (!$("#vMap").hidden) drawMap();
     if (!$("#vDay").hidden) drawDay();
+    if (!$("#vWeather").hidden) drawWeather();
   }, 30000);
 }
 
@@ -377,13 +408,148 @@ function drawDay() {
     even with no signal.</p>`;
 }
 
+/* ---------- weather ---------- */
+function drawWeather() {
+  const el = $("#vWeather");
+  const w = GUIDE.weather, air = GUIDE.air, c = GUIDE.conditions;
+  if (!w) {
+    el.innerHTML = '<div class="card warn"><h3>No forecast</h3><p class="sub">' +
+      'Every weather source declined. Sunrise and sunset below are still exact, ' +
+      'because they are calculated here rather than fetched.</p></div>' + sunCard();
+    return;
+  }
+  const n = w.now, [label, icon] = wmo(n.code);
+  const today = new Date().toISOString().slice(0, 10);
+  const days = [...new Set(w.hours.map(h => h.day))];
+  const day = days.includes(today) ? today : days[0];
+  const t = localMins();
+  const rest = w.hours.filter(h => h.day === day && M(h.time) >= t - 60).slice(0, 14);
+  const band = air && aqiBand(air.aqi);
+
+  const bars = rest.map(h => {
+    const hot = c.heatWindow && M(h.time) >= c.heatWindow[0] && M(h.time) <= c.heatWindow[1];
+    const now = Math.abs(M(h.time) - t) < 30;
+    return `<div style="flex:0 0 54px;text-align:center;padding:8px 0;border-radius:9px;
+      background:${now ? "var(--card2)" : "transparent"};border:1px solid ${now ? "var(--hot)" : "transparent"}">
+      <div class="tiny" style="color:${now ? "var(--hot)" : "var(--dimmer)"}">${h.time}</div>
+      <div style="font-size:17px;margin:2px 0">${wmo(h.code)[1]}</div>
+      <div style="font-weight:800;font-size:14px;color:${hot ? "var(--hot)" : "var(--ink)"}">${h.temp}\u00B0</div>
+      ${h.rain != null && h.rain > 15 ? `<div class="tiny" style="color:var(--blue)">${h.rain}%</div>` : '<div class="tiny">&nbsp;</div>'}
+      ${h.uv != null && h.uv >= 8 ? `<div class="tiny" style="color:var(--red)">UV${h.uv}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="card hi">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:44px;line-height:1">${icon}</div>
+        <div style="flex:1">
+          <div style="font-size:30px;font-weight:800;letter-spacing:-1px">${n.temp}\u00B0C</div>
+          <div class="sub" style="margin:0">${esc(label)}, feels like ${n.feels}\u00B0</div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="stat"><div class="v">${w.today.max}\u00B0 / ${w.today.min}\u00B0</div><div class="k">today high and low</div></div>
+        <div class="stat"><div class="v">${w.today.rain == null ? "?" : w.today.rain + "%"}</div><div class="k">chance of rain</div></div>
+        <div class="stat"><div class="v">${n.humidity}%</div><div class="k">humidity</div></div>
+        <div class="stat"><div class="v">${n.wind} km/h</div><div class="k">wind</div></div>
+      </div>
+      <p class="tiny" style="margin:10px 0 0">Forecast from ${esc(GUIDE.weatherSource || "unknown")}.</p>
+    </div>
+
+    <h2><span class="n">01</span> The next few hours</h2>
+    <div style="display:flex;gap:4px;overflow-x:auto;padding:4px 0" class="chips">${bars || '<p class="tiny">no more hours today</p>'}</div>
+    ${c.heatWindow ? `<p class="tiny">Orange marks the hottest stretch, ${HM(c.heatWindow[0])} to ${HM(c.heatWindow[1])},
+      measured from today's forecast rather than assumed. The ranking already pushes shade up during it.</p>` : ""}
+
+    ${band ? `<h2><span class="n">02</span> Air</h2>
+    <div class="card">
+      <h3>${esc(band[0])}<span class="money" style="color:${band[1]}">US AQI ${air.aqi}</span></h3>
+      <p class="sub" style="margin:6px 0 0">PM2.5 ${air.pm25} and PM10 ${air.pm10} micrograms per cubic metre.
+      ${air.aqi > 150 ? "Worth a mask if you are outside for long, and worth doing indoor things at the peak."
+        : air.aqi > 100 ? "Fine for most people, noticeable if you are asthmatic or running."
+        : "Nothing to plan around."}</p>
+    </div>` : ""}
+
+    <h2><span class="n">${band ? "03" : "02"}</span> Light</h2>
+    ${sunCard()}`;
+}
+
+function sunCard() {
+  const c = GUIDE.conditions;
+  return `<div class="card cool">
+    <div class="grid2">
+      <div class="stat"><div class="v">${HM(c.sunrise)}</div><div class="k">sunrise</div></div>
+      <div class="stat"><div class="v">${HM(c.sunset)}</div><div class="k">sunset</div></div>
+      <div class="stat"><div class="v">${HM(c.firstLight)}</div><div class="k">first light</div></div>
+      <div class="stat"><div class="v">${HM(c.lastLight)}</div><div class="k">last light</div></div>
+    </div>
+    <p class="tiny" style="margin:10px 0 0">Computed on this device from the date and your
+    coordinates, so these are right even with no signal.</p></div>`;
+}
+
+/* ---------- local: country facts, getting around, photos ---------- */
+function drawLocal() {
+  const el = $("#vLocal");
+  const c = GUIDE.country, tr = GUIDE.transit || [], ph = GUIDE.photos || [];
+  let html = "";
+
+  if (c) {
+    const e = c.emergency || {};
+    html += `<div class="card">
+      <h3>${esc(c.flag || "")} ${esc(c.name || GUIDE.place.country || "")}</h3>
+      <div class="grid2" style="margin-top:10px">
+        ${c.currency ? `<div class="stat"><div class="v">${esc(c.currency.symbol)} ${esc(c.currency.code)}</div><div class="k">currency</div></div>` : ""}
+        ${c.drivingSide ? `<div class="stat"><div class="v">${esc(c.drivingSide)}</div><div class="k">traffic drives on the</div></div>` : ""}
+        ${c.dialCode ? `<div class="stat"><div class="v">${esc(c.dialCode)}</div><div class="k">dialling code</div></div>` : ""}
+        ${c.languages ? `<div class="stat"><div class="v" style="font-size:14px">${esc(c.languages.slice(0, 2).join(", "))}</div><div class="k">languages</div></div>` : ""}
+      </div></div>`;
+    if (e.all) {
+      html += `<div class="card warn"><h3>If something goes wrong</h3><div class="sos">` +
+        Object.entries(e).map(([k, v]) =>
+          `<a href="tel:${String(v).replace(/[^0-9+]/g, "")}">${esc(v)}<br><span class="tiny">${esc(k)}</span></a>`
+        ).join("") + `</div></div>`;
+    }
+  }
+
+  if (tr.length) {
+    const byKind = {};
+    tr.forEach(x => (byKind[x.kind] = byKind[x.kind] || []).push(x));
+    html += `<h2><span class="n">01</span> Getting around</h2>
+      <p class="sub">${tr.length} stops and stations near the centre, from OpenStreetMap.</p>`;
+    for (const [kind, list] of Object.entries(byKind).sort((a, b) => b[1].length - a[1].length)) {
+      html += `<details><summary>${esc(kind)} (${list.length})</summary>` +
+        list.slice(0, 20).map(x =>
+          `<p class="sub" style="margin:5px 0"><a href="https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}&travelmode=walking" target="_blank" rel="noopener">${esc(x.name)}</a>${x.network ? ` <span class="tiny">${esc(x.network)}</span>` : ""}</p>`
+        ).join("") + `</details>`;
+    }
+  }
+
+  if (ph.length) {
+    html += `<h2><span class="n">0${tr.length ? 2 : 1}</span> What it looks like</h2>
+      <p class="sub">Photographed near here, from Wikimedia Commons.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">` +
+      ph.map(p => `<a href="${esc(p.full)}" target="_blank" rel="noopener"
+        style="display:block;border-radius:11px;overflow:hidden;border:1px solid var(--line);background:var(--bg2)">
+        <img src="${esc(p.thumb)}" loading="lazy" alt="${esc(p.title)}"
+             style="width:100%;height:120px;object-fit:cover;display:block">
+        <div class="tiny" style="padding:6px 8px">${esc(p.title).slice(0, 60)}</div></a>`).join("") +
+      `</div><p class="tiny" style="margin-top:8px">Images are licensed by their photographers,
+       follow a photo for the terms.</p>`;
+  }
+
+  if (!html) html = '<div class="empty">Nothing extra was available for this place.</div>';
+  el.innerHTML = html;
+}
+
 /* ---------- views ---------- */
 function setView(v) {
-  $("#vList").hidden = v !== "list";
-  $("#vMap").hidden = v !== "map";
-  $("#vDay").hidden = v !== "day";
+  const map = { list: "#vList", map: "#vMap", day: "#vDay", weather: "#vWeather", local: "#vLocal" };
+  for (const [k, sel] of Object.entries(map)) { const n = $(sel); if (n) n.hidden = k !== v; }
   if (v === "map") drawMap();
   if (v === "day") drawDay();
+  if (v === "weather") drawWeather();
+  if (v === "local") drawLocal();
 }
 
 /* ---------- extras ---------- */
