@@ -30,7 +30,7 @@ function guessTz(lat, lng, cc) {
 /* GUIDE is the whole saved trip. The engine separately owns TRIP, its derived
    timing config. Two top level `let` of the same name across script tags is a
    SyntaxError that kills the page before a line of it runs. */
-let PLACE = null, GUIDE = null;
+let PLACE = null, GUIDE = null, SHARED_PLAN = null;
 
 /* ---------- screen 1: search ---------- */
 let searchTimer = null;
@@ -230,6 +230,7 @@ async function runBuild() {
     v: 1, built: Date.now(),
     place: PLACE, notes, intro, cautions, wvTitle,
     radius: r,
+    plan: [],
     config: {
       dest: PLACE.name, country: PLACE.country,
       arrive: M(arrive), depart: M(depart),
@@ -246,6 +247,11 @@ async function runBuild() {
     transit: transit.value || [], photos: (photos.value || []).slice(0, 24),
     places
   };
+  if (SHARED_PLAN && SHARED_PLAN.length) {
+    const have = new Set(places.map(p => p.id));
+    GUIDE.plan = SHARED_PLAN.filter(id => have.has(id));
+    SHARED_PLAN = null;
+  }
   save(GUIDE);
   step("stDone", "done", `${places.length} places ready, saved to this device`);
   progress(100);
@@ -361,6 +367,7 @@ function card(r, i) {
       ${p.warn ? `<p class="pc-warn">\u26A0 ${esc(p.warn)}</p>` : ""}
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
       <div class="btns">
+        <button class="btn ${inPlan(p.id) ? "picked" : "o"}" data-pick="${esc(p.id)}">${inPlan(p.id) ? "\u2713 in your day" : "+ add to day"}</button>
         <a class="btn g" target="_blank" rel="noopener" href="${g}">Walk there</a>
         <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
         ${p.website ? `<a class="btn b" target="_blank" rel="noopener" href="${esc(p.website)}">Website</a>` : ""}
@@ -395,6 +402,8 @@ function render() {
   $("#list").innerHTML = top.length ? top.map(card).join("")
     : `<div class="empty">Nothing in this filter is open and still fits.</div>`;
   $("#count").textContent = `${r.list.length} of ${GUIDE.places.length} places fit right now`;
+  $$("#list [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+  paintPlanCount();
 }
 
 /* ---------- map ---------- */
@@ -459,6 +468,111 @@ function drawDay() {
     <p class="tiny" style="margin:10px 0 0">Sunrise and sunset were calculated on this device
     from the date and your coordinates. Nothing was fetched to work them out, so they are right
     even with no signal.</p>`;
+}
+
+/* ---------- the plan ---------- */
+const inPlan = id => (GUIDE && GUIDE.plan || []).indexOf(id) >= 0;
+
+function togglePick(id) {
+  GUIDE.plan = GUIDE.plan || [];
+  const i = GUIDE.plan.indexOf(id);
+  if (i >= 0) GUIDE.plan.splice(i, 1); else GUIDE.plan.push(id);
+  save(GUIDE);
+  render();
+  paintPlanCount();
+  if (!$("#vPlan").hidden) drawPlan();
+}
+
+function planPlaces() {
+  const byId = {};
+  (GUIDE.places || []).forEach(p => byId[p.id] = p);
+  return (GUIDE.plan || []).map(id => byId[id]).filter(Boolean);
+}
+
+function paintPlanCount() {
+  const n = (GUIDE.plan || []).length;
+  const chip = $('#views .chip[data-v="plan"]');
+  if (chip) chip.textContent = n ? `Your day (${n})` : "Your day";
+}
+
+function drawPlan() {
+  const el = $("#vPlan");
+  const picks = planPlaces();
+  if (!picks.length) {
+    el.innerHTML = `<div class="card"><h3>Nothing picked yet</h3>
+      <p class="sub">Add places from the list and this builds an order for them: when to
+      be where, how long the walk is, and whether any of it collides with opening hours
+      or with the time you have to leave.</p>
+      <p class="tiny">It will tell you when a plan does not fit rather than quietly
+      dropping something.</p></div>`;
+    return;
+  }
+  const s = schedule(picks);
+  const used = new Set(GUIDE.plan);
+
+  const rows = s.rows.map((r, i) => {
+    const gapBlock = r.gap > 20 ? (() => {
+      const opts = fillGap(i > 0 ? s.rows[i - 1].p : r.p, r.arrive - r.gap, r.gap, [...used]);
+      return `<div class="gap">
+        <div class="gap-h">${r.gap} minutes free here</div>
+        ${opts.length ? `<p class="tiny" style="margin:4px 0 6px">Open now, close by, and short enough to fit:</p>
+          <div class="gap-opts">${opts.map(o =>
+            `<button class="btn" data-pick="${esc(o.p.id)}">+ ${esc(o.p.name)} <span class="tiny">${o.walk}m away</span></button>`
+          ).join("")}</div>`
+          : '<p class="tiny">Nothing nearby is open and short enough. A coffee, then.</p>'}
+      </div>`;
+    })() : "";
+
+    return gapBlock + `<div class="prow${r.issues.length ? " prow-bad" : ""}">
+      <div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+      <div class="pbody">
+        <div class="pname">${esc(r.p.name)}
+          <button class="btn drop" data-pick="${esc(r.p.id)}" title="remove">\u00D7</button></div>
+        <div class="tiny">${r.walk ? `${r.walk} min walk. ` : ""}${dur(r.stay)} here.${r.p.lo ? ` About ${inr(r.p.lo)}.` : ""}</div>
+        ${r.issues.map(x => `<div class="pissue">\u26A0 ${esc(x)}</div>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="card ${s.overruns ? "warn" : "ok"}">
+      <h3>${s.overruns ? "This does not fit" : "Your day"}</h3>
+      <div class="grid2" style="margin-top:10px">
+        <div class="stat"><div class="v">${HM(s.start)} to ${HM(s.end)}</div><div class="k">start and finish</div></div>
+        <div class="stat"><div class="v">${picks.length}</div><div class="k">stops</div></div>
+        <div class="stat"><div class="v">${s.walking} min</div><div class="k">walking</div></div>
+        <div class="stat"><div class="v">${s.cost ? inr(s.cost) : "free"}</div><div class="k">entries and food</div></div>
+      </div>
+      ${s.overruns ? `<p class="sub" style="margin:10px 0 0">It runs past when you have to
+        leave. Drop a stop, or start earlier.</p>` : s.problems === 0
+        ? `<p class="sub" style="margin:10px 0 0">Everything lands inside its opening hours,
+           and each stop is at or near its best time of day.</p>`
+        : `<p class="sub" style="margin:10px 0 0">${s.problems} thing${s.problems > 1 ? "s" : ""} to look at, marked below.</p>`}
+    </div>
+    <div class="btns" style="margin:10px 0 14px">
+      <button class="btn o" id="printPlan">Print or save as PDF</button>
+      <button class="btn b" id="sharePlan">Share this day</button>
+      <button class="btn r" id="clearPlan">Clear</button>
+    </div>
+    <div class="plan">${rows}</div>
+    <p class="tiny" style="margin-top:12px">Walking times assume 75 metres a minute with a
+    third added for real streets, which is a realistic pace in a place you do not know.</p>`;
+
+  $$("#vPlan [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+  $("#printPlan").onclick = () => window.print();
+  $("#clearPlan").onclick = () => { GUIDE.plan = []; save(GUIDE); render(); paintPlanCount(); drawPlan(); };
+  $("#sharePlan").onclick = async () => {
+    const u = location.origin + location.pathname + "?" + new URLSearchParams({
+      q: GUIDE.place.name, lat: GUIDE.place.lat.toFixed(5), lng: GUIDE.place.lng.toFixed(5),
+      tz: GUIDE.config.tzOffsetMinutes, a: HM(GUIDE.config.arrive), d: HM(GUIDE.config.depart),
+      plan: (GUIDE.plan || []).join(","),
+    });
+    const btn = $("#sharePlan");
+    try {
+      if (navigator.share) await navigator.share({ title: `A day in ${GUIDE.place.name}`, url: u });
+      else { await navigator.clipboard.writeText(u); btn.textContent = "Link copied"; setTimeout(() => btn.textContent = "Share this day", 1800); }
+    } catch (e) {}
+  };
 }
 
 /* ---------- the destination header ---------- */
@@ -621,12 +735,14 @@ function drawLocal() {
 
 /* ---------- views ---------- */
 function setView(v) {
-  const map = { list: "#vList", map: "#vMap", day: "#vDay", weather: "#vWeather", local: "#vLocal" };
+  const map = { list: "#vList", plan: "#vPlan", map: "#vMap", day: "#vDay",
+                weather: "#vWeather", local: "#vLocal" };
   for (const [k, sel] of Object.entries(map)) { const n = $(sel); if (n) n.hidden = k !== v; }
   if (v === "map") drawMap();
   if (v === "day") drawDay();
   if (v === "weather") drawWeather();
   if (v === "local") drawLocal();
+  if (v === "plan") drawPlan();
 }
 
 /* ---------- extras ---------- */
@@ -727,6 +843,7 @@ window.addEventListener("DOMContentLoaded", () => {
     $("#tz").value = u.get("tz") || guessTz(PLACE.lat, PLACE.lng, "");
     $("#arrive").value = u.get("a") || "09:00";
     $("#depart").value = u.get("d") || "21:00";
+    SHARED_PLAN = (u.get("plan") || "").split(",").filter(Boolean);
     build();
     return;
   }

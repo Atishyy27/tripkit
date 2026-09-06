@@ -425,9 +425,15 @@ describe("the page loads as a browser would", () => {
     const wanted = new Set();
     for (const m of app.matchAll(/\$\("#([A-Za-z0-9_-]+)/g)) wanted.add(m[1]);
     for (const m of app.matchAll(/getElementById\("([A-Za-z0-9_-]+)"/g)) wanted.add(m[1]);
-    const have = new Set([...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]));
+    // Some elements are rendered by the app itself rather than sitting in the
+    // static markup, so an id counts as defined if either the page or the code
+    // creates it. What must never happen is reaching for one that nothing makes.
+    const have = new Set([
+      ...[...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]),
+      ...[...app.matchAll(/id="([A-Za-z0-9_-]+)"/g)].map(m => m[1]),
+    ]);
     const missing = [...wanted].filter(id => !have.has(id)).sort();
-    eq(missing, [], "app.js reaches for ids that index.html does not define");
+    eq(missing, [], "the code reaches for ids that nothing ever creates");
   });
 
   it("no network call is made without a deadline", () => {

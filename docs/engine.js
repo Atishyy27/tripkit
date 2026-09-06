@@ -144,3 +144,151 @@ const closingSoon = t => (DATA.places || []).map(p => ({ p, st: openState(p, t) 
   .filter(r => r.st.state === "closing").sort((a, b) => a.st.closesIn - b.st.closesIn);
 const openingSoon = t => (DATA.places || []).map(p => ({ p, st: openState(p, t) }))
   .filter(r => r.st.state === "soon").sort((a, b) => a.st.opensIn - b.st.opensIn);
+
+/* ============================================================
+   Planning.
+
+   Everything above answers "what now". This answers "what today", which is a
+   different question: an order, with times attached, that a person can follow.
+
+   The scheduler is deliberately simple and deliberately honest. It will tell you
+   a plan does not fit rather than quietly dropping a stop, and it will say when a
+   stop lands outside that place's opening hours instead of pretending.
+   ============================================================ */
+
+const WALK_METRES_PER_MIN = 75;      // a real walking pace in a strange town, with stops
+
+function walkMinutes(a, b) {
+  if (!a || !b || a.lat == null || b.lat == null) return 10;
+  const R = 6371000, p = Math.PI / 180;
+  const dx = (b.lat - a.lat) * p, dy = (b.lng - a.lng) * p;
+  const h = Math.sin(dx / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dy / 2) ** 2;
+  const m = 2 * R * Math.asin(Math.sqrt(h));
+  // straight line underestimates real streets, so add a third
+  return Math.max(3, Math.round((m * 1.35) / WALK_METRES_PER_MIN));
+}
+
+/* Order the picks so the day flows.
+
+   Time leads, walking follows. A first attempt used nearest neighbour with a mild
+   time nudge and produced a tidy walk that put a sunset viewpoint at one in the
+   afternoon, which is precisely the mistake this whole app exists to avoid. So:
+   anything with a best hour is placed by that hour, and anything without one is
+   slotted wherever it costs the least walking. A slightly longer walk is a much
+   smaller loss than arriving somewhere at the wrong time. */
+function orderPlan(picks) {
+  if (picks.length < 2) return picks.slice();
+
+  const timed = picks.filter(p => p.best && p.best.length)
+    .map(p => ({ p, at: M(p.best[0]) }))
+    .sort((a, b) => a.at - b.at)
+    .map(x => x.p);
+  const loose = picks.filter(p => !(p.best && p.best.length));
+
+  if (!timed.length) {
+    // nothing has an hour of its own, so just keep the walk short
+    const rest = loose.slice(), out = [rest.shift()];
+    while (rest.length) {
+      let bi = 0, bd = Infinity;
+      rest.forEach((p, i) => { const d = walkMinutes(out[out.length - 1], p); if (d < bd) { bd = d; bi = i; } });
+      out.push(rest.splice(bi, 1)[0]);
+    }
+    return out;
+  }
+
+  // insert each untimed stop at whichever gap it lengthens the walk least
+  const out = timed.slice();
+  for (const p of loose) {
+    let bestAt = out.length, bestCost = Infinity;
+    for (let i = 0; i <= out.length; i++) {
+      const before = out[i - 1], after = out[i];
+      const cost = (before ? walkMinutes(before, p) : 0)
+                 + (after ? walkMinutes(p, after) : 0)
+                 - (before && after ? walkMinutes(before, after) : 0);
+      if (cost < bestCost) { bestCost = cost; bestAt = i; }
+    }
+    out.splice(bestAt, 0, p);
+  }
+  return out;
+}
+
+/* Lay the ordered stops onto the clock and report every problem found. */
+function schedule(picks, startMins) {
+  const order = orderPlan(picks);
+  const start = startMins != null ? startMins
+    : Math.max(localMins(), TRIP.arrive != null ? TRIP.arrive : 0);
+  const hardEnd = TRIP.multiDay ? 22 * 60 : TRIP.hardExit;
+
+  let t = start;
+  const rows = [];
+  for (let i = 0; i < order.length; i++) {
+    const p = order[i];
+    const walk = i === 0 ? 0 : walkMinutes(order[i - 1], p);
+    t += walk;
+
+    // A person would wait rather than turn up four hours before a sunset viewpoint
+    // is worth seeing. Packing stops back to back is what produced exactly that.
+    // So hold, if the day still has room for it, and show the gap honestly rather
+    // than hiding it inside the previous stop.
+    let gap = 0;
+    if (p.best && p.best.length) {
+      const target = p.best.reduce((a, b) => Math.abs(M(b) - t) < Math.abs(M(a) - t) ? b : a);
+      const wait = M(target) - t;
+      const remaining = order.slice(i).reduce((a, x) => a + (x.dur || 30) + 8, 0);
+      if (wait > 20 && t + wait + remaining <= hardEnd) { gap = wait; t += wait; }
+    }
+    // and never arrive while the place is shut for the middle of the day
+    const shutNow = openState(p, t);
+    if (shutNow.state === "shut" && shutNow.opensIn && shutNow.opensIn <= 180) {
+      const remaining = order.slice(i).reduce((a, x) => a + (x.dur || 30) + 8, 0);
+      if (t + shutNow.opensIn + remaining <= hardEnd) { gap += shutNow.opensIn; t += shutNow.opensIn; }
+    }
+
+    const arrive = t;
+    const stay = p.dur || 30;
+    const leave = arrive + stay;
+    const st = openState(p, arrive);
+    const issues = [];
+    if (st.state === "shut") issues.push(`shut at ${HM(arrive)}, ${st.label}`);
+    if (st.state === "soon") issues.push(`does not open until ${p.open}`);
+    if (st.state === "unknown") issues.push("nobody has recorded its hours");
+    if (p.close && M(p.close) > M(p.open || "00:00") && leave > M(p.close))
+      issues.push(`you would still be there after it closes at ${p.close}`);
+    if (leave > hardEnd) issues.push("this runs past when you have to leave");
+    if (p.best && p.best.length) {
+      const d = Math.min.apply(null, p.best.map(b => Math.abs(M(b) - arrive)));
+      if (d > 150) issues.push(`its best hour is ${p.best[0]}, this is well off it`);
+    }
+    rows.push({ p, walk, gap, arrive, leave, stay, issues, state: st.state });
+    t = leave;
+  }
+  return {
+    rows, start, end: t,
+    overruns: t > hardEnd,
+    minutes: t - start,
+    walking: rows.reduce((a, r) => a + r.walk, 0),
+    waiting: rows.reduce((a, r) => a + (r.gap || 0), 0),
+    problems: rows.reduce((a, r) => a + r.issues.length, 0),
+    cost: rows.reduce((a, r) => a + (r.p.lo || 0), 0),
+  };
+}
+
+/* What could fill a gap in the plan: open now, close by, and short enough to fit. */
+function fillGap(afterPlace, gapStart, gapMins, exclude) {
+  const skip = new Set(exclude || []);
+  const pool = (DATA.places || []).filter(p => !skip.has(p.id));
+  const out = [];
+  for (const p of pool) {
+    const walk = walkMinutes(afterPlace, p);
+    const need = walk * 2 + (p.dur || 30);
+    if (need > gapMins - 5) continue;
+    const st = openState(p, gapStart + walk);
+    if (st.state === "shut" || st.state === "soon") continue;
+    if (["practical", "move", "stay", "hub"].includes(p.cat)) continue;
+    let s = (p.why ? 20 : 0) + (st.state === "open" ? 10 : 0) - walk;
+    if (p.best && p.best.length)
+      s += Math.max(0, 30 - Math.min.apply(null, p.best.map(b => Math.abs(M(b) - gapStart))) / 4);
+    out.push({ p, walk, score: s });
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, 4);
+}

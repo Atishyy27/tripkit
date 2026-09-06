@@ -159,6 +159,56 @@ const ok = (cond, what) => {
     ok(map.pins > 0, `pins were drawn (${map.pins})`);
     ok(map.note.includes("real pin"), "the map explains what it is showing");
 
+    console.log("\n  you can actually plan a day");
+    const nAdd = await page.locator('#list [data-pick]').count();
+    ok(nAdd > 0, `${nAdd} places can be added to a day`);
+    // Every click re-renders the list, which detaches the handles. Re-query each
+    // time and always take the first unpicked one.
+    // Every click rebuilds the whole list, so a handle taken before the click is
+    // detached by the time Playwright tries to act on it. Dispatch on the element
+    // instead: it still runs the real handler, it just does not wait for a node
+    // that is about to be replaced anyway.
+    const added = await page.evaluate(async () => {
+      let n = 0;
+      for (let k = 0; k < 4; k++) {
+        const b = document.querySelector("#list [data-pick]:not(.picked)");
+        if (!b) break;
+        b.click();
+        n++;
+        await new Promise(r => setTimeout(r, 60));
+      }
+      return n;
+    });
+    ok(added > 0, `added ${added} places by clicking`);
+    await page.click('#views .chip[data-v="plan"]');
+    await page.waitForTimeout(700);
+    const plan = await page.evaluate(() => {
+      const el = document.getElementById("vPlan");
+      return { picked: (GUIDE.plan || []).length,
+               rows: el.querySelectorAll(".prow").length,
+               gaps: el.querySelectorAll(".gap").length,
+               hasPrint: !!document.getElementById("printPlan"),
+               hasShare: !!document.getElementById("sharePlan"),
+               summary: (el.querySelector(".card h3") || {}).textContent || "",
+               times: [...el.querySelectorAll(".ptime")].map(t => t.textContent.slice(0, 5)) };
+    });
+    ok(plan.picked >= 1, `${plan.picked} places picked`);
+    ok(plan.rows === plan.picked, `every pick has a row in the plan (${plan.rows})`);
+    ok(plan.hasPrint && plan.hasShare, "the plan can be printed and shared");
+    ok(/^\d\d:\d\d$/.test(plan.times[0] || ""), `stops carry clock times (${plan.times.join(" ")})`);
+    const ordered = plan.times.every((t, i, a) => i === 0 || t >= a[i - 1]);
+    ok(ordered, "the stops are in chronological order");
+    if (plan.gaps) console.log(`      (${plan.gaps} gaps offered something to fill them)`);
+
+    console.log("\n  removing a stop works");
+    await page.evaluate(() => {
+      const b = document.querySelector("#vPlan .drop");
+      if (b) b.click();
+    });
+    await page.waitForTimeout(400);
+    const after = await page.evaluate(() => (GUIDE.plan || []).length);
+    ok(after === plan.picked - 1, `dropping a stop removed it (${plan.picked} to ${after})`);
+
     console.log("\n  it looks like a product");
     const look = await page.evaluate(() => ({
       hero: !!document.querySelector(".dhero"),
