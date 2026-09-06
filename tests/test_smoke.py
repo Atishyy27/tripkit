@@ -211,6 +211,17 @@ class TestHouseStyle:
         assert not bad, f"a regex quantifier contains a space in: {bad}"
 
 
+try:
+    import tomllib as _toml
+except ModuleNotFoundError:          # stdlib only from 3.11, and we support 3.10
+    try:
+        import tomli as _toml
+    except ModuleNotFoundError:
+        _toml = None
+
+
+@pytest.mark.skipif(_toml is None,
+                    reason="needs tomllib (Python 3.11+) or tomli installed")
 class TestPackaging:
     """
     A malformed pyproject still parses as TOML and still passes every syntax
@@ -220,9 +231,8 @@ class TestPackaging:
 
     @staticmethod
     def _meta():
-        import tomllib
         with open(os.path.join(ROOT, "pyproject.toml"), "rb") as f:
-            return tomllib.load(f)
+            return _toml.load(f)
 
     def test_pyproject_is_valid_toml(self):
         assert self._meta()["project"]["name"] == "tripkit"
