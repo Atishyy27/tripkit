@@ -5,8 +5,28 @@
 
 const UA = "tripkit-web/0.1 (https://github.com/Atishyy27/tripkit)";
 
-async function jget(url, opts) {
-  const r = await fetch(url, Object.assign({ headers: { "Accept": "application/json" } }, opts || {}));
+/* Every request gets a deadline.
+
+   Without one, a provider that accepts the connection and then never answers
+   hangs the whole app forever, and the user sees a screen frozen mid step with no
+   way to tell whether it is working. A slow source has to become a failed source
+   so the fallback chain can move on. */
+const DEADLINE = 20000;
+
+function withTimeout(url, opts, ms) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), ms || DEADLINE);
+  return fetch(url, Object.assign({ signal: ac.signal }, opts || {}))
+    .finally(() => clearTimeout(timer))
+    .catch(e => {
+      if (e && e.name === "AbortError")
+        throw new Error(`no answer within ${Math.round((ms || DEADLINE) / 1000)}s`);
+      throw e;
+    });
+}
+
+async function jget(url, opts, ms) {
+  const r = await withTimeout(url, Object.assign({ headers: { "Accept": "application/json" } }, opts || {}), ms);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
@@ -71,8 +91,9 @@ async function overpass(lat, lng, r, onNote) {
   let lastErr;
   for (const url of OVERPASS) {
     try {
-      const res = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(overpassQL(lat, lng, r)),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+      const res = await withTimeout(url, { method: "POST",
+        body: "data=" + encodeURIComponent(overpassQL(lat, lng, r)),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" } }, 45000);
       if (!res.ok) throw new Error(res.status + "");
       return (await res.json()).elements || [];
     } catch (e) { lastErr = e; onNote && onNote(`${url.split("/")[2]} failed (${e.message}), trying another mirror`); }
@@ -594,8 +615,8 @@ async function getTransit(lat, lng, radius, onNote) {
       let last;
       for (const url of OVERPASS) {
         try {
-          const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(q),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+          const r = await withTimeout(url, { method: "POST", body: "data=" + encodeURIComponent(q),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" } }, 30000);
           if (!r.ok) throw new Error(String(r.status));
           const els = (await r.json()).elements || [];
           const KIND = { station: "Train station", halt: "Train halt", tram_stop: "Tram stop",

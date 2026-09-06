@@ -40,6 +40,12 @@ More data, from more places, and a real answer when one of them is down.
 ### Fixed
 - The heat window silently returned nothing whenever the destination's local date
   differed from UTC, which near midnight in India is most of the time.
+- **No network request had a deadline.** A provider that accepted a connection and
+  then never answered hung the app indefinitely, which presents to a user as a
+  frozen screen with no way to tell whether it is still working. Every request now
+  has one, and a slow source becomes a failed source so the chain can move past it.
+  Found because a CI runner got 504 from both Overpass mirrors, which is the
+  behaviour the fallbacks exist for and the app still stalled.
 
 ## [0.2.0] - 2026-09-07
 

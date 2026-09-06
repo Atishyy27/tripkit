@@ -430,6 +430,23 @@ describe("the page loads as a browser would", () => {
     eq(missing, [], "app.js reaches for ids that index.html does not define");
   });
 
+  it("no network call is made without a deadline", () => {
+    // A provider that accepts a connection and never answers used to hang the app
+    // forever, which presents as "it is broken" with no way to tell.
+    const src = fs.readFileSync(path.join(DOCS, "sources.js"), "utf8");
+    const bare = src.split("\n")
+      .map((l, i) => [i + 1, l])
+      .filter(([, l]) => /(?<!with)[^A-Za-z]fetch\(/.test(l))
+      // withTimeout itself is the one legitimate raw fetch: it is the wrapper that
+      // attaches the abort signal. Recognised by that signal rather than by name,
+      // so renaming the function cannot quietly disable this check.
+      .filter(([, l]) => !l.includes("withTimeout") && !l.includes("globalThis.fetch")
+                      && !l.includes("signal: ac.signal")
+                      && !/^\s*(\*|\/\/)/.test(l));
+    eq(bare.map(([n]) => n), [], "these lines call fetch directly, with no timeout");
+    ok(src.includes("AbortController"), "there is no timeout mechanism at all");
+  });
+
   it("index.html loads every script the app needs, in an order that works", () => {
     const html = fs.readFileSync(path.join(DOCS, "index.html"), "utf8");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
