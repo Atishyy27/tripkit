@@ -4,6 +4,11 @@
 
 ### → [Open it](https://atishyy27.github.io/tripkit/)
 
+[![ci](https://github.com/Atishyy27/tripkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Atishyy27/tripkit/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/Atishyy27/tripkit?color=ff8a4c)](https://github.com/Atishyy27/tripkit/releases)
+[![licence](https://img.shields.io/badge/licence-MIT-7ee0a8)](LICENSE)
+[![data](https://img.shields.io/badge/data-OpenStreetMap%20%2B%20Wikivoyage-8ab8ff)](https://www.openstreetmap.org/copyright)
+
 No install. No account. No API key. No AI.
 
 Type a town. You get a guide that answers one question a normal guide never does:

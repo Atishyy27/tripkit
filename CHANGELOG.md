@@ -5,6 +5,23 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-09-07
+
+### Added
+- **Places to sleep.** Hotels, hostels, guest houses, apartments and campsites,
+  with star ratings and room counts where OpenStreetMap has them. Not scope creep:
+  Wikivoyage's sleep listings were already being parsed into this category and then
+  discarded, because nothing was asking OpenStreetMap for the matching places.
+  Pushkar went from 129 places to 219, Lisbon from 3,195 to 3,667.
+- Share cards, so a pasted link previews properly rather than as a bare URL.
+
+### Fixed
+- **The cap was deleting every hotel in a large city.** Somewhere to sleep was
+  classed as a chore alongside bus stops, which is right for "what should I do
+  next" and wrong for "what should exist in the dataset". One number was answering
+  two different questions. The cap is now per category with a floor, so no category
+  is ever wiped out, and it trims by quality rather than by category order.
+
 ## [0.3.0] - 2026-09-07
 
 More data, from more places, and a real answer when one of them is down.
@@ -115,6 +132,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.3.1]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.1.0

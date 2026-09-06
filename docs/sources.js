@@ -67,6 +67,12 @@ const AMENITY = { restaurant:"food", cafe:"cafe", fast_food:"street", ice_cream:
 const HISTORIC = { monument:"view", memorial:"view", castle:"view", ruins:"view",
                    fort:"view", archaeological_site:"view", city_gate:"view" };
 const LEISURE  = { park:"park", garden:"park", nature_reserve:"outdoor" };
+/* Somewhere to sleep. Not scope creep: Wikivoyage's {{sleep}} listings were already
+   being parsed into this category and then thrown away because nothing asked OSM
+   for the matching places. This is three tags, not a feature. */
+const TOURISM_STAY = { hotel:"stay", hostel:"stay", guest_house:"stay",
+                       apartment:"stay", motel:"stay", chalet:"stay",
+                       camp_site:"stay", caravan_site:"stay", alpine_hut:"stay" };
 const SHOPS    = ["gift","craft","jewelry","books","antiques","art","bakery",
                   "confectionery","spices","department_store"];
 
@@ -80,7 +86,7 @@ function overpassQL(lat, lng, r) {
     sel.push(`node["${k}"~"^(${v})$"](around:${r},${lat},${lng});`);
     sel.push(`way["${k}"~"^(${v})$"](around:${r},${lat},${lng});`);
   };
-  add("tourism", TOURISM); add("amenity", AMENITY);
+  add("tourism", TOURISM); add("tourism", TOURISM_STAY); add("amenity", AMENITY);
   add("historic", HISTORIC); add("leisure", LEISURE);
   sel.push(`node["shop"~"^(${SHOPS.join("|")})$"](around:${r},${lat},${lng});`);
   sel.push(`way["shop"~"^(${SHOPS.join("|")})$"](around:${r},${lat},${lng});`);
@@ -125,12 +131,41 @@ function parseHours(oh) {
    keep a workable slice, saying so rather than silently truncating. */
 function capPlaces(list, max) {
   if (list.length <= max) return { kept: list, dropped: 0 };
-  const worth = p => (p.why ? 40 : 0) + (p.open ? 25 : 0)
-    + ({ view: 30, museum: 28, park: 20, temple: 18, do: 16, shop: 8,
-         food: 10, cafe: 8, sweet: 6, bar: 6, street: 6 }[p.cat] || 0)
-    - (["practical", "move", "stay"].includes(p.cat) ? 40 : 0);
-  const sorted = list.slice().sort((a, b) => worth(b) - worth(a));
-  return { kept: sorted.slice(0, max), dropped: list.length - max };
+
+  // Two different questions were being answered by one number. "Should a hotel be
+  // suggested as the next thing to do" is no, and the ranking handles that. "Should
+  // hotels exist in the dataset at all" is obviously yes, and a flat penalty here
+  // deleted every one of them from a big city before the user could filter to them.
+  //
+  // So cap per category with a floor, and no category is ever wiped out entirely.
+  const SHARE = {
+    view: 0.16, museum: 0.05, temple: 0.07, park: 0.04, do: 0.10, wellness: 0.03,
+    food: 0.14, cafe: 0.09, street: 0.05, sweet: 0.02, bar: 0.04,
+    shop: 0.07, stay: 0.10, outdoor: 0.02, practical: 0.01, move: 0.01, ghat: 0.03,
+  };
+  const worth = p => (p.why ? 40 : 0) + (p.open ? 25 : 0) + (p.stars ? p.stars * 4 : 0);
+  const byCat = {};
+  for (const p of list) (byCat[p.cat] = byCat[p.cat] || []).push(p);
+
+  const kept = [];
+  const leftovers = [];
+  for (const [cat, rows] of Object.entries(byCat)) {
+    rows.sort((a, b) => worth(b) - worth(a));
+    // The floor stops a small category vanishing, but it must never exceed what
+    // this category could fairly claim, or the quotas overshoot the cap and the
+    // final trim ends up cutting by category order instead of by quality.
+    const fair = Math.round(max * (SHARE[cat] || 0.02));
+    const quota = Math.min(rows.length, Math.max(Math.min(12, Math.floor(max / 4)), fair));
+    kept.push(...rows.slice(0, quota));
+    leftovers.push(...rows.slice(quota));
+  }
+  // spend whatever room is left on the best of the rest, whatever category
+  leftovers.sort((a, b) => worth(b) - worth(a));
+  if (kept.length < max) kept.push(...leftovers.slice(0, max - kept.length));
+  // and if the floors still overshot, cut by quality rather than by category order
+  kept.sort((a, b) => worth(b) - worth(a));
+  const final = kept.slice(0, max);
+  return { kept: final, dropped: list.length - final.length };
 }
 
 function osmToPlaces(elements, town) {
@@ -139,7 +174,7 @@ function osmToPlaces(elements, town) {
     const t = e.tags || {};
     const name = t["name:en"] || t.name;
     if (!name) continue;
-    const cat = TOURISM[t.tourism] || AMENITY[t.amenity] || HISTORIC[t.historic]
+    const cat = TOURISM[t.tourism] || TOURISM_STAY[t.tourism] || AMENITY[t.amenity] || HISTORIC[t.historic]
              || LEISURE[t.leisure] || (SHOPS.includes(t.shop) ? "shop" : null);
     if (!cat) continue;
     const lat = e.lat != null ? e.lat : (e.center && e.center.lat);
@@ -152,12 +187,21 @@ function osmToPlaces(elements, town) {
       open: h.open, close: h.close, shut: h.shut, days: null,
       lo: t.fee === "no" ? 0 : null, hi: t.fee === "no" ? 0 : null,
       priceNote: null, dur: 30,
-      why: t.description || "",
+      why: t.description ||
+           (TOURISM_STAY[t.tourism]
+             ? [t.tourism === "guest_house" ? "Guest house" :
+                t.tourism === "camp_site" ? "Campsite" :
+                t.tourism.charAt(0).toUpperCase() + t.tourism.slice(1),
+                t.stars ? t.stars + " star" : null,
+                t.rooms ? t.rooms + " rooms" : null].filter(Boolean).join(", ")
+             : ""),
       warn: h.note ? (h.open ? "holiday rule: " + h.note : "hours listed as “" + h.note + "”, too complex to flatten safely") : null,
       best: [], tags: t.fee === "no" ? ["free"] : [],
       website: t.website || t["contact:website"] || null,
       phone: t.phone || t["contact:phone"] || null,
       wikidata: t.wikidata || null,
+      stars: t.stars ? Number(t.stars) : null,
+      rooms: t.rooms ? Number(t.rooms) : null,
       src: `https://www.openstreetmap.org/${e.type}/${e.id}`,
       from: "OpenStreetMap"
     });

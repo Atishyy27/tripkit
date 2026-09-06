@@ -152,6 +152,16 @@ const ok = (cond, what) => {
     ok(map.pins > 0, `pins were drawn (${map.pins})`);
     ok(map.note.includes("real pin"), "the map explains what it is showing");
 
+    console.log("\n  places to sleep are there");
+    const stay = await page.evaluate(() => {
+      const s = (GUIDE.places || []).filter(p => p.cat === "stay");
+      const chips = [...document.querySelectorAll("#cats .chip")].map(c => c.dataset.c);
+      return { count: s.length, hasChip: chips.includes("stay"),
+               named: s.slice(0, 3).map(x => x.name) };
+    });
+    ok(stay.count > 0, `${stay.count} places to sleep in the dataset`);
+    ok(stay.hasChip, "a stay filter appears in the category chips");
+
     console.log("\n  the weather view works");
     await page.click('#views .chip[data-v="weather"]');
     await page.waitForTimeout(600);
