@@ -209,3 +209,48 @@ class TestHouseStyle:
                 if re.search(r"\{" + r"\d+,\s+\d+" + r"\}", open(p, encoding="utf-8", errors="ignore").read()):
                     bad.append(os.path.relpath(p, ROOT))
         assert not bad, f"a regex quantifier contains a space in: {bad}"
+
+
+class TestPackaging:
+    """
+    A malformed pyproject still parses as TOML and still passes every syntax
+    check. It only fails at install time, which in this project meant three CI
+    jobs going red after the change had already been pushed.
+    """
+
+    @staticmethod
+    def _meta():
+        import tomllib
+        with open(os.path.join(ROOT, "pyproject.toml"), "rb") as f:
+            return tomllib.load(f)
+
+    def test_pyproject_is_valid_toml(self):
+        assert self._meta()["project"]["name"] == "tripkit"
+
+    def test_optional_dependencies_are_lists_of_strings(self):
+        extras = self._meta()["project"].get("optional-dependencies", {})
+        for name, deps in extras.items():
+            assert isinstance(deps, list), (
+                f"extra {name!r} is a {type(deps).__name__}; a nested table here is "
+                f"valid TOML and invalid package metadata")
+            assert all(isinstance(d, str) for d in deps), name
+
+    def test_dependencies_are_a_list_of_strings(self):
+        deps = self._meta()["project"]["dependencies"]
+        assert isinstance(deps, list) and all(isinstance(d, str) for d in deps)
+
+    def test_the_entry_point_names_something_importable(self):
+        script = self._meta()["project"]["scripts"]["tripkit"]
+        mod, _, fn = script.partition(":")
+        import importlib
+        assert hasattr(importlib.import_module(mod), fn), script
+
+    def test_the_version_matches_the_package(self):
+        import tripkit
+        assert self._meta()["project"]["version"] == tripkit.__version__
+
+    def test_the_changelog_documents_the_current_version(self):
+        import tripkit
+        text = open(os.path.join(ROOT, "CHANGELOG.md"), encoding="utf-8").read()
+        assert f"[{tripkit.__version__}]" in text, (
+            f"CHANGELOG.md has no entry for {tripkit.__version__}")
