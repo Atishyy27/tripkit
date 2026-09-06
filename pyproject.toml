@@ -35,3 +35,11 @@ packages = ["tripkit"]
 
 [tool.setuptools.package-data]
 tripkit = ["../templates/**/*"]
+
+[project.optional-dependencies.dev]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]
