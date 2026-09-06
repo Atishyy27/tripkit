@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Fix the data itself
+    url: https://www.openstreetmap.org
+    about: Missing places and opening hours are fixed in OpenStreetMap, which helps everyone.
+  - name: Fix a description
+    url: https://en.wikivoyage.org
+    about: Descriptions, prices and safety notes come from Wikivoyage.

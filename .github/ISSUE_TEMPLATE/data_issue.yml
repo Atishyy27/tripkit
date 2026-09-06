@@ -1,0 +1,31 @@
+name: Wrong or missing place data
+description: A place is missing, or its hours or description are wrong
+labels: [data]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This tool holds no place data of its own. It reads OpenStreetMap and
+        Wikivoyage live, so fixing it there fixes it for everyone, including people
+        who never use this.
+
+        - Missing place, wrong coordinates, or missing opening hours: [OpenStreetMap](https://www.openstreetmap.org)
+        - Missing or wrong description, price, or warning: [Wikivoyage](https://en.wikivoyage.org)
+
+        Open an issue here only if the data is right at the source and this tool is
+        reading it wrongly.
+  - type: input
+    id: place
+    attributes:
+      label: The place
+    validations: { required: true }
+  - type: input
+    id: source
+    attributes:
+      label: Link to the correct data at the source
+      placeholder: https://www.openstreetmap.org/node/123456
+  - type: textarea
+    id: what
+    attributes:
+      label: What this tool shows, and what the source says
+    validations: { required: true }

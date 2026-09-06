@@ -1,0 +1,31 @@
+name: Bug report
+description: Something behaved wrongly
+labels: [bug]
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options: ["The web app", "The Python CLI", "Both", "Not sure"]
+    validations: { required: true }
+  - type: input
+    id: place
+    attributes:
+      label: Which place were you looking at
+      description: The town or city, so it can be reproduced against the same data.
+      placeholder: Pushkar, Rajasthan
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected instead
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+  - type: checkboxes
+    id: data
+    attributes:
+      label: Before filing
+      options:
+        - label: I checked whether the underlying data is wrong in OpenStreetMap or Wikivoyage rather than in this tool
