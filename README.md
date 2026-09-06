@@ -15,7 +15,7 @@ useful question:
 pip install tripkit
 tripkit doctor                       # check credentials
 tripkit new Pushkar                  # write a starter spec
-tripkit run pushkar.yaml --deploy    # research, build, publish
+tripkit run pushkar.yaml --deploy    # osm + research + build + publish
 ```
 
 ---
@@ -54,6 +54,65 @@ looks closed, it is listed as closed rather than quietly dropped, because droppi
 someone walk across town to a shutter.
 
 ---
+
+## Where the data comes from, and what that costs
+
+The first version asked an LLM for every field. That is the wrong architecture, and
+measuring it says so plainly. `tripkit osm` pulls OpenStreetMap through Overpass first,
+because name, coordinates and category are facts a free API already holds and a model can
+only approximate.
+
+The measured reality for opening hours, taken live on 2026-09-06 with the exact query in
+`tripkit/osm.py`:
+
+| place | category | with `opening_hours` | |
+|---|---|---|---|
+| Munich | restaurants | 1,924 / 2,249 | **85.5%** |
+| Jaipur | restaurants | 15 / 168 | **8.9%** |
+| Pushkar | all POIs | 9 / 129 | **7.0%** |
+| Ajmer | all POIs | 3 / 104 | **2.9%** |
+
+Global averages by category sit around 23–41% (restaurants 23.2%, museums 29.1%,
+supermarkets 40.9%, from taginfo). The `opening_hours` grammar itself is entirely capable
+of midday closures, seasonal rules and sunset-relative times. The gap is data entry, not
+expressiveness.
+
+So a no-LLM build genuinely works in Munich and collapses in Rajasthan, which is the
+opposite of a detail if you are building for the second case. The split tripkit settles on:
+
+| field | source |
+|---|---|
+| name, coordinates, category, website, phone | OpenStreetMap — free, exact, verifiable |
+| opening hours | OSM where the tag exists, LLM research where it does not |
+| prices, warnings, "is this overrated", "how the scam opens", "its best hour" | LLM only, because no open dataset contains an opinion |
+
+On the Pushkar example this took exact coordinates from **1 place out of 217** to **194 out
+of 408**. The pins stopped being approximate.
+
+**And where both sources have hours, they check each other.** `tripkit verify` compares
+what the model claimed against what OSM says and prints every disagreement. It does not
+pick a winner, because OSM goes stale too. It just refuses to let the two quietly differ.
+When it reports no disagreements it also says why that is weaker evidence than it sounds:
+usually it means few places appear in both sets with hours on both sides.
+
+## Prior art
+
+Checked before publishing, written up in [PRIOR-ART.md](PRIOR-ART.md). The short version:
+plenty of LLM itinerary generators exist, several with the same parallel-agents-to-JSON
+shape, but none found combine agent research, a generated static site, and clock-driven
+ranking against a departure deadline. The most credentialed nearby academic work,
+[ITINERA](https://github.com/YihongT/ITINERA) (EMNLP 2024), does spatial optimisation and
+explicitly does not use current time, opening hours, or a deadline.
+
+Two honest caveats on that claim. First, it rests on a fetch-based scan: two general search
+engines were blocked during the check, so it is "nothing found", not "nothing exists".
+Second, [BestTime.app](https://besttime.app) does rank venues by predicted hourly crowd
+level, which is a different and arguably better axis than open-versus-shut. *Open* and *good
+hour to go* are not the same question, and tripkit currently only answers the first properly.
+
+The dead prior art is the instructive part. Triposo shut down in 2023 and the
+Wikivoyage-offline-guide lineage went stale around 2016–2018. They died of data going
+stale, not of the idea being wrong.
 
 ## Install
 
@@ -159,6 +218,8 @@ departure pressure, the countdown and the deadline filtering all switch off.
 | `tripkit new <name>` | write a starter spec |
 | `tripkit research spec.yaml` | run the research fan-out into `research/*.json` |
 | `tripkit build spec.yaml` | merge the research and render the site |
+| `tripkit osm spec.yaml` | pull OpenStreetMap places into `research/osm.json` |
+| `tripkit verify spec.yaml` | cross-check researched hours against OSM |
 | `tripkit deploy spec.yaml` | push to GitHub Pages |
 | `tripkit run spec.yaml` | all three, `--deploy` to publish |
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse, json, os, subprocess, sys, time
 
-from . import auth as A, llm, merge, search as S, slices as SL
+from . import auth as A, llm, merge, osm as OSM, search as S, slices as SL
 from .render import Site
 from .spec import load, SpecError, DEFAULT_SLICES
 
@@ -174,6 +174,100 @@ def cmd_research(args):
     return 0 if good else 1
 
 
+# ---------------------------------------------------------------- osm
+def cmd_osm(args):
+    """
+    Pull OpenStreetMap first, because it is free, structured and verifiable.
+
+    It will not carry the day on its own. Measured 2026-09-06 with this exact query:
+    Munich restaurants 85.5% have opening_hours, Jaipur restaurants 8.9%. So OSM is
+    the spine for name/coords/category everywhere, good for hours in dense Western
+    cities, thin for hours elsewhere - and, wherever it does have hours, a free
+    mechanical check on whatever the model claimed.
+    """
+    spec = load(args.spec)
+    base = os.path.dirname(os.path.abspath(args.spec))
+    outdir = os.path.join(base, args.research_dir)
+    os.makedirs(outdir, exist_ok=True)
+
+    say(f"\n{C['b']}OpenStreetMap{C['x']}")
+    all_places = []
+    for pl in spec.places:
+        if pl.lat is None or pl.lng is None:
+            warn(f"{pl.name}: no lat/lng in the spec, skipping "
+                 f"(Overpass needs a point to search around)")
+            continue
+        dim(f"querying {pl.name} within {args.radius}m ...")
+        try:
+            els = OSM.fetch(pl.lat, pl.lng, args.radius, log=dim)
+        except RuntimeError as e:
+            bad(f"{pl.name}: {e}"); continue
+        got = OSM.to_places(els, pl.name.lower())
+        cov = OSM.coverage(got)
+        all_places += got
+        (ok if cov["pct"] >= 20 else warn)(
+            f"{pl.name:<14} {cov['total']:>4} places, "
+            f"{cov['with_hours_tag']:>3} carry opening_hours ({cov['pct']}%), "
+            f"{cov['parsed_into_fields']} parsed into usable fields")
+
+    if not all_places:
+        bad("nothing returned. Add lat/lng to your places, or widen --radius."); return 1
+
+    path = os.path.join(outdir, "osm.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(all_places, f, ensure_ascii=False, indent=1)
+    ok(f"{len(all_places)} places -> {args.research_dir}/osm.json")
+
+    cov = OSM.coverage(all_places)
+    if cov["pct"] < 25:
+        dim(f"only {cov['pct']}% carry hours here, so the research slices still have to "
+            f"find most of them. That is expected outside dense Western cities.")
+    say("")
+    return 0
+
+
+# ---------------------------------------------------------------- verify
+def cmd_verify(args):
+    """Cross-check model-claimed hours against OSM's, where both exist."""
+    spec = load(args.spec)
+    base = os.path.dirname(os.path.abspath(args.spec))
+    rdir = os.path.join(base, args.research_dir)
+    op = os.path.join(rdir, "osm.json")
+    if not os.path.exists(op):
+        bad("no osm.json. Run `tripkit osm` first."); return 1
+    with open(op, encoding="utf-8") as f:
+        osm_places = json.load(f)
+
+    llm_places = []
+    for fn in sorted(os.listdir(rdir)):
+        if not fn.endswith(".json") or fn == "osm.json":
+            continue
+        try:
+            with open(os.path.join(rdir, fn), encoding="utf-8") as f:
+                v = json.load(f)
+            if isinstance(v, list):
+                llm_places += [x for x in v if isinstance(x, dict) and x.get("name")]
+        except json.JSONDecodeError:
+            continue
+
+    hits = OSM.crosscheck(llm_places, osm_places)
+    say(f"\n{C['b']}hours cross-check{C['x']}")
+    dim(f"{len(llm_places)} researched entries vs {sum(1 for p in osm_places if p.get('open'))} "
+        f"OSM entries that carry parsed hours")
+    if not hits:
+        ok("no disagreements found")
+        dim("that is weaker evidence than it looks: it mostly means few places appear in "
+            "both sets with hours on both sides.")
+        say(""); return 0
+    for h in hits:
+        warn(f"{h['name']}")
+        dim(f"    researched {h['llm']}   osm {h['osm']}   ({h['osm_raw']})")
+        dim(f"    {h['osm_url']}")
+    say(f"\n  {len(hits)} disagreement(s). Neither side is automatically right - OSM goes "
+        f"stale too - but each of these is worth a human look.\n")
+    return 0
+
+
 # ---------------------------------------------------------------- build
 SHAPE_OF = {n: d.get("shape", "places") for n, d in SL.ALL.items()}
 KEYS = {"move": ("mode", "from", "to"), "say": ("situation", "say"),
@@ -325,6 +419,9 @@ def cmd_deploy(args):
 
 
 def cmd_run(args):
+    if getattr(args, "osm", True):
+        args.radius = getattr(args, "radius", 4000)
+        cmd_osm(args)          # advisory: a failure here must not stop the run
     for fn in (cmd_research, cmd_build):
         rc = fn(args)
         if rc:
@@ -364,6 +461,14 @@ def main(argv=None):
     r.add_argument("--timeout", type=int, default=900)
     r.set_defaults(fn=cmd_research)
 
+    o = sub.add_parser("osm", help="pull places from OpenStreetMap into research/osm.json")
+    common(o); o.add_argument("--radius", type=int, default=4000,
+                              help="metres around each place's lat/lng (default 4000)")
+    o.set_defaults(fn=cmd_osm)
+
+    v = sub.add_parser("verify", help="cross-check researched hours against OpenStreetMap")
+    common(v); v.set_defaults(fn=cmd_verify)
+
     b = sub.add_parser("build", help="merge research and render the site")
     common(b); b.set_defaults(fn=cmd_build)
 
@@ -382,6 +487,9 @@ def main(argv=None):
     u.add_argument("--per-query", type=int, default=8)
     u.add_argument("--timeout", type=int, default=900)
     u.add_argument("--deploy", action="store_true")
+    u.add_argument("--radius", type=int, default=4000)
+    u.add_argument("--no-osm", dest="osm", action="store_false", default=True,
+                   help="skip the OpenStreetMap pass")
     u.add_argument("--repo", default=None); u.add_argument("--message", default="update trip site")
     u.add_argument("--public", action="store_true", default=True)
     u.add_argument("--private", dest="public", action="store_false")
