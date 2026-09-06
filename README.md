@@ -178,7 +178,12 @@ git config core.hooksPath .githooks  # blocks pushing as the wrong GitHub accoun
 | `tests/test_spec.py` | spec loading, and that every bad input fails with a message rather than a traceback |
 | `tests/test_osm.py` | the Overpass query, `opening_hours` parsing, and the cross-check |
 | `tests/test_smoke.py` | builds a real site and inspects the output, plus house style |
-| `tests/test_live.py` | the real services. Opt in with `TRIPKIT_LIVE=1`, deliberately not in CI, so 5 more |
+| `tests/browser.js` | loads the real page in a real browser, searches, builds a guide and uses it |
+| `tests/test_live.py` | the real services. Opt in with `TRIPKIT_LIVE=1`, deliberately not in CI |
+
+The browser suite is the one that matters most. The app shipped completely dead twice in a
+single day while every asset returned 200, every file parsed, and every other test passed.
+Nothing was loading the page assembled, so nothing noticed.
 
 The JS runner concatenates the shipped browser scripts the way a page loads them, so the
 tests exercise the real files rather than a copy. Two of those tests exist because the thing

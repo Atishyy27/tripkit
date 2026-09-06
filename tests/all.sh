@@ -16,6 +16,9 @@ for f in docs/*.js templates/assets/*.js; do node --check "$f"; done
 python3 -m compileall -q tripkit
 echo "  all scripts parse"
 
+blue "browser"
+node tests/browser.js
+
 if [ "${TRIPKIT_LIVE:-}" = "1" ]; then
   blue "live services (opt in)"
   python3 -m pytest tests/test_live.py -q

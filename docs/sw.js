@@ -17,11 +17,21 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
   if (u.origin !== location.origin) return;          // never cache other people's APIs
+
+  // Network first, cache as the fallback. The other way round is faster and it is
+  // how this app shipped a broken build to anyone who had already opened it: they
+  // kept getting the cached shell and no amount of fixing reached them. Offline
+  // still works, because the cache answers the moment the network does not.
   e.respondWith(
     fetch(e.request).then(r => {
-      const copy = r.clone();
-      caches.open(V).then(c => c.put(e.request, copy));
+      if (r && r.ok) {
+        const copy = r.clone();
+        caches.open(V).then(c => c.put(e.request, copy));
+      }
       return r;
     }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
   );
 });
+
+// Let the page ask for an immediate takeover after an update.
+self.addEventListener("message", e => { if (e.data === "skipWaiting") self.skipWaiting(); });

@@ -9,3 +9,5 @@ venv/
 /examples/site/
 /demo/
 /docs/e2e-out/
+node_modules/
+package-lock.json

@@ -464,5 +464,25 @@ window.addEventListener("DOMContentLoaded", () => {
     $("#resumeName").textContent = saved.place.name;
     $("#resumeBtn").onclick = () => open(saved);
   }
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").then(reg => {
+      // A user who opened a broken build should not be stuck with it. When a new
+      // worker is waiting, take it and reload once, guarded so this can never loop.
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener("statechange", () => {
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            try {
+              if (sessionStorage.getItem("tk_reloaded")) return;
+              sessionStorage.setItem("tk_reloaded", "1");
+            } catch (e) { return; }
+            sw.postMessage("skipWaiting");
+            location.reload();
+          }
+        });
+      });
+      reg.update();
+    }).catch(() => {});
+  }
 });

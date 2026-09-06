@@ -1,0 +1,11 @@
+{
+  "name": "tripkit-web",
+  "private": true,
+  "description": "Test tooling for the tripkit web app. The app itself has no build step and no runtime dependencies.",
+  "scripts": {
+    "test": "node tests/js/run.js",
+    "test:browser": "node tests/browser.js",
+    "test:live": "node docs/e2e.js"
+  },
+  "devDependencies": { "playwright": "^1.49.0" }
+}

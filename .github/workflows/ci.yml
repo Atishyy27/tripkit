@@ -54,6 +54,21 @@ jobs:
           done
           echo "$(ls examples/site/*.html | wc -l) pages, all non-trivial"
 
+  browser:
+    name: the real page in a real browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm i -D playwright --no-save
+      - run: npx playwright install --with-deps chromium
+      - name: load the page, search, build a guide, use it
+        run: node tests/browser.js
+        # This job exists because the app shipped completely dead twice in one day
+        # while every asset returned 200 and every other job was green. Nothing was
+        # loading the page assembled.
+
   syntax:
     name: syntax and house style
     runs-on: ubuntu-latest
