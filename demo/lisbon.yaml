@@ -1,0 +1,26 @@
+trip:
+  title: "Two days in Lisbon"
+  country: Portugal
+  places:
+    - name: Lisbon
+      role: destination
+      lat: 38.7223
+      lng: -9.1393
+  arrive: 2026-10-02T09:00
+  depart: 2026-10-04T17:00
+  timezone: Europe/Lisbon
+  tz_offset_minutes: 60
+  currency: EUR
+  currency_symbol: "€"
+  profile: [first-time, walking]
+  languages: [Portuguese]
+  interests: [viewpoints, pastries, trams]
+
+research:
+  slices: [sights, food, conditions]
+  parallel: 3
+  model: sonnet
+
+site:
+  out: site
+  favicon: "🚋"

@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b12">
+<title>Money — Two days in Lisbon</title><meta name="description" content="What the day costs.">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚋</text></svg>">
+</head><body>
+<div class="hero"><div class="wrap"><h1>Money.</h1><p class="lead">Every price in the dataset, and a calculator for the day. 754 of 754 places cost nothing to visit, which is usually the more useful number.</p></div></div>
+<div class="wrap">
+
+<div class="card"><h3>Today, priced</h3>
+<div style="display:grid;grid-template-columns:1fr auto;gap:9px 12px;align-items:center;margin-top:10px">
+  <label class="sub">Transport</label>
+  <select id="a"><option value="200">Public / shared</option><option value="700" selected>Mix of both</option><option value="1800">Cabs all day</option></select>
+  <label class="sub">Food</label>
+  <select id="b"><option value="200">Street only</option><option value="700" selected>Street plus one sit-down</option><option value="1600">Restaurants</option></select>
+  <label class="sub">Entries, tickets and tips</label>
+  <select id="c"><option value="0" selected>Only the free things</option><option value="400">A few paid entries</option><option value="1200">Everything ticketed</option></select>
+  <label class="sub">Activities</label>
+  <select id="d"><option value="0" selected>None</option><option value="700">One</option><option value="2000">Two or more</option></select>
+  <label class="sub">Shopping</label>
+  <span><input type="range" id="e" min="0" max="8000" step="250" value="0" style="width:120px;accent-color:var(--hot)"> <span class="tiny" id="ev">€0</span></span>
+</div><hr style="margin:14px 0">
+<div style="display:flex;justify-content:space-between;align-items:flex-end">
+ <div><div class="tiny">plus a €500 buffer</div><b>Day total</b></div>
+ <div style="font-size:30px;font-weight:800;color:var(--cool);letter-spacing:-1px" id="tot">€0</div>
+</div></div>
+<h2><span class="n">01</span> Every price we found</h2>
+<p class="sub">Sorted cheapest first. These are the anchors: if a quote is more than double
+the number here, it is a price invented for you.</p>
+<div class="scroll"><table><tr><th>Thing</th><th>€</th><th></th></tr></table></div>
+</div>
+<script src="assets/data.js"></script><script src="assets/core.js"></script>
+<script>
+const ids=["a","b","c","d","e"];
+function calc(){const v=ids.map(i=>+document.getElementById(i).value);
+ document.getElementById("ev").textContent=inr(v[4]);
+ document.getElementById("tot").textContent=inr(v.reduce((x,y)=>x+y,0)+500);}
+ids.forEach(i=>document.getElementById(i).addEventListener("input",calc));
+document.querySelectorAll("select").forEach(s=>s.style.cssText=
+ "background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px;font-family:inherit;font-size:12.5px");
+calc();
+</script>
+<script>mountChrome("money.html");</script>
+</body></html>

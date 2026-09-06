@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b12">
+<title>Open now — Two days in Lisbon</title><meta name="description" content="Everything sorted by whether it is open this minute.">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚋</text></svg>">
+</head><body>
+<div class="hero"><div class="wrap"><h1>What is open.</h1><p class="lead">Everything, sorted by whether its doors are open at this exact minute. Sorted rather than filtered, so you can also see what is shut and when it comes back.</p></div></div>
+<div class="wrap">
+<div class="chips" id="f">
+  <button class="chip" data-s="open" aria-pressed="true">Open now</button>
+  <button class="chip" data-s="soon" aria-pressed="false">Opening soon</button>
+  <button class="chip" data-s="shut" aria-pressed="false">Shut</button>
+  <button class="chip" data-s="unknown" aria-pressed="false">Hours unknown</button>
+  <button class="chip" data-s="all" aria-pressed="false">Everything</button>
+</div><div class="grid2" id="stats"></div><div id="list"></div></div>
+<script src="assets/data.js"></script><script src="assets/core.js"></script>
+<script>
+function go(){
+  const t=localMins();
+  const s=(document.querySelector("#f .chip[aria-pressed=true]")||{dataset:{s:"open"}}).dataset.s;
+  const all=DATA.places.map(p=>({p,st:openState(p,t)}));
+  const c={open:0,closing:0,soon:0,shut:0,unknown:0}; all.forEach(x=>c[x.st.state]++);
+  document.getElementById("stats").innerHTML=
+   '<div class="stat"><div class="v">'+(c.open+c.closing)+'</div><div class="k">open now</div></div>'+
+   '<div class="stat"><div class="v">'+c.shut+'</div><div class="k">shut</div></div>'+
+   '<div class="stat"><div class="v">'+c.soon+'</div><div class="k">opening within 75 min</div></div>'+
+   '<div class="stat"><div class="v">'+c.unknown+'</div><div class="k">hours never found</div></div>';
+  let f=all;
+  if(s==="open") f=all.filter(x=>x.st.state==="open"||x.st.state==="closing");
+  else if(s!=="all") f=all.filter(x=>x.st.state===s);
+  f.sort((a,b)=>a.p.name.localeCompare(b.p.name));
+  document.getElementById("list").innerHTML=f.length?f.map(x=>placeCard(x)).join("")
+    :'<div class="empty">Nothing in this bucket right now.</div>';
+}
+document.querySelectorAll("#f .chip").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#f .chip").forEach(x=>x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true");go();});
+go(); setInterval(go,60000);
+</script>
+<script>mountChrome("open.html");</script>
+</body></html>

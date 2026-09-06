@@ -130,7 +130,9 @@ class Site:
         if d.get("help"):
             self.pages.append(("help.html", "🆘", "Help"))
 
-        payload = dict(d)
+        payload = {"places": [], "move": [], "say": [], "help": [],
+                   "scams": [], "buy": [], "conditions": {}}
+        payload.update(d)
         payload["config"] = self.config()
         payload["built"] = dt.datetime.now().strftime("%d %b %Y, %H:%M")
         with open(os.path.join(self.out, "assets", "data.js"), "w", encoding="utf-8") as f:

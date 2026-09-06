@@ -1,8 +1,10 @@
 let fails = 0;
 const ok = (cond, msg) => { if(!cond){ fails++; console.log("   FAIL " + msg); } };
 
-console.log("phases derived from sunrise " + (DATA.conditions.sunrise) +
-            " / sunset " + (DATA.conditions.sunset) + ":");
+ok(DATA.conditions !== undefined, "DATA.conditions key missing entirely from the build");
+const _c = DATA.conditions || {};
+console.log("phases derived from sunrise " + (_c.sunrise || HM(SUNRISE) + " (default)") +
+            " / sunset " + (_c.sunset || HM(SUNSET) + " (default)") + ":");
 PHASES.forEach(p => console.log("   " + HM(p.from) + " - " + HM(p.to) + "  " + p.name));
 
 // phases must tile the day with no gap and no overlap
@@ -38,10 +40,17 @@ if(DATA.places && DATA.places.length){
     }
   });
 }
-// overnight venues must still be open at 01:00 if they say they are
-DATA.places.filter(p=>p.open&&p.close&&M(p.close)<=M(p.open)).forEach(p=>{
-  ok(openState(p, M("01:00")).state !== "shut",
-     p.name + " closes " + p.close + " but reports shut at 01:00");
-});
+// A genuinely overnight venue (closes strictly after midnight, e.g. 02:00) must be
+// open shortly BEFORE its closing time. Two things are deliberately excluded:
+//   close == "00:00"  -> that is midnight as end-of-day, not an overnight venue
+//   the exact closing minute -> a place shutting at 01:00 is shut AT 01:00
+DATA.places.filter(p => p.open && p.close && M(p.close) > 0 && M(p.close) <= M(p.open))
+  .forEach(p => {
+    const probe = M(p.close) - 30;
+    if(probe < 0) return;
+    ok(openState(p, probe).state !== "shut",
+       p.name + " (" + p.open + "-" + p.close + ") reports shut at " + HM(probe) +
+       ", 30 min before its own closing time");
+  });
 console.log(fails ? "\n" + fails + " ASSERTION(S) FAILED" : "\nall assertions passed");
 if(fails) process.exit(1);
