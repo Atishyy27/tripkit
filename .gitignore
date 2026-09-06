@@ -7,3 +7,5 @@ dist/
 venv/
 .DS_Store
 /examples/site/
+/demo/
+/docs/e2e-out/
