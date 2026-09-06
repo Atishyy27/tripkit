@@ -1,0 +1,2 @@
+recursive-include templates *
+include LICENSE README.md

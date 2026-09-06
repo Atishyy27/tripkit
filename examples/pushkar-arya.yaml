@@ -1,0 +1,36 @@
+# The trip this tool was extracted from: one day in Pushkar, off an overnight bus.
+trip:
+  title: "Pushkar in one day"
+  traveller: Arya
+  country: India
+  places:
+    - name: Pushkar
+      role: destination
+      lat: 26.4869
+      lng: 74.5511
+    - name: Ajmer
+      role: hub
+      lat: 26.4562
+      lng: 74.6280
+  hub: Ajmer
+  arrive: 2026-09-06T06:00
+  depart: 2026-09-06T19:00
+  hub_to_dest_minutes: 35
+  exit_buffer_minutes: 75
+  timezone: Asia/Kolkata
+  tz_offset_minutes: 330
+  currency: INR
+  currency_symbol: "₹"
+  profile: [solo, female, backpacker]
+  languages: [Hindi, Marwari]
+  interests: [temples, ghats, street food, photography]
+
+research:
+  slices: [sights, food, transport, safety, shopping, experiences, offbeat, phrases, conditions, help]
+  parallel: 10
+  model: sonnet
+
+site:
+  out: site
+  favicon: "🐪"
+  repo: Atishyy27/pushkar-day

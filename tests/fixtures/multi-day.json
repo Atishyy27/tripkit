@@ -1,0 +1,4 @@
+{"config":{"arrive":"09:00","depart":"17:00","dest":"lisbon","hub":"lisbon","multiDay":true,
+"tzOffsetMinutes":60,"tzLabel":"WEST","currencySymbol":"€"},
+"conditions":{"sunrise":"07:35","sunset":"19:20","heatWindow":["14:00","16:00"]},
+"places":[{"name":"Miradouro","cat":"view","town":"lisbon","open":"00:00","close":"23:59","lo":0,"hi":0,"dur":40,"best":["19:00"],"tags":["outdoor","sunset","view"]}]}

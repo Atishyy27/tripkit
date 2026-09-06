@@ -1,0 +1,594 @@
+[
+  {
+    "situation": "Priest at the ghat catches your hand and presses flower petals into it, starting an unrequested puja",
+    "say": "मुझे अभी पूजा नहीं करनी, माफ़ कीजिए।",
+    "roman": "Mujhe abhi puja nahi karni, maaf kijiye.",
+    "means": "I don't want to do puja right now, sorry.",
+    "why": "Stated as your own decision, not a question - a question like 'kya main karu?' invites him to keep persuading, a flat statement doesn't.",
+    "cat": "scam"
+  },
+  {
+    "situation": "He keeps pushing flowers into your hand and won't let go, still in the polite phase",
+    "say": "हाथ छोड़िए, मुझे नहीं करनी पूजा।",
+    "roman": "Haath chhodiye, mujhe nahi karni puja.",
+    "means": "Let go of my hand, I don't want to do the puja.",
+    "why": "Names the actual physical act - haath chhodiye, let go of my hand - so he has to respond to the touch itself, which is the real violation, not just the refusal.",
+    "cat": "scam"
+  },
+  {
+    "situation": "He still won't let go or stop after the polite refusal - moving firmer",
+    "say": "मैंने मना कर दिया है, अब हाथ छोड़िए वरना मैं शोर मचाऊँगी।",
+    "roman": "Maine mana kar diya hai, ab haath chhodiye warna main shor machaungi.",
+    "means": "I have already refused, let go now or I will start shouting.",
+    "why": "States the refusal as an already-completed fact, removing his opening to keep asking, and names the consequence before doing it, which alone often ends it.",
+    "cat": "exit"
+  },
+  {
+    "situation": "Signalling you are Indian and already know the ghat routine, so the price and pressure drop instantly",
+    "say": "मैं यहीं की हूँ, ये सब पता है मुझे, रेट मत बढ़ाइए।",
+    "roman": "Main yahin ki hoon, ye sab pata hai mujhe, rate mat badhaiye.",
+    "means": "I'm from here, I already know all this, don't inflate the rate.",
+    "why": "This exact combination - yahin ki hoon plus ye sab pata hai - is the line that flips you from tourist-tariff to local-tariff, because it tells him the foreigner script won't work on you.",
+    "cat": "scam"
+  },
+  {
+    "situation": "Priest demands money after a puja you never actually agreed to",
+    "say": "मैंने पूजा करने के लिए हाँ नहीं कहा था, मैं पैसे नहीं दूँगी।",
+    "roman": "Maine puja karne ke liye haan nahi kaha tha, main paise nahi doongi.",
+    "means": "I never said yes to this puja, I will not pay.",
+    "why": "Argues from consent, not price - the whole scam depends on treating an unrequested act as a billable service, so refusing on consent grounds closes the argument instead of opening a haggle.",
+    "cat": "scam"
+  },
+  {
+    "situation": "A red thread (mauli) has already been tied on your wrist and a donation is being asked per family member",
+    "say": "ये धागा मैंने बंधवाने को नहीं कहा था, मैं सिर्फ़ इतना ही दूँगी।",
+    "roman": "Ye dhaaga maine bandhwane ko nahi kaha tha, main sirf itna hi doongi.",
+    "means": "I didn't ask for this thread to be tied, I'll only give this much.",
+    "why": "Names your own ceiling before he can multiply it by counting family members - stopping the per-head math is easier than arguing against it once it starts.",
+    "cat": "scam"
+  },
+  {
+    "situation": "He insists on separate donation amounts per family member you mention or he counts",
+    "say": "परिवार के नाम पर अलग-अलग पैसे नहीं चलेंगे, एक ही दान है।",
+    "roman": "Parivar ke naam par alag-alag paise nahi chalenge, ek hi daan hai.",
+    "means": "Separate money per family member won't work, there is only one donation.",
+    "why": "Names the mechanism itself - per-person counting - instead of just repeating no; saying what the trick is often makes someone drop it because they know you've clocked it.",
+    "cat": "scam"
+  },
+  {
+    "situation": "He threatens that removing the red thread is bad luck, to pressure more money",
+    "say": "धागा अपनी जगह रहेगा, पैसे इतने ही मिलेंगे।",
+    "roman": "Dhaaga apni jagah rahega, paise itne hi milenge.",
+    "means": "The thread stays where it is, the money will only be this much.",
+    "why": "Decouples the two things he's bundling - you keep the thread he was using as leverage while refusing more money, which takes the point out of the bad-luck threat.",
+    "cat": "scam"
+  },
+  {
+    "situation": "Auto driver quotes an obviously tripled fare for a short distance",
+    "say": "इतना ज़्यादा नहीं चलता यहाँ, सही रेट बताइए।",
+    "roman": "Itna zyada nahi chalta yahan, sahi rate bataiye.",
+    "means": "It doesn't cost this much here, tell me the correct rate.",
+    "why": "Signals local knowledge without naming a number first - whoever states a number first anchors the negotiation, so make him move first.",
+    "cat": "price"
+  },
+  {
+    "situation": "Making your counter-offer after his inflated quote",
+    "say": "मैं तीस रुपए दूँगी, चलना है तो बताइए।",
+    "roman": "Main tees rupaye doongi, chalna hai to bataiye.",
+    "means": "I will give thirty rupees, tell me if you want to go.",
+    "why": "Framed as a final number with a yes/no attached, not an opening bid he can negotiate up from - this avoids the back-and-forth that usually lands in his favour.",
+    "cat": "price"
+  },
+  {
+    "situation": "Walking away when the driver won't come down to a fair price",
+    "say": "ठीक है, कोई और मिल जाएगा।",
+    "roman": "Theek hai, koi aur mil jaayega.",
+    "means": "Fine, I'll find someone else.",
+    "why": "Only works said while actually turning to walk - the line just narrates the leverage, which is removing his sense that you need this exact auto right now.",
+    "cat": "price"
+  },
+  {
+    "situation": "Agreeing the total fare for a camel ride, before mounting",
+    "say": "पूरे राइड का कुल कितना होगा, अभी बता दीजिए।",
+    "roman": "Poore ride ka kul kitna hoga, abhi bata dijiye.",
+    "means": "Tell me right now what the total for the whole ride will be.",
+    "why": "Asking for the kul (grand total) blocks the common move of quoting per-person or per-leg and adding waiting or return charges once you're already mounted and can't easily get off.",
+    "cat": "price"
+  },
+  {
+    "situation": "Agreeing the duration of the camel ride, before mounting",
+    "say": "कितनी देर की सवारी है ये, टाइम बता दीजिए।",
+    "roman": "Kitni der ki sawaari hai ye, time bata dijiye.",
+    "means": "How long is this ride, tell me the time.",
+    "why": "Price and duration are sold together verbally but drift apart in practice - asking duration as its own question stops a promised half hour quietly becoming ten minutes.",
+    "cat": "price"
+  },
+  {
+    "situation": "Agreeing headcount for the camel ride before mounting, so a child or extra person isn't billed separately later",
+    "say": "हम कुल कितने लोग बैठेंगे, इसी रेट में सब आएँगे?",
+    "roman": "Hum kul kitne log baithenge, isi rate mein sab aayenge?",
+    "means": "How many of us total will sit, will everyone be included in this same rate?",
+    "why": "Forces the per-head clause into the open before mounting - it's usually announced only at the end of the ride, when you have no bargaining position left.",
+    "cat": "price"
+  },
+  {
+    "situation": "Closing the camel-ride price conversation before mounting, so nothing changes mid-ride",
+    "say": "पहले तय कर लेते हैं, बाद में कोई एक्स्ट्रा पैसे नहीं दूँगी।",
+    "roman": "Pehle tay kar lete hain, baad mein koi extra paise nahi doongi.",
+    "means": "Let's fix it now, I won't pay anything extra later.",
+    "why": "Said before mounting, while you still have full ability to walk away - the same sentence mid-ride carries no force because you're now on the animal in open desert.",
+    "cat": "price"
+  },
+  {
+    "situation": "An unsolicited 'guide' attaches himself and starts walking alongside you",
+    "say": "मुझे गाइड नहीं चाहिए, आप जाइए।",
+    "roman": "Mujhe guide nahi chahiye, aap jaiye.",
+    "means": "I don't need a guide, please go.",
+    "why": "Aap jaiye is a direct instruction to leave, not just a statement of preference - a statement alone he can pretend not to have heard as a no.",
+    "cat": "exit"
+  },
+  {
+    "situation": "The guide keeps following after already being told no once",
+    "say": "मैंने बोल दिया न, मुझे साथ नहीं चाहिए, पीछा मत कीजिए।",
+    "roman": "Maine bol diya na, mujhe saath nahi chahiye, peecha mat kijiye.",
+    "means": "I already told you, I don't want company, stop following me.",
+    "why": "Names the specific act - peecha mat kijiye, don't follow - which is harder to shrug off than repeating a general no.",
+    "cat": "exit"
+  },
+  {
+    "situation": "A guide claims a guide or permission is required to enter a temple or ghat area, which usually isn't true",
+    "say": "यहाँ जाने के लिए गाइड ज़रूरी नहीं है, मुझे पता है।",
+    "roman": "Yahan jaane ke liye guide zaroori nahi hai, mujhe pata hai.",
+    "means": "A guide isn't required to go here, I already know that.",
+    "why": "Contradicts the false claim directly instead of just declining the offer, which stops him repeating the same line to the next person while you're still standing there.",
+    "cat": "scam"
+  },
+  {
+    "situation": "Shopkeeper opens at roughly three times the real price",
+    "say": "इतना नहीं, आधे से भी कम में बताइए।",
+    "roman": "Itna nahi, aadhe se bhi kam mein bataiye.",
+    "means": "Not this much, quote less than half.",
+    "why": "Anchors below half immediately instead of nibbling down from his number - the standard opening move against an opening bid that's already three times real value.",
+    "cat": "price"
+  },
+  {
+    "situation": "Mid-bargain, shopkeeper has come down a little but not enough",
+    "say": "थोड़ा और कम कीजिए, तभी लूँगी।",
+    "roman": "Thoda aur kam kijiye, tabhi loongi.",
+    "means": "Bring it down a bit more, only then will I take it.",
+    "why": "Tabhi loongi ties the price drop directly to the sale happening, making the discount feel like it earns him the deal rather than something given away for nothing.",
+    "cat": "price"
+  },
+  {
+    "situation": "Shopkeeper claims the current price is already final",
+    "say": "ये फाइनल नहीं है, यहाँ का असली रेट मुझे पता है।",
+    "roman": "Ye final nahi hai, yahan ka asli rate mujhe pata hai.",
+    "means": "This isn't final, I know the real local rate here.",
+    "why": "Asli rate pata hai is the single phrase that tells him you're not guessing - the exact line that changes how he negotiates from that point.",
+    "cat": "price"
+  },
+  {
+    "situation": "Final step in the bargaining ladder - walking away to force a real price drop",
+    "say": "रहने दीजिए, इतने में नहीं लूँगी।",
+    "roman": "Rehne dijiye, itne mein nahi loongi.",
+    "means": "Leave it, I won't take it at this price.",
+    "why": "Said while turning away, not as another bid - it changes the question from how low will you go to do you want this sale at all, which is what actually moves a stuck price.",
+    "cat": "price"
+  },
+  {
+    "situation": "Confirming the agreed price out loud before handing over money",
+    "say": "तो पक्का इतने में हुआ, है ना?",
+    "roman": "To pakka itne mein hua, hai na?",
+    "means": "So it's confirmed at this price, right?",
+    "why": "Said in front of shop staff or other customers nearby, a verbal confirmation on record makes a last-second price bump much harder to pull once money is out.",
+    "cat": "price"
+  },
+  {
+    "situation": "Checking whether a lassi, cookie or sweet has bhang in it before eating or drinking",
+    "say": "इसमें भांग तो नहीं है ना? मुझे नहीं चाहिए।",
+    "roman": "Isme bhaang to nahi hai na? Mujhe nahi chahiye.",
+    "means": "This doesn't have bhang in it, does it? I don't want it.",
+    "why": "Phrased as a negative confirmation rather than an open question - an open 'kya isme kuch hai' can get a vague non-answer, this form is harder to dodge.",
+    "cat": "food"
+  },
+  {
+    "situation": "Explicitly asking for the plain, non-bhang version at a shop that sells both openly",
+    "say": "सादी लस्सी दीजिए, भांग वाली नहीं।",
+    "roman": "Saadi lassi dijiye, bhaang waali nahi.",
+    "means": "Give me the plain lassi, not the bhang one.",
+    "why": "Names both options the way these shops actually menu them - many sell both side by side, so asking for the plain one by its own name gets a straight answer instead of relying on him to volunteer it.",
+    "cat": "food"
+  },
+  {
+    "situation": "Checking a sweet or cookie at a stall known to sell bhang-laced items",
+    "say": "क्या इसमें भांग मिली हुई है? साफ़-साफ़ बताइए।",
+    "roman": "Kya isme bhaang mili hui hai? Saaf-saaf bataiye.",
+    "means": "Is bhang mixed into this? Tell me clearly.",
+    "why": "Saaf-saaf bataiye (tell me clearly) preempts the vague half-answer that lets a seller technically avoid lying without actually telling you.",
+    "cat": "food"
+  },
+  {
+    "situation": "Ordering food and asking for no onion, no garlic",
+    "say": "प्याज़-लहसुन बिल्कुल मत डालिए, बिना प्याज़-लहसुन का बनाइए।",
+    "roman": "Pyaaz-lehsun bilkul mat daaliye, bina pyaaz-lehsun ka banaiye.",
+    "means": "Don't put onion-garlic at all, make it without onion-garlic.",
+    "why": "Repeats the request as both a prohibition and a cooking instruction - a single 'no onion garlic' is often heard as a preference and skipped under rush, restating it as how to cook it is taken more seriously.",
+    "cat": "food"
+  },
+  {
+    "situation": "Asking for less oil in the food",
+    "say": "तेल बहुत कम डालिएगा, हल्का बनाइए।",
+    "roman": "Tel bahut kam daaliyega, halka banaiye.",
+    "means": "Put very little oil, make it light.",
+    "why": "Halka (light) is the actual word cooks use for low-oil food - it lands as a firmer instruction than a literal 'kam tel', which some cooks read as only a mild suggestion.",
+    "cat": "food"
+  },
+  {
+    "situation": "Asking for less spicy food",
+    "say": "मिर्च कम रखिए, बहुत तीखा मत बनाइए।",
+    "roman": "Mirch kam rakhiye, bahut teekha mat banaiye.",
+    "means": "Keep the chili low, don't make it very spicy.",
+    "why": "Names both the ingredient (mirch) and the end quality (teekha) - a cook who hears only 'kam masala' may still load chili, since masala and mirch aren't the same axis in Rajasthani cooking.",
+    "cat": "food"
+  },
+  {
+    "situation": "Asking specifically for Jain food, which excludes root vegetables entirely",
+    "say": "जैन खाना चाहिए, प्याज़-लहसुन और आलू भी नहीं।",
+    "roman": "Jain khaana chahiye, pyaaz-lehsun aur aalu bhi nahi.",
+    "means": "I need Jain food, no onion-garlic and no potato either.",
+    "why": "Naming Jain khaana invokes a whole recognized category most Rajasthani cooks already know, instead of you listing every excluded vegetable yourself.",
+    "cat": "food"
+  },
+  {
+    "situation": "Asking a shop or hotel to hold your luggage for the day",
+    "say": "क्या आप मेरा सामान थोड़ी देर के लिए रख सकते हैं?",
+    "roman": "Kya aap mera saamaan thodi der ke liye rakh sakte hain?",
+    "means": "Can you keep my luggage for a little while?",
+    "why": "Phrased as a favour-sized request rather than a formal cloakroom ask, which matches how small Pushkar shops actually hold bags informally for customers.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking what it costs to have luggage held, before handing it over",
+    "say": "इसके लिए पैसे लगेंगे क्या?",
+    "roman": "Iske liye paise lagenge kya?",
+    "means": "Will there be a charge for this?",
+    "why": "Asked before the bag goes behind his counter, not after - once it's already there you have no position to dispute whatever price he names at pickup.",
+    "cat": "price"
+  },
+  {
+    "situation": "Asking to use a bathroom inside a shop or restaurant",
+    "say": "क्या यहाँ वॉशरूम है? इस्तेमाल कर सकती हूँ?",
+    "roman": "Kya yahan washroom hai? Istemaal kar sakti hoon?",
+    "means": "Is there a washroom here? Can I use it?",
+    "why": "The two-part ask gets past shops that don't advertise a washroom but will still let a customer use one if asked directly and politely.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for the nearest public toilet on the street",
+    "say": "आस-पास कोई सुलभ शौचालय है क्या?",
+    "roman": "Aas-paas koi sulabh shauchalay hai kya?",
+    "means": "Is there a Sulabh toilet nearby?",
+    "why": "Sulabh Shauchalay is the actual name of India's public-toilet chain, so naming it gets a precise direction instead of a vague wave toward general facilities.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for directions in an unfamiliar market, deliberately choosing to ask a woman",
+    "say": "बहनजी, ज़रा रास्ता बता दीजिए, ...(जगह) कैसे जाऊँ?",
+    "roman": "Behanji, zara raasta bata dijiye, ...(jagah) kaise jaaun?",
+    "means": "Sister, please tell me the way, how do I get to ...(place)?",
+    "why": "Opening with behanji, a respectful address used specifically for women, both signals who you're speaking to and defaults you to asking a woman or a family group first, the safer choice in an unfamiliar market.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking a woman specifically for help when you feel unsafe or think someone is following you",
+    "say": "दीदी, मुझे थोड़ी मदद चाहिए, कोई पीछे आ रहा है।",
+    "roman": "Didi, mujhe thodi madad chahiye, koi peeche aa raha hai.",
+    "means": "Sister, I need a little help, someone is following me.",
+    "why": "Didi plus the exact problem in one breath gets a woman bystander to act fast, since specificity is what turns a stranger into actual help rather than sympathy.",
+    "cat": "help"
+  },
+  {
+    "situation": "Someone won't leave you alone - step one, staying polite",
+    "say": "माफ़ कीजिए, मुझे अकेले रहना है, आप जाइए।",
+    "roman": "Maaf kijiye, mujhe akele rehna hai, aap jaiye.",
+    "means": "Excuse me, I want to be alone, please go.",
+    "why": "Stays polite and low-key on purpose - most people back off here, and starting loud burns the escalation you may need for someone who doesn't.",
+    "cat": "exit"
+  },
+  {
+    "situation": "Same person still won't leave - step two, dropping politeness",
+    "say": "मैंने कहा न, दूर हटिए, मुझे परेशान मत कीजिए।",
+    "roman": "Maine kaha na, door hatiye, mujhe pareshaan mat kijiye.",
+    "means": "I already said, move away, stop bothering me.",
+    "why": "Drops softening words and names the behaviour directly as harassment - the register change itself signals to onlookers that this has gone past a normal exchange.",
+    "cat": "exit"
+  },
+  {
+    "situation": "Still not leaving - step three, loud and aimed at drawing bystanders",
+    "say": "ये आदमी मुझे तंग कर रहा है, कोई मदद करो!",
+    "roman": "Ye aadmi mujhe tang kar raha hai, koi madad karo!",
+    "means": "This man is harassing me, someone help!",
+    "why": "Built to work in an Indian public space specifically - bystanders are the actual safety mechanism, not response time, so this line's job is to recruit the crowd, not just express distress.",
+    "cat": "exit"
+  },
+  {
+    "situation": "Pointing him out directly to pull a shopkeeper or crowd's attention onto him",
+    "say": "ये देखिए, ये मुझे परेशान कर रहा है!",
+    "roman": "Ye dekhiye, ye mujhe pareshaan kar raha hai!",
+    "means": "Look at this, he is harassing me!",
+    "why": "Ye dekhiye is an instruction to actually turn and look, converting nearby people from passive listeners into witnesses, which is what changes his behaviour.",
+    "cat": "exit"
+  },
+  {
+    "situation": "Asking where the bus to Ajmer leaves from",
+    "say": "अजमेर की बस कहाँ से मिलेगी?",
+    "roman": "Ajmer ki bus kahan se milegi?",
+    "means": "From where will I get the bus to Ajmer?",
+    "why": "Pushkar-Ajmer buses and shared jeeps leave from a specific stand, not a general stop - asking where you'll get it, not where the bus stop is, gets you pointed at the actual departure point.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Asking when the last bus to Ajmer leaves",
+    "say": "आखिरी बस कितने बजे है अजमेर की?",
+    "roman": "Aakhri bus kitne baje hai Ajmer ki?",
+    "means": "What time is the last bus to Ajmer?",
+    "why": "Asking for the aakhri bus (last bus) specifically gets the one number that actually matters for a same-day return, instead of a full schedule you then have to parse yourself.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Asking how long the road journey to Ajmer takes",
+    "say": "अजमेर पहुँचने में कितना टाइम लगेगा?",
+    "roman": "Ajmer pahunchne mein kitna time lagega?",
+    "means": "How much time will it take to reach Ajmer?",
+    "why": "The road distance itself is short, but shared transport often waits to fill up before leaving - asking travel time separately from departure time catches that gap.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Confirming a hired driver or auto will wait at Ajmer while you visit the dargah",
+    "say": "आप यहीं रुकेंगे न, मैं दर्शन करके आती हूँ।",
+    "roman": "Aap yahin rukenge na, main darshan karke aati hoon.",
+    "means": "You'll wait right here, won't you, I'll come back after visiting.",
+    "why": "Phrased as confirming an assumed fact rather than asking permission - it's harder for a driver to quietly leave once he's verbally agreed to a stated plan than to a vague request.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Fixing the waiting charge for a driver's wait time, before he agrees to wait",
+    "say": "इंतज़ार का अलग से कितना लगेगा, अभी बता दीजिए।",
+    "roman": "Intezaar ka alag se kitna lagega, abhi bata dijiye.",
+    "means": "How much extra for the waiting, tell me now.",
+    "why": "Same principle as the camel ride - fix the number before the wait happens, since a driver who's already waited an hour has all the leverage to name any figure.",
+    "cat": "price"
+  },
+  {
+    "situation": "Buying a bus ticket at the counter or from the conductor",
+    "say": "अजमेर का एक टिकट दीजिए।",
+    "roman": "Ajmer ka ek ticket dijiye.",
+    "means": "Give me one ticket to Ajmer.",
+    "why": "Minimal, standard phrasing - conductors on this short route handle dozens of these a day and don't need more than this to process it.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Buying a train ticket, asking about the next departure",
+    "say": "अजमेर के लिए अगली ट्रेन कब है, और टिकट कहाँ मिलेगा?",
+    "roman": "Ajmer ke liye agli train kab hai, aur ticket kahan milega?",
+    "means": "When is the next train to Ajmer, and where do I get the ticket?",
+    "why": "Bundles both questions since the same counter usually answers both - asking separately just means standing in the same line twice at a small station.",
+    "cat": "transport"
+  },
+  {
+    "situation": "Asking a temple's darshan timings",
+    "say": "मंदिर के दर्शन का समय क्या है?",
+    "roman": "Mandir ke darshan ka samay kya hai?",
+    "means": "What is the darshan (viewing) time of the temple?",
+    "why": "Darshan ka samay is the phrase temples themselves use on their own noticeboards, matching what priests and staff expect, unlike a generic 'opening time' which sounds like you're asking about a shop.",
+    "cat": "temple"
+  },
+  {
+    "situation": "Checking whether a temple someone claims is closed is actually closed",
+    "say": "सच में बंद है, या अभी थोड़ी देर बाद खुलेगा?",
+    "roman": "Sach mein band hai, ya abhi thodi der baad khulega?",
+    "means": "Is it really closed, or will it open again shortly?",
+    "why": "Directly questions the claim instead of accepting it - at high-traffic spots like the Brahma temple, a 'band hai' from a bystander sometimes precedes an offer to help you in some other paid way, so pushing back once is worth it.",
+    "cat": "temple"
+  },
+  {
+    "situation": "Asking about a temple's midday closing gap before evening aarti",
+    "say": "दोपहर में कब बंद होता है और शाम को कब खुलता है?",
+    "roman": "Dopahar mein kab band hota hai aur shaam ko kab khulta hai?",
+    "means": "When does it close at midday and when does it reopen in the evening?",
+    "why": "Most Rajasthani temples close for a midday gap and reopen for evening aarti - asking both edges of that gap in one question avoids arriving twice at the wrong time.",
+    "cat": "temple"
+  },
+  {
+    "situation": "Buying rose products (gulkand, rose water, ittar) and checking if it's really rose-based",
+    "say": "ये असली गुलाब का है, या इसमें कुछ मिला हुआ है?",
+    "roman": "Ye asli gulaab ka hai, ya isme kuchh mila hua hai?",
+    "means": "Is this made of real rose, or is something mixed into it?",
+    "why": "Naming mila hua (adulterated) directly is the question that separates Pushkar's actual farm-sourced rose stock from synthetic-scented filler sold alongside it.",
+    "cat": "price"
+  },
+  {
+    "situation": "Checking silver purity before buying jewellery",
+    "say": "ये चांदी कितने प्रतिशत शुद्ध है, हॉलमार्क है क्या इसपर?",
+    "roman": "Ye chaandi kitne pratishat shuddh hai, hallmark hai kya ispar?",
+    "means": "How many percent pure is this silver, does it have a hallmark on it?",
+    "why": "Asking for a hallmark by name forces a real, physically checkable answer rather than a verbal purity claim you can't verify on the spot.",
+    "cat": "price"
+  },
+  {
+    "situation": "Shopkeeper claims the silver is pure but shows no hallmark",
+    "say": "बिना हॉलमार्क के मैं भरोसा नहीं करूँगी, दिखाइए कहाँ लिखा है।",
+    "roman": "Bina hallmark ke main bharosa nahi karoongi, dikhaiye kahan likha hai.",
+    "means": "Without a hallmark I won't trust it, show me where it's marked.",
+    "why": "Demands physical proof instead of accepting reassurance, which makes an unmarked claim visibly fall apart in the conversation itself.",
+    "cat": "price"
+  },
+  {
+    "situation": "Asking for the nearest pharmacy",
+    "say": "यहाँ पास में कोई मेडिकल स्टोर है क्या?",
+    "roman": "Yahan paas mein koi medical store hai kya?",
+    "means": "Is there a medical store (pharmacy) nearby?",
+    "why": "'Medical store' used as-is is the actual working term across Rajasthan for a pharmacy, and gets a faster, clearer response than a more literal translation.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for a headache tablet",
+    "say": "सर दर्द की कोई गोली मिलेगी?",
+    "roman": "Sar dard ki koi goli milegi?",
+    "means": "Will I get some tablet for a headache?",
+    "why": "Goli (tablet) is the working word any pharmacist recognizes instantly, more specific about form than the vaguer 'dawaai'.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for something for stomach upset",
+    "say": "पेट खराब है, कुछ दवा दीजिए।",
+    "roman": "Pet kharaab hai, kuchh dawa dijiye.",
+    "means": "My stomach is upset, give me some medicine.",
+    "why": "Pet kharaab is the exact colloquial phrase understood immediately without describing symptoms further, and typically gets an ORS-plus-antacid combo without more questions.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for sanitary pads discreetly but clearly",
+    "say": "सैनिटरी पैड्स मिलेंगे क्या?",
+    "roman": "Sanitary pads milenge kya?",
+    "means": "Will I get sanitary pads?",
+    "why": "Asked plainly and directly - most medical stores keep these behind the counter and hand them over quickly, often already bagged, which matches the local norm around discretion.",
+    "cat": "help"
+  },
+  {
+    "situation": "Asking for rehydration salts after getting dehydrated in Rajasthan's dry heat",
+    "say": "गर्मी में पानी की कमी हो गई है, ORS का पैकेट दीजिए।",
+    "roman": "Garmi mein paani ki kami ho gayi hai, ORS ka packet dijiye.",
+    "means": "I've gotten dehydrated in the heat, give me a packet of ORS.",
+    "why": "Naming ORS directly, widely recognized by that acronym even in small-town pharmacies, gets you actual rehydration salts rather than just a bottle of water, which doesn't replace lost electrolytes.",
+    "cat": "help"
+  },
+  {
+    "situation": "Recognizing round numbers by tens when a vendor quotes a price",
+    "say": "दस, बीस, तीस, चालीस, पचास, साठ, सत्तर, अस्सी, नब्बे, सौ।",
+    "roman": "Das, bees, tees, chaalis, pachaas, saath, sattar, assi, nabbe, sau.",
+    "means": "10, 20, 30, 40, 50, 60, 70, 80, 90, 100.",
+    "why": "These are irregular words, not built from a repeating pattern the way English 'twenty, thirty, forty' are - each has to be recognized on its own, and market prices are always spoken this way, never as digits.",
+    "cat": "price"
+  },
+  {
+    "situation": "A vendor quotes a price using dedh, dhaai or saadhe instead of a plain number",
+    "say": "डेढ़ सौ माने 150, ढाई सौ माने 250, साढ़े तीन सौ माने 350।",
+    "roman": "Dedh sau maane 150, dhaai sau maane 250, saadhe teen sau maane 350.",
+    "means": "Dedh sau means 150, dhaai sau means 250, saadhe teen sau means 350.",
+    "why": "Dedh (one-and-a-half) and dhaai (two-and-a-half) are fixed irregular words, not built from 'sau' plus 'half' the way you'd guess - mishearing dedh as do (two) is a real fifty-or-hundred-rupee mistake mid-bargain.",
+    "cat": "price"
+  },
+  {
+    "situation": "A vendor uses saadhe with a bigger base number, for a higher-value item",
+    "say": "साढ़े सात सौ माने 750, साढ़े चार हज़ार माने 4500।",
+    "roman": "Saadhe saat sau maane 750, saadhe chaar hazaar maane 4500.",
+    "means": "Saadhe saat sau means 750, saadhe chaar hazaar means 4500.",
+    "why": "Saadhe (and-a-half) attaches to any base number three and above - once this pattern is known, any half-price quote at any scale becomes decodable on the spot, not just in the hundreds.",
+    "cat": "price"
+  },
+  {
+    "situation": "Pricing a bigger-ticket item like a rug or leather bag, quoted in thousands",
+    "say": "हज़ार माने 1000, दो हज़ार माने 2000, ढाई हज़ार माने 2500, पांच हज़ार माने 5000।",
+    "roman": "Hazaar maane 1000, do hazaar maane 2000, dhaai hazaar maane 2500, paanch hazaar maane 5000.",
+    "means": "Hazaar means 1000, do hazaar means 2000, dhaai hazaar means 2500, paanch hazaar means 5000.",
+    "why": "The same dhaai (two-and-a-half) irregular form reappears at the thousand scale, which is worth knowing once because it recurs at every order of magnitude.",
+    "cat": "price"
+  },
+  {
+    "situation": "A vendor uses sawa, meaning a quarter more than the stated number",
+    "say": "सवा सौ माने 125, सवा दो सौ माने 225।",
+    "roman": "Sawa sau maane 125, sawa do sau maane 225.",
+    "means": "Sawa sau means 125, sawa do sau means 225.",
+    "why": "Sawa adds a quarter to the number named - it comes up in both prices and times ('sawa char baje' is 4:15), so it's worth locking in as its own pattern rather than as a one-off price quirk.",
+    "cat": "price"
+  },
+  {
+    "situation": "A vendor uses paune, meaning a quarter less than the next round number",
+    "say": "पौने सौ माने 75, पौने दो सौ माने 175, पौने हज़ार माने 750।",
+    "roman": "Paune sau maane 75, paune do sau maane 175, paune hazaar maane 750.",
+    "means": "Paune sau means 75, paune do sau means 175, paune hazaar means 750.",
+    "why": "Paune always counts down from the NEXT round number, the opposite direction from sawa - paune sau is a quarter short of 100, not a quarter more than anything, which is the part that trips people up first hearing it.",
+    "cat": "price"
+  },
+  {
+    "situation": "Hearing the traditional Rajasthani greeting used by shopkeepers, hoteliers and older locals in Pushkar and Ajmer",
+    "say": "खम्मा घणी",
+    "roman": "Khamma ghani",
+    "means": "Roughly 'my respects/salutations to you' - the standard Marwari greeting, used both on meeting and as a warm welcome.",
+    "why": "Using it back, instead of a Hindi namaste, signals you recognize the local register rather than treating the person as a generic tourist-facing service - it often gets a warmer, less transactional response.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari cultural usage; not independently confirmed via a live source this session (web search budget was exhausted) - treat as strong but unverified."
+  },
+  {
+    "situation": "Seeing the Rajasthan tourism welcome phrase on signage, or hearing a local invite you in warmly",
+    "say": "पधारो म्हारे देश",
+    "roman": "Padharo mhare desh",
+    "means": "Come, welcome to my land - a hospitality phrase, not literal geography.",
+    "why": "This is Rajasthan's own tourism slogan and a genuinely local construction - 'mhare' (my/our) and 'padharo' (come/welcome) are both Marwari forms, distinct from Hindi 'mera desh' and 'aaiye'.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge (widely used as the official Rajasthan tourism slogan); not independently confirmed via a live source this session."
+  },
+  {
+    "situation": "Hearing 'sa' added after a name or greeting by an older or rural Rajasthani speaker",
+    "say": "राम राम सा",
+    "roman": "Ram Ram sa",
+    "means": "A respectful rural greeting - 'sa' is an honorific suffix, similar in function to 'ji' in standard Hindi.",
+    "why": "Hearing 'sa' tacked onto names or greetings is a marker you're in a Marwari-speaking register, not standard Hindi - it doesn't require a special response, but recognizing it stops it sounding like a mistake or a nickname.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari honorific usage; not independently confirmed via a live source this session."
+  },
+  {
+    "situation": "Understanding 'mhara/mhare' when a local refers to their own family, shop or village",
+    "say": "म्हारो / म्हारे",
+    "roman": "Mharo / mhare",
+    "means": "My / our - the Marwari equivalent of Hindi 'mera/mere'.",
+    "why": "This possessive swap is one of the most common tells that someone has switched into Marwari mid-sentence even while otherwise speaking Hindi to you - useful to recognize even if you don't use it yourself.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari-Hindi lexical contrast; not independently confirmed via a live source this session."
+  },
+  {
+    "situation": "Understanding 'thaaro/thaari' when a local asks about something of yours",
+    "say": "थारो / थारी",
+    "roman": "Tharo / thaari",
+    "means": "Your / yours - the Marwari equivalent of Hindi 'tumhara/tumhari'.",
+    "why": "Pairs with mharo/mhare as the other half of the same possessive pattern - recognizing both means you're not lost when a conversation slips fully into Marwari for a sentence or two.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari-Hindi lexical contrast; not independently confirmed via a live source this session."
+  },
+  {
+    "situation": "Being asked 'kathe' when someone wants to know where you're going or where something is",
+    "say": "कठे",
+    "roman": "Kathe",
+    "means": "Where - the Marwari equivalent of Hindi 'kahan'.",
+    "why": "A short, common question word that marks Marwari speech clearly - useful to recognize since it can otherwise sound like a mumbled or unclear 'kahan'.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari-Hindi lexical contrast; not independently confirmed via a live source this session - flagged for verification given regional variation in this word."
+  },
+  {
+    "situation": "Being asked or overhearing 'baisa' used to address a woman respectfully",
+    "say": "बाईसा",
+    "roman": "Baisa",
+    "means": "A respectful form of address for a woman, historically used for women of standing, now used more broadly as a polite honorific.",
+    "why": "If a shopkeeper or elder calls you 'baisa' instead of the Hindi 'madam' or 'behenji', it's a marker of local courtesy, not overfamiliarity - worth recognizing so it doesn't read as odd.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge of Marwari honorific usage; not independently confirmed via a live source this session."
+  },
+  {
+    "situation": "How a Rajasthani greeting actually changes the interaction compared to a standard Hindi namaste",
+    "say": "खम्मा घणी (के जवाब में सामने वाला अक्सर ज़्यादा खुल जाता है, सिर्फ़ 'नमस्ते' कहने पर उतना नहीं)",
+    "roman": "Khamma ghani (ke jawaab mein saamne waala aksar zyada khul jaata hai, sirf 'namaste' kehne par utna nahi)",
+    "means": "In response to khamma ghani, the other person often opens up more than a plain namaste gets you.",
+    "why": "A Hindi namaste marks you as a generic North Indian visitor; a Marwari greeting marks you as someone who's made an effort with the actual local culture, and that distinction is what shifts a shopkeeper, priest or driver from transactional mode to a warmer, more generous one - worth using deliberately, not just as trivia.",
+    "cat": "marwari",
+    "verify": true,
+    "src": "General/training knowledge and common travel-experience reporting about Marwari-region hospitality register; not independently confirmed via a live source this session - treat the behavioural claim as plausible, not measured."
+  }
+]

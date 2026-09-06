@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tripkit"
+version = "0.1.0"
+description = "Turn a trip spec into a time-driven static travel site, researched by Claude."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Atishay Jain" }]
+keywords = ["travel", "itinerary", "claude", "static-site", "llm", "research"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Internet :: WWW/HTTP :: Site Management",
+]
+dependencies = ["pyyaml>=6"]
+
+[project.optional-dependencies]
+api = ["anthropic>=0.40"]
+
+[project.scripts]
+tripkit = "tripkit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Atishyy27/tripkit"
+Issues = "https://github.com/Atishyy27/tripkit/issues"
+
+[tool.setuptools]
+packages = ["tripkit"]
+
+[tool.setuptools.package-data]
+tripkit = ["../templates/**/*"]

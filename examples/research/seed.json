@@ -1,0 +1,836 @@
+[
+ {
+  "id": "dargah",
+  "name": "Ajmer Sharif Dargah",
+  "cat": "ajmer",
+  "town": "ajmer",
+  "lat": 26.4562,
+  "lng": 74.628,
+  "loose": true,
+  "open": "04:00",
+  "close": "21:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 60,
+  "why": "The shrine of Khwaja Moinuddin Chishti, and the reason most people come to Ajmer at all. Gates open around 04:00-05:00, so at 06:15 you get it close to empty. Noon to 16:00 is the worst window of the day.",
+  "warn": "Head covered, shoes deposited, carry as little as possible. Chadar sellers and khadim donation pressure start at the gate; a firm no is completely acceptable.",
+  "best": [
+   "05:30",
+   "06:30",
+   "07:30"
+  ],
+  "tags": [
+   "free",
+   "quiet",
+   "sunrise",
+   "indoor",
+   "solo-ok"
+  ],
+  "src": null
+ },
+ {
+  "id": "nasiyan",
+  "name": "Soniji ki Nasiyan (Golden Jain Temple)",
+  "cat": "ajmer",
+  "town": "ajmer",
+  "lat": 26.457,
+  "lng": 74.636,
+  "loose": true,
+  "open": "08:00",
+  "close": "16:30",
+  "shut": null,
+  "days": null,
+  "lo": 10,
+  "hi": 30,
+  "priceNote": null,
+  "dur": 25,
+  "why": "One hall holding an enormous gilded wooden model of the Jain universe. Genuinely unlike anything else on this trip and it takes twenty minutes.",
+  "warn": null,
+  "best": [
+   "08:30",
+   "09:00"
+  ],
+  "tags": [
+   "indoor",
+   "shade",
+   "quiet"
+  ],
+  "src": null
+ },
+ {
+  "id": "adhai",
+  "name": "Adhai Din Ka Jhonpra",
+  "cat": "ajmer",
+  "town": "ajmer",
+  "lat": 26.455,
+  "lng": 74.623,
+  "loose": true,
+  "open": "07:00",
+  "close": "18:30",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 30,
+  "why": "A 12th century pillared ruin built from dismantled temples, five minutes from the Dargah. Quiet, photogenic, and almost nobody is there early.",
+  "warn": "Hours were inconsistent across sources. Treat as daylight-only.",
+  "best": [
+   "07:30",
+   "08:30"
+  ],
+  "tags": [
+   "free",
+   "outdoor",
+   "quiet",
+   "photo"
+  ],
+  "src": null
+ },
+ {
+  "id": "anasagar",
+  "name": "Ana Sagar Lake and Daulat Bagh",
+  "cat": "ajmer",
+  "town": "ajmer",
+  "lat": 26.47,
+  "lng": 74.62,
+  "loose": true,
+  "open": "06:00",
+  "close": "20:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 35,
+  "why": "Marble pavilions on a 12th century artificial lake. Pleasant, not essential. Skip it if your Ajmer window is under three hours.",
+  "warn": null,
+  "best": [
+   "07:00",
+   "17:30"
+  ],
+  "tags": [
+   "free",
+   "outdoor",
+   "walk"
+  ],
+  "src": null
+ },
+ {
+  "id": "lake",
+  "name": "Pushkar Lake and the 52 ghats",
+  "cat": "ghat",
+  "town": "pushkar",
+  "lat": 26.4869,
+  "lng": 74.5511,
+  "loose": false,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 45,
+  "why": "The reason the town exists. Brahma Ghat and Varah Ghat are the two that matter. Mangala aarti runs around 05:30-06:00, Sandhya aarti around 18:30-19:30.",
+  "warn": "This is exactly where the flower-and-red-thread routine happens. Do not accept flowers from anyone. Shoes off. No photographing people bathing or the evening aarti.",
+  "best": [
+   "06:30",
+   "07:30",
+   "17:30",
+   "18:30"
+  ],
+  "tags": [
+   "free",
+   "outdoor",
+   "sunrise",
+   "sunset",
+   "ghat",
+   "photo",
+   "quiet"
+  ],
+  "src": null
+ },
+ {
+  "id": "brahma",
+  "name": "Brahma Temple",
+  "cat": "temple",
+  "town": "pushkar",
+  "lat": 26.487,
+  "lng": 74.548,
+  "loose": false,
+  "open": "05:30",
+  "close": "21:00",
+  "shut": [
+   "13:30",
+   "15:00"
+  ],
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 30,
+  "why": "One of only a handful of Brahma temples in India. Not the only one in the world, whatever you get told at the gate.",
+  "warn": "Shut 13:30-15:00 daily, the one closure worth memorising. Phones and cameras are widely reported to be barred inside and are usually deposited at the entrance, though no official source states it - assume you cannot shoot inside.",
+  "best": [
+   "07:00",
+   "09:00",
+   "16:00"
+  ],
+  "tags": [
+   "free",
+   "temple",
+   "indoor"
+  ],
+  "src": null
+ },
+ {
+  "id": "savitri",
+  "name": "Savitri Mata Temple, hilltop",
+  "cat": "view",
+  "town": "pushkar",
+  "lat": 26.4816,
+  "lng": 74.5461,
+  "loose": false,
+  "open": "05:00",
+  "close": "19:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 110,
+  "why": "The best view in Pushkar by unanimous agreement. Roughly 970 steps, 30-45 minutes up. The ropeway does not open until 07:30, so a sunrise here means walking.",
+  "warn": "Monkeys on the path. Nothing edible in your hands, no loose bags.",
+  "best": [
+   "06:00",
+   "16:30"
+  ],
+  "tags": [
+   "free",
+   "outdoor",
+   "view",
+   "sunrise",
+   "sunset",
+   "photo",
+   "walk"
+  ],
+  "src": null
+ },
+ {
+  "id": "rangji",
+  "name": "Rangji Temple",
+  "cat": "temple",
+  "town": "pushkar",
+  "lat": 26.4884,
+  "lng": 74.5555,
+  "loose": true,
+  "open": "06:00",
+  "close": "20:00",
+  "shut": [
+   "13:00",
+   "16:00"
+  ],
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 20,
+  "why": "A South Indian gopuram dropped into the middle of Rajasthan. Odd, and worth ten minutes if you are walking past.",
+  "warn": null,
+  "best": [
+   "09:00",
+   "17:00"
+  ],
+  "tags": [
+   "free",
+   "temple",
+   "indoor"
+  ],
+  "src": null
+ },
+ {
+  "id": "varaha",
+  "name": "Varaha Temple",
+  "cat": "temple",
+  "town": "pushkar",
+  "lat": 26.489,
+  "lng": 74.5548,
+  "loose": true,
+  "open": "06:00",
+  "close": "20:00",
+  "shut": [
+   "13:00",
+   "16:00"
+  ],
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 20,
+  "why": "12th century, built by Anaji Chauhan for Vishnu's boar incarnation. One of the older things in town and usually empty.",
+  "warn": null,
+  "best": [
+   "09:30"
+  ],
+  "tags": [
+   "free",
+   "temple",
+   "indoor",
+   "quiet"
+  ],
+  "src": null
+ },
+ {
+  "id": "manmahal",
+  "name": "Man Mahal",
+  "cat": "view",
+  "town": "pushkar",
+  "lat": 26.4893,
+  "lng": 74.556,
+  "loose": true,
+  "open": "08:00",
+  "close": "18:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 25,
+  "why": "Raja Man Singh I's guest palace over the lake, now run as an RTDC heritage hotel. You can walk in and look, and the view over the ghats is the reason to.",
+  "warn": null,
+  "best": [
+   "09:00",
+   "17:00"
+  ],
+  "tags": [
+   "free",
+   "view",
+   "photo"
+  ],
+  "src": null
+ },
+ {
+  "id": "rosegarden",
+  "name": "Rose Garden",
+  "cat": "view",
+  "town": "pushkar",
+  "lat": 26.495,
+  "lng": 74.562,
+  "loose": true,
+  "open": "07:00",
+  "close": "18:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 40,
+  "why": "Pushkar grows roses commercially, and the gulkand and rose water in the bazaar comes from fields around town. Worth it only with a spare hour; the bazaar sells the output without the trip.",
+  "warn": null,
+  "best": [
+   "07:30"
+  ],
+  "tags": [
+   "free",
+   "outdoor",
+   "photo"
+  ],
+  "src": null
+ },
+ {
+  "id": "ropeway",
+  "name": "Pushkar Ropeway (Savitri)",
+  "cat": "move",
+  "town": "pushkar",
+  "lat": 26.483,
+  "lng": 74.547,
+  "loose": true,
+  "open": "07:30",
+  "close": "18:00",
+  "shut": null,
+  "days": null,
+  "lo": null,
+  "hi": null,
+  "priceNote": "price unverified",
+  "dur": 20,
+  "why": "The cable car up to Savitri temple. Opens 07:30, which is after sunrise, so the sunrise version means walking regardless.",
+  "warn": "Ticket price could not be verified from any source. Ask at the base, do not trust a number you read online.",
+  "best": [
+   "08:00",
+   "16:30"
+  ],
+  "tags": [
+   "view",
+   "photo"
+  ],
+  "src": null
+ },
+ {
+  "id": "sadar",
+  "name": "Sadar and Sarafa Bazaar",
+  "cat": "shop",
+  "town": "pushkar",
+  "lat": 26.4875,
+  "lng": 74.5535,
+  "loose": false,
+  "open": "09:00",
+  "close": "22:00",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 75,
+  "why": "One street running roughly a kilometre along the lake. Silver, mojaris, leather, textiles, rose products, and gemstones you should assume are glass unless you genuinely know stones.",
+  "warn": "Opening quote to an obvious outsider runs several times the real price. Bargaining is expected and not rude.",
+  "best": [
+   "10:00",
+   "16:30",
+   "18:30"
+  ],
+  "tags": [
+   "shop",
+   "outdoor",
+   "evening"
+  ],
+  "src": null
+ },
+ {
+  "id": "camel",
+  "name": "Sunset camel ride",
+  "cat": "do",
+  "town": "pushkar",
+  "lat": 26.482,
+  "lng": 74.54,
+  "loose": true,
+  "open": "06:00",
+  "close": "19:00",
+  "shut": null,
+  "days": null,
+  "lo": 500,
+  "hi": 600,
+  "priceNote": "per hour",
+  "dur": 60,
+  "why": "The real rate is ₹500-600 an hour, and around 17:30 is when it is worth doing rather than an endurance test.",
+  "warn": "The bait and switch is standard: cheap quote, then ten minutes in it becomes per person. Agree total price, duration and headcount out loud before you get on. Pay at the end.",
+  "best": [
+   "17:00",
+   "17:30"
+  ],
+  "tags": [
+   "outdoor",
+   "sunset",
+   "photo"
+  ],
+  "src": null
+ },
+ {
+  "id": "poha",
+  "name": "Pushkar Breakfast Corner (poha)",
+  "cat": "street",
+  "town": "pushkar",
+  "lat": 26.4876,
+  "lng": 74.553,
+  "loose": true,
+  "open": "06:30",
+  "close": "10:00",
+  "shut": null,
+  "days": null,
+  "lo": 20,
+  "hi": 20,
+  "priceNote": "a plate",
+  "dur": 15,
+  "why": "₹20 poha in the bazaar, and it sells out before 10:00. This plus a chai from the stall beside it is the honest answer to what is open at dawn.",
+  "warn": "Gone by mid-morning. If you want this, it is an early decision, not a later one.",
+  "best": [
+   "07:00",
+   "08:00"
+  ],
+  "tags": [
+   "cheap",
+   "food",
+   "outdoor"
+  ],
+  "src": null
+ },
+ {
+  "id": "lakeview",
+  "name": "Café Lake View",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4872,
+  "lng": 74.5518,
+  "loose": true,
+  "open": "07:00",
+  "close": "22:00",
+  "shut": null,
+  "days": null,
+  "lo": 200,
+  "hi": 400,
+  "priceNote": null,
+  "dur": 45,
+  "why": "The one named café confirmed to open before 09:00. If you want to sit down with a coffee before the town wakes up, this is the address.",
+  "warn": null,
+  "best": [
+   "07:30",
+   "08:30"
+  ],
+  "tags": [
+   "food",
+   "shade",
+   "indoor",
+   "view"
+  ],
+  "src": null
+ },
+ {
+  "id": "ugma",
+  "name": "Ugma ji kachori",
+  "cat": "street",
+  "town": "pushkar",
+  "lat": 26.4878,
+  "lng": 74.554,
+  "loose": true,
+  "open": "08:00",
+  "close": "20:00",
+  "shut": null,
+  "days": null,
+  "lo": 15,
+  "hi": 15,
+  "priceNote": "a piece",
+  "dur": 15,
+  "why": "₹15 a piece. A late morning target rather than a dawn one, since nothing confirms it opens at 07:00.",
+  "warn": null,
+  "best": [
+   "10:00",
+   "17:00"
+  ],
+  "tags": [
+   "cheap",
+   "food"
+  ],
+  "src": null
+ },
+ {
+  "id": "malpua",
+  "name": "Halwai Gali (malpua)",
+  "cat": "sweet",
+  "town": "pushkar",
+  "lat": 26.4865,
+  "lng": 74.5525,
+  "loose": true,
+  "open": "09:00",
+  "close": "22:00",
+  "shut": null,
+  "days": null,
+  "lo": 40,
+  "hi": 80,
+  "priceNote": null,
+  "dur": 20,
+  "why": "Pushkar's signature sweet, rabri style, on the lane near Gau Ghat. Sarvadia Mishthan Bhandar and Radhe ji Mishthan Bhandaar are the named shops. Do this one.",
+  "warn": null,
+  "best": [
+   "11:00",
+   "17:00"
+  ],
+  "tags": [
+   "food",
+   "cheap",
+   "sweet"
+  ],
+  "src": null
+ },
+ {
+  "id": "dalbaati",
+  "name": "Dal baati churma (R.S. Restaurant / Shree Karni Maa)",
+  "cat": "food",
+  "town": "pushkar",
+  "lat": 26.488,
+  "lng": 74.5545,
+  "loose": true,
+  "open": "11:00",
+  "close": "22:30",
+  "shut": null,
+  "days": null,
+  "lo": 200,
+  "hi": 200,
+  "priceNote": "unlimited thali",
+  "dur": 60,
+  "why": "₹200 for an unlimited-refill Rajasthani thali. The proper lunch here, and heavy enough that it will end your afternoon if you finish it.",
+  "warn": "Zomato shows Shree Karni Maa as permanently closed while undated blogs still praise it; the conflict is unresolved. R.S. Restaurant is the safer of the two. Check the shutter before you commit your lunch hour to a walk across town.",
+  "best": [
+   "12:30",
+   "13:30"
+  ],
+  "tags": [
+   "food",
+   "indoor",
+   "shade",
+   "aircon"
+  ],
+  "src": null
+ },
+ {
+  "id": "lassi",
+  "name": "Baba Ji / Nataraj / Kumawat (lassi)",
+  "cat": "street",
+  "town": "pushkar",
+  "lat": 26.4874,
+  "lng": 74.5533,
+  "loose": true,
+  "open": "09:00",
+  "close": "21:00",
+  "shut": null,
+  "days": null,
+  "lo": 30,
+  "hi": 30,
+  "priceNote": "clay cup",
+  "dur": 15,
+  "why": "₹30 in a clay cup. The correct move at 15:00 when it is too hot to be outside and too early to climb anything.",
+  "warn": "Ask explicitly whether it contains bhang before you drink it. Not every shop volunteers this.",
+  "best": [
+   "14:00",
+   "15:00"
+  ],
+  "tags": [
+   "cheap",
+   "food",
+   "shade"
+  ],
+  "src": null
+ },
+ {
+  "id": "sunsetcafe",
+  "name": "Sunset Café",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4861,
+  "lng": 74.5498,
+  "loose": true,
+  "open": "08:00",
+  "close": "23:00",
+  "shut": null,
+  "days": null,
+  "lo": 250,
+  "hi": 500,
+  "priceNote": null,
+  "dur": 60,
+  "why": "The famous one, right on the lake, and it earns the name. Fills well before sunset in season; September is quieter.",
+  "warn": null,
+  "best": [
+   "17:30",
+   "18:15"
+  ],
+  "tags": [
+   "food",
+   "sunset",
+   "view",
+   "rooftop"
+  ],
+  "src": null
+ },
+ {
+  "id": "honey",
+  "name": "Honey and Spice",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4879,
+  "lng": 74.5528,
+  "loose": true,
+  "open": "08:30",
+  "close": "18:00",
+  "shut": null,
+  "days": null,
+  "lo": 250,
+  "hi": 450,
+  "priceNote": null,
+  "dur": 45,
+  "why": "Long-standing traveller favourite, health-leaning menu, small room. Reliably good rather than spectacular.",
+  "warn": null,
+  "best": [
+   "09:00",
+   "12:00"
+  ],
+  "tags": [
+   "food",
+   "shade",
+   "indoor",
+   "quiet"
+  ],
+  "src": null
+ },
+ {
+  "id": "ootb",
+  "name": "Out of the Blue",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4877,
+  "lng": 74.5537,
+  "loose": true,
+  "open": "08:00",
+  "close": "23:00",
+  "shut": null,
+  "days": null,
+  "lo": 300,
+  "hi": 500,
+  "priceNote": null,
+  "dur": 60,
+  "why": "Main-drag café that shows up in traveller lists year after year. A good middle option when you want a real meal and a chair.",
+  "warn": null,
+  "best": [
+   "12:30",
+   "19:30"
+  ],
+  "tags": [
+   "food",
+   "indoor",
+   "shade",
+   "aircon"
+  ],
+  "src": null
+ },
+ {
+  "id": "buddha",
+  "name": "Laughing Buddha",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4868,
+  "lng": 74.5504,
+  "loose": true,
+  "open": "08:00",
+  "close": "22:00",
+  "shut": null,
+  "days": null,
+  "lo": 250,
+  "hi": 450,
+  "priceNote": null,
+  "dur": 60,
+  "why": "Rooftop on the lake side. Slow service by every account, which is fine when slow is the point.",
+  "warn": null,
+  "best": [
+   "17:00",
+   "18:00"
+  ],
+  "tags": [
+   "food",
+   "rooftop",
+   "view",
+   "sunset"
+  ],
+  "src": null
+ },
+ {
+  "id": "funky",
+  "name": "Funky Monkey",
+  "cat": "cafe",
+  "town": "pushkar",
+  "lat": 26.4873,
+  "lng": 74.5522,
+  "loose": true,
+  "open": "08:00",
+  "close": "22:30",
+  "shut": null,
+  "days": null,
+  "lo": 200,
+  "hi": 400,
+  "priceNote": null,
+  "dur": 45,
+  "why": "Backpacker staple, cheap and busy.",
+  "warn": "One review title claims eggs are served despite the town-wide ban. Unverified, and not worth a confrontation either way.",
+  "best": [
+   "11:00",
+   "19:00"
+  ],
+  "tags": [
+   "food",
+   "shade",
+   "indoor"
+  ],
+  "src": null
+ },
+ {
+  "id": "ajmerjn",
+  "name": "Ajmer Junction railway station",
+  "cat": "move",
+  "town": "ajmer",
+  "lat": 26.4614,
+  "lng": 74.632,
+  "loose": false,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 15,
+  "why": "About 1 to 1.5 km from Ajmer bus stand. Has a cloakroom for bags and retiring rooms you can pay for by the hour if you want a shower after the bus.",
+  "warn": "The ₹10 per bag cloakroom figure circulating online is over a decade old. Ask at the counter.",
+  "best": [
+   "06:00",
+   "18:30"
+  ],
+  "tags": [
+   "indoor",
+   "transit",
+   "shade"
+  ],
+  "src": null
+ },
+ {
+  "id": "bypass",
+  "name": "Parbatpura Bypass (approx. drop point)",
+  "cat": "move",
+  "town": "ajmer",
+  "lat": 26.42,
+  "lng": 74.66,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 5,
+  "why": "Where you probably get off. Ajmer bypass covers several NH48 stops, so confirm the exact name on your ticket.",
+  "warn": "This pin is close enough to understand where you will be, not close enough to navigate to.",
+  "best": [
+   "06:00"
+  ],
+  "tags": [
+   "transit"
+  ],
+  "src": null
+ },
+ {
+  "id": "ajmerbus",
+  "name": "Ajmer Bus Stand",
+  "cat": "move",
+  "town": "ajmer",
+  "lat": 26.465,
+  "lng": 74.63,
+  "loose": true,
+  "open": "00:00",
+  "close": "23:59",
+  "shut": null,
+  "days": null,
+  "lo": 0,
+  "hi": 0,
+  "priceNote": null,
+  "dur": 10,
+  "why": "Where shared autos and local buses to Pushkar actually leave from, which is why a bypass drop is awkward for the cheap options.",
+  "warn": null,
+  "best": [
+   "06:30"
+  ],
+  "tags": [
+   "transit"
+  ],
+  "src": null
+ }
+]

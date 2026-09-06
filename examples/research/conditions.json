@@ -1,0 +1,85 @@
+{
+  "date": "2026-09-06",
+  "location": "Pushkar/Ajmer, Rajasthan (11km apart; sun times differ by <1 min, given separately below)",
+  "sunrise": "06:12",
+  "sunset": "18:48",
+  "sunriseAjmer": "06:12",
+  "sunsetAjmer": "18:48",
+  "sunrisePushkar": "06:12",
+  "sunsetPushkar": "18:48",
+  "firstLight": "05:50",
+  "lastLight": "19:10",
+  "firstLightNote": "civil twilight begin (sun 6deg below horizon) - Ajmer 05:49:57, Pushkar 05:50:16 IST, converted from UTC",
+  "lastLightNote": "civil twilight end (sun 6deg below horizon) - Ajmer 19:09:47, Pushkar 19:10:10 IST, converted from UTC",
+  "goldenAM": ["06:12", "07:05"],
+  "goldenPM": ["17:55", "18:48"],
+  "blueAM": ["05:50", "06:12"],
+  "bluePM": ["18:48", "19:10"],
+  "goldenBlueMethod": "Golden/blue hour windows are computed, not independently sourced: blue hour = the civil-twilight window either side of sunrise/sunset (sun -6 deg to 0 deg elevation, taken directly from the sunrise-sunset.org civil-twilight fields above); golden hour = standard photography convention (sun approx -4 deg to +6 deg elevation), approximated here as roughly 50 minutes bracketing sunrise/sunset for this latitude (26.5N) in early September. Two dedicated golden-hour calculators (golden-hour.com, sunrisesunsetcalendar.com) were unreachable (TLS cert mismatch / DNS failure), so these minute-level boundaries are a derived estimate, not a third-party figure - treat +/-10min as the real precision.",
+  "temp": {
+    "06": 25,
+    "09": 28,
+    "12": 31,
+    "15": 33,
+    "18": 30,
+    "21": 27
+  },
+  "tempNote": "Typical early-September diurnal curve for Ajmer, built from the Ajmer climate-normal table (Sept mean daily max 33.6C, mean daily min 24.3C) and shaped against actual Sept 1-5 2026 daily observations (highs 26-33C) from Weather Underground. Not an hour-by-hour measured curve for 6 Sept 2026 specifically - no hourly historical/forecast source was reachable (Wunderground, AccuWeather and climate-data.org hourly pages all returned 403/404).",
+  "humidity": "60-90% range across early Sept 2026 (Weather Underground daily obs for Ajmer, Sept 1-5): typically highest just after sunrise and after rain, lowest mid-afternoon (~55-65%) between rain spells.",
+  "monsoon": "Active / recently active over the region as of 6 Sept 2026. IMD bulletins (mausam.imd.gov.in) reported isolated heavy-to-very-heavy rainfall over East Rajasthan and West Madhya Pradesh on 3-5 Sept 2026 from a low-pressure system, with a further note of subdued rainfall over Peninsular India (not Rajasthan specifically) for the following week. Ajmer's own actual readings on 4-5 Sept 2026 were cooler and far more humid (26-30C, humidity up to 90%) than 1-3 Sept (32-33C, 60-67%), consistent with that rain system reaching Ajmer district. No IMD announcement of monsoon withdrawal from Rajasthan was found as of this check; normal LPA withdrawal onset for west Rajasthan is mid-to-late September, so the monsoon should be treated as still technically active over Ajmer on 6 Sept 2026, just past a wet spell.",
+  "rainChance": "Not independently confirmed for 6 Sept 2026 itself (no dated IMD nowcast for that specific day was found). Given a rain system passed through 3-5 Sept and IMD flagged only 'subdued' activity for Peninsular India (a different region) afterward, treat as: skies likely humid/partly cloudy with a residual, not-zero, chance of an afternoon shower - this line is a reasoned inference from the surrounding bulletins, not a sourced number, and is listed in unverified below.",
+  "heatWindow": ["12:00", "16:00"],
+  "heatWindowNote": "Peak of the 31-33C midday/afternoon plateau, compounded by monsoon-season humidity (heat-index effect, not just dry heat). Locals and shopkeepers in both towns commonly take an afternoon lull in this window - many small shops and stalls slow down or shut 13:00-16:00, ghat/temple footfall thins, and open-air sightseeing (Pushkar lake parikrama, Ajmer fort walks) is pushed to before 11:00 or after 17:00.",
+  "moon": "Waning crescent, approx 28% illuminated (moon age ~24 days into the synodic month), per moongiant.com for 6 Sept 2026. Not near Purnima or Amavasya: 6 Sept 2026 falls roughly 10 days after the last full moon (~27-28 Aug 2026) and roughly 5 days before the next new moon (~11 Sept 2026), both dates derived, not independently sourced.",
+  "tithi": "Krishna Paksha Dashami (10th day of the waning fortnight), Bhadrapada month, Vikram Samvat 2083, ending approx 19:29 IST on 6 Sept 2026 (then moving into Ekadashi). Panchang figures were pulled from Delhi/Ahmedabad-calibrated pages, not an Ajmer-specific panchang - the tithi/day itself will not change for Ajmer's slightly different longitude, but the exact hour the tithi ends could shift by a few minutes; treat only the hour-level figure as approximate.",
+  "lunarSignificance": "Nothing special for Pushkar Lake specifically on 6 Sept 2026 - it is an ordinary Krishna Paksha Dashima, not a Purnima or Amavasya. Pushkar's major lunar-linked pilgrimage dates (the big lake-bathing mela) fall on Kartik Purnima in Oct/Nov, not Bhadrapada - no lake-specific crowd effect expected from the lunar calendar this week.",
+  "festivals": [
+    {
+      "name": "Krishna Janmashtami",
+      "date": "2026-09-04",
+      "effect": "2 days before 6 Sept. Temple crowds/decorations in Ajmer and Pushkar temples would have peaked on the 4th; some residual festive decoration but not active crowding by the 6th.",
+      "src": "https://www.drikpanchang.com"
+    },
+    {
+      "name": "Dahi Handi",
+      "date": "2026-09-05",
+      "effect": "1 day before 6 Sept, linked to Janmashtami. Localised street events, not a Pushkar/Ajmer pilgrimage draw.",
+      "src": "https://www.drikpanchang.com"
+    },
+    {
+      "name": "Aja Ekadashi",
+      "date": "2026-09-07",
+      "effect": "1 day after 6 Sept. A monthly fasting/pilgrimage day observed by many Vaishnavite pilgrims - can bring a modest uptick in ritual bathers at Pushkar ghats on the 7th itself, not the 6th. This is a routine monthly Ekadashi, not a mega-event on the scale of Kartik Purnima.",
+      "src": "https://www.drikpanchang.com"
+    },
+    {
+      "name": "Ganesh Chaturthi / Hartalika Teej",
+      "date": "2026-09-14",
+      "effect": "8 days after 6 Sept - outside the 'few days' window, listed only so it is not missed by a traveller extending their stay. No effect on 6 Sept itself.",
+      "src": "https://www.drikpanchang.com"
+    }
+  ],
+  "festivalOn6Sept": "No Hindu or regional festival falls on 6 September 2026 itself in Ajmer or Pushkar. It sits in the quiet gap between Janmashtami/Dahi Handi (4-5 Sept) and Aja Ekadashi (7 Sept).",
+  "aqi": "Typically 'moderate', roughly 70 US AQI / ~19-32 ug/m3 PM2.5 per IQAir - September is one of the cleanest months of the year in Ajmer (post-monsoon rain washes out particulates), a sharp contrast to winter (Oct-Dec) when PM2.5 climbs well above 50 ug/m3. The 70 AQI figure was IQAir's live reading at the time of this check, not a verified value specifically for 6 Sept 2026.",
+  "sources": [
+    "https://api.sunrise-sunset.org/json?lat=26.4499&lng=74.6399&date=2026-09-06 (Ajmer sun/twilight times)",
+    "https://api.sunrise-sunset.org/json?lat=26.4897&lng=74.5511&date=2026-09-06 (Pushkar sun/twilight times)",
+    "https://sunrise-sunset.org/search?location=Ajmer,+Rajasthan,+India (cross-check of the same sun/twilight times)",
+    "https://www.drikpanchang.com (panchang: tithi, nakshatra, paksha - Delhi/Ahmedabad calibrated pages)",
+    "https://en.wikipedia.org/wiki/Ajmer (climate table: Sept mean max/min temp, rainfall normals)",
+    "https://www.wunderground.com/history/monthly/in/ajmer (actual Sept 1-5 2026 daily temp/humidity observations)",
+    "https://mausam.imd.gov.in/ (IMD press releases, 3 and 5 Sept 2026, on the Rajasthan/MP rain system)",
+    "https://www.moongiant.com/phase/9/6/2026/ (moon phase and % illumination)",
+    "https://www.iqair.com/india/rajasthan/ajmer (AQI current reading and seasonal pattern)"
+  ],
+  "unverified": [
+    "timeanddate.com could not be reached (403 Forbidden on every attempt), so the sunrise/sunset figures rest on two calls to the same underlying provider (sunrise-sunset.org) rather than two truly independent astronomical sources. The UTC-to-IST arithmetic was hand-checked and self-consistent, but this is not the same as a second independent source agreeing.",
+    "No hour-by-hour temperature reading exists for 6 Sept 2026 specifically - the hourly temp curve is a typical/climatological shape (climate normals + nearby actual days), not a measured or forecast curve for this exact date.",
+    "No IMD statement confirming or denying monsoon withdrawal timing for Ajmer district in 2026 was found; 'still active' is inferred from actual wet conditions on 4-5 Sept 2026 plus the normal mid/late-September withdrawal climatology, not a direct 2026 IMD withdrawal bulletin for Rajasthan.",
+    "Rain chance for 6 Sept 2026 itself is a reasoned inference from the 3-5 Sept bulletins, not a sourced forecast number for that date.",
+    "Golden hour / blue hour minute boundaries are computed from the civil-twilight and sunrise/sunset times using standard convention, not read off a dedicated golden-hour calculator - two such calculators were unreachable (TLS/DNS errors).",
+    "Panchang source pages returned Delhi- or Ahmedabad-calibrated data, not an Ajmer-specific panchang; the tithi/day is safe, but the exact hour the tithi changes could be off by a few minutes for Ajmer's location.",
+    "AQI figure (70 US AQI) was IQAir's reading at the time of this check (a live/recent value), not a verified reading dated exactly 6 Sept 2026.",
+    "This model did not run its own WebSearch (session search budget was already exhausted before this task started) - everything above came from direct WebFetch calls to named URLs, and a session with a fresh search budget may be able to independently corroborate the monsoon/festival findings further."
+  ]
+}

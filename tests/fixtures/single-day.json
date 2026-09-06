@@ -1,0 +1,9 @@
+{"config":{"arrive":"06:00","depart":"19:00","dest":"pushkar","hub":"ajmer","hopMinutes":35,
+"exitBufferMinutes":75,"tzOffsetMinutes":330,"tzLabel":"IST","currencySymbol":"₹"},
+"conditions":{"sunrise":"06:12","sunset":"18:48","heatWindow":["11:30","15:30"]},
+"places":[
+{"name":"Ghats","cat":"ghat","town":"pushkar","open":"00:00","close":"23:59","lo":0,"hi":0,"dur":45,"best":["06:30","17:30"],"tags":["outdoor","sunrise","sunset"]},
+{"name":"Thali place","cat":"food","town":"pushkar","open":"11:00","close":"22:30","lo":200,"hi":200,"dur":60,"best":["13:00"],"tags":["indoor","shade","food"]},
+{"name":"Dargah","cat":"hub","town":"ajmer","open":"04:00","close":"21:00","lo":0,"hi":0,"dur":60,"best":["06:30"],"tags":["quiet","indoor"]},
+{"name":"Night market","cat":"shop","town":"pushkar","open":"18:00","close":"02:00","lo":0,"hi":0,"dur":40,"best":["20:00"],"tags":["evening","shop"]},
+{"name":"Temple with midday closure","cat":"temple","town":"pushkar","open":"05:30","close":"21:00","shut":["13:30","15:00"],"lo":0,"hi":0,"dur":30,"best":["09:00"],"tags":["indoor","temple"]}]}

@@ -1,0 +1,202 @@
+[
+  {
+    "item": "Silver jewellery",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine Indian silver jewellery should carry a BIS hallmark: the BIS triangular logo, a purity/fineness number, and (on pieces hallmarked since 2021) a 6-digit alphanumeric HUID code. Silver hallmarking in India has run under standard IS 2112 since 2005. No hallmark doesn't automatically mean fake silver, but it means purity is unverified and you have no recourse if it isn't real. Un-hallmarked 'silver' sold to tourists is frequently a low-silver alloy or a silver-plated base metal.",
+    "why": "Pushkar's bazaars sit on a heavy pilgrim and camel-fair trade route where silver jewellery (rings, anklets, oxidised pieces) is one of the most heavily promoted items - Wikivoyage lists jewellery among the main categories sold in the town's shops.",
+    "warn": "Not found: no verified price-per-gram or real-vs-ask bargaining ratio for Pushkar specifically could be sourced this session. Do not treat any 'locals pay X' number a seller gives you as fact - weigh the piece and ask for the day's silver rate yourself before agreeing a price.",
+    "src": "https://en.wikipedia.org/wiki/BIS_hallmark"
+  },
+  {
+    "item": "Gemstones and semi-precious stones",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Under a loupe or strong light, glass and cast-resin 'gemstones' often show trapped round air bubbles and swirl/flow banding from the melt - features natural stones don't have. Genuine stones are also reliably harder (most semi-precious stones scratch glass; glass does not scratch them) and feel colder and heavier for their size than glass or plastic of the same volume. Note this test catches glass/plastic imitations, not lab-grown synthetic stones, which are chemically real gemstone material and will pass a hardness/bubble check while still not being a natural stone.",
+    "why": "Gemstone and bead stalls sit alongside Pushkar's silver-jewellery trade as a standard pairing aimed at pilgrim and backpacker shoppers; no Pushkar-specific source was found distinguishing local sourcing from generic bazaar stock this session.",
+    "warn": "Not found: no Pushkar-specific fake-rate or price anchor could be sourced this session. A handwritten 'certificate' from the seller is not independent verification of anything.",
+    "src": "https://en.wikipedia.org/wiki/Synthetic_gemstone"
+  },
+  {
+    "item": "Mojari / juti leather shoes",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine leather mojari have a distinct raw-hide smell, take a crease/fold mark that slowly relaxes back rather than staying sharply creased, and show visibly hand-done, slightly irregular stitching where sole meets upper. Synthetic/rexine look-alikes feel uniformly smooth, don't crease naturally, and often carry a faint chemical/plastic smell instead. This is general leather-goods knowledge; it was not verified against a Pushkar-specific source this session.",
+    "why": "Mojari are a Rajasthan-wide leather-footwear craft; Wikivoyage lists footwear among the categories of goods sold in Pushkar's shops.",
+    "warn": "Not found: no Pushkar price anchor located this session. Traditional lasts often run narrow with no left/right distinction on cheaper pairs, so try them on rather than trusting a quoted size.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Leather bags",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Same general leather checks as mojari: smell, grain irregularity, and how a fold-crease relaxes. Additionally, check the stitching at handle-join stress points - bazaar-grade bags typically fail there first, not at the leather panel itself, so a bag can look fine in-store and still fail within weeks.",
+    "why": "Leather goods, including bags, are explicitly listed by Wikivoyage among what Pushkar's shops sell.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Embroidered and mirror-work textiles",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Hand embroidery shows slight stitch-to-stitch irregularity and thread tension that varies a little; machine embroidery is mechanically uniform, and the reverse side shows a dense, even bobbin-stitch pattern rather than hand-finished thread ends. Hand-set mirrors (shisha) are usually stitched into a buttonhole-stitch frame around each mirror; glued-on mirrors, a shortcut on cheaper pieces, pop out with normal wear.",
+    "why": "A travel guide specifically calls out miniature paintings, mirror work and hand embroidery among Pushkar's handicrafts.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://www.holidify.com/places/pushkar/"
+  },
+  {
+    "item": "Block print",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine hand block print shows minor colour-layer misregistration and a slightly raised, textured feel where dye/pigment sits on the fabric; screen-printed imitations are perfectly flat and perfectly aligned.",
+    "why": "Block-printed fabric is sold widely in Pushkar's bazaars as part of the general Rajasthani textile trade, but the historic hand block-print production centres are Sanganer and Bagru near Jaipur, not Pushkar - what's sold locally is largely brought in rather than printed on site.",
+    "warn": "Not found: no price anchor sourced this session, and the Sanganer/Bagru sourcing point above is general regional-craft knowledge, not independently re-confirmed via a live source this session. Assume stock was made elsewhere and shipped in unless a seller can demonstrate otherwise.",
+    "src": null
+  },
+  {
+    "item": "Bedcovers and tapestries",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Same hand-vs-machine embroidery/print tells as above. Also check the hem: a hand-finished hem is slightly uneven, a machine-overlocked hem is perfectly uniform - a quick way to tell how a piece was actually finished regardless of what it's sold as.",
+    "why": "Bedcovers and tapestry-style wall hangings fall under the 'cushion covers ... decorative items' that Wikivoyage explicitly lists as sold in Pushkar's shops.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Gulkand (rose petal preserve)",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Real gulkand shows visible, slightly fibrous rose-petal fragments suspended in a thick syrup and smells strongly of rose, not just sugar. A cheap fake is closer to plain sugar syrup with red colouring, with little real petal texture and a weak or artificial rose scent.",
+    "why": "Wikipedia describes Pushkar as 'the rose garden of Rajasthan' because of commercial rose cultivation whose essence is exported internationally - the direct reason gulkand is sold here as a genuine local specialty rather than a generic import.",
+    "warn": "Not found: no verified price anchor for Pushkar gulkand located this session.",
+    "src": "https://en.wikipedia.org/wiki/Pushkar"
+  },
+  {
+    "item": "Rose water",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Pure distilled rose water smells like fresh roses and evaporates cleanly off skin without leaving a sticky or greasy residue. A synthetic version tends to smell more like rose-scented alcohol or perfume and can leave a slight tackiness, or an artificially sharp edge to the scent.",
+    "why": "Same basis as gulkand: Pushkar's rose cultivation is documented on Wikipedia as internationally significant, which is the reason rose water is sold locally as a specialty.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://en.wikipedia.org/wiki/Pushkar"
+  },
+  {
+    "item": "Rose oil",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine rose oil (attar/absolute) is costly to produce at real concentration, so a bottle priced very cheaply for a large volume is far more likely to be a diluted or synthetic rose-fragrance oil than true steam-distilled rose oil. A drop of the real thing is intensely fragrant even heavily diluted and shouldn't feel greasy or tacky the way some synthetic fragrance oils do. This is general essential-oil market knowledge, not a Pushkar-specific test verified this session.",
+    "why": "Directly tied to Pushkar's own rose cultivation - Wikipedia notes the town is called the rose garden of Rajasthan and its rose essence is exported internationally, which is why rose oil is sold locally as a specialty rather than an imported item.",
+    "warn": "Not found: no price anchor or purity test specific to Pushkar sellers was located this session.",
+    "src": "https://en.wikipedia.org/wiki/Pushkar"
+  },
+  {
+    "item": "Incense",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Hand-rolled incense sticks have visibly uneven paste coating and slightly varying thickness stick to stick; machine-extruded mass-market sticks are uniform. Beyond that, quality (how it actually smells and burns) is very hard to judge before burning it.",
+    "why": "Standard offering-economy stock around a major temple town; Pushkar's Brahma Temple and ghats draw heavy pilgrim footfall which sustains dedicated incense stalls in the bazaar.",
+    "warn": "Not found: no Pushkar-specific price anchor sourced this session.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Attar",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine attar is oil-based (traditionally steam-distilled into a base such as sandalwood), not alcohol-based. A drop on paper leaves an oily mark that lingers and doesn't evaporate quickly, whereas an alcohol-based 'perfume oil' sold as attar evaporates fast and leaves little to no oily residue.",
+    "why": "Sold alongside incense in temple-town bazaars generally; Pushkar's own rose-growing reputation gives extra local colour to rose-based attars specifically, though India's historic attar-distillation centre is Kannauj, Uttar Pradesh, not Pushkar - what's sold locally is not necessarily distilled in town.",
+    "warn": "Not found: no price anchor sourced this session. 'Pure attar' claims are unverifiable by eye at the stall; the paper test above is the only practical on-the-spot check.",
+    "src": "https://en.wikipedia.org/wiki/Attar"
+  },
+  {
+    "item": "Brass and metalwork",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Genuine cast brass feels notably heavier for its size than brass-plated or painted base metal, has a warm yellow-gold colour all the way through (a scratch on plated metal reveals a different-coloured base underneath), and gives a clear ringing tone when tapped, versus a duller thud from cheaper alloys.",
+    "why": "Brass devotional items (lamps, idols, bells) are standard stock in Indian temple-town bazaars; this is inferred under Wikivoyage's general 'decorative items/handicrafts' listing rather than a category named specifically for Pushkar by a source this session.",
+    "warn": "Not found: category not independently confirmed as a distinct Pushkar specialty this session, and no price anchor was sourced.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Musical instruments",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "On a wooden folk instrument (ravanahatha, ektara, khartal), check it's carved/joined solid wood rather than a hollow moulded-plastic shell painted to look like wood, and that strings/pegs are functional rather than decorative-only. Many tourist-stall pieces are display-only and cannot actually be played in tune.",
+    "why": "Small Rajasthani folk-instrument stalls are a common feature of pilgrim/backpacker bazaars across Rajasthan. Could not confirm this as a named Pushkar specialty via a live source this session.",
+    "warn": "Not found: category unverified for Pushkar specifically this session; no price anchor sourced.",
+    "src": null
+  },
+  {
+    "item": "Hippie / festival clothing",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Not really a fake-vs-real category; the practical check is fabric quality - loose-weave cotton or rayon prints can run colour badly in the wash, versus pre-shrunk, colourfast fabric. Wash-test a corner if the seller allows it before buying.",
+    "why": "Pushkar has a long-documented backpacker/'hippie trail' presence tied to its Camel Fair, which Wikivoyage says draws roughly 400,000 visitors a year; loose festival-style clothing stalls catering to this crowd are a well-known feature of the town's bazaars in general travel writing.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Camel leather goods",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Camel leather has a coarser, more open grain than cow or goat leather and is usually thicker and stiffer. In practice, there is no reliable eyeball test a non-expert shopper can do on the spot, and sellers frequently mislabel ordinary cow-leather goods as 'camel leather' since the visual difference is subtle.",
+    "why": "Pushkar hosts one of India's largest camel fairs - Wikivoyage cites over 11,000 camels, horses and cattle traded there annually - which is the direct link to camel-leather goods (bags, mojari trim, belts) being sold locally as a specialty.",
+    "warn": "Not found: no price anchor sourced this session. Treat any 'camel leather' claim as unverifiable by you personally at the point of sale.",
+    "src": "https://en.wikivoyage.org/wiki/Pushkar"
+  },
+  {
+    "item": "Tie-dye and bandhani",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Authentic hand-tied bandhani has thousands of tiny individual knots (called 'bheendi') tied by fingernail or a pointed metal ring before dyeing, leaving a faint raised dot or pucker at the centre of each dye spot and natural motif-to-motif irregularity. Machine-printed imitation bandhani is perfectly uniform, flat, and has no raised texture at all.",
+    "why": "Bandhani is a Rajasthan/Gujarat-wide craft, per Wikipedia; it's sold widely in Pushkar's bazaars as part of the general regional textile trade rather than being produced specifically in Pushkar itself.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://en.wikipedia.org/wiki/Bandhani"
+  },
+  {
+    "item": "Secondhand books",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Not a fake/real category; the practical check is completeness (missing pages, water damage) and edition, since backpacker exchange stock turns over fast and condition varies a lot title to title.",
+    "why": "Pushkar's long-stay backpacker/hippie-trail culture, tied to the Camel Fair crowd Wikivoyage describes, commonly sustains secondhand-book exchange stalls in similar Indian backpacker towns. No specific named Pushkar shop could be confirmed via a live source this session.",
+    "warn": "Not found: this category itself is unverified for Pushkar specifically this session, and no price anchor was located.",
+    "src": null
+  },
+  {
+    "item": "Spices",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "Whole spices are much harder to adulterate than ground ones - buy whole and grind at home where possible. For ground spice, check for uniform colour and a strong, clean smell; a dull colour or weak smell suggests old stock or adulteration with filler.",
+    "why": "A travel guide lists 'food items like pickles and masalas' among what's sold in Pushkar's markets.",
+    "warn": "Not found: no price anchor sourced this session.",
+    "src": "https://www.holidify.com/places/pushkar/"
+  },
+  {
+    "item": "Honey",
+    "realPrice": null,
+    "askPrice": null,
+    "counterAt": null,
+    "howToTell": "A common home test: pure honey does not dissolve quickly or cleanly in cold water and tends to sink toward the bottom of the glass rather than mixing in immediately, while sugar-syrup-adulterated honey diffuses through the water fast. This is not a laboratory-grade test and can still be fooled by sophisticated adulteration.",
+    "why": "Local/wild honey is commonly sold in Rajasthani pilgrim-town bazaars generally. Could not confirm this as a named Pushkar specialty via a live source this session; included per the requested coverage but flagged as unverified for Pushkar.",
+    "warn": "Not found: category unverified for Pushkar specifically this session, and no price anchor was located.",
+    "src": null
+  }
+]
