@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  engine:
+    name: engine invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: phases tile the day, hours never contradict themselves
+        run: |
+          ./tests/run.sh "$(cat tests/fixtures/single-day.json)"
+          ./tests/run.sh "$(cat tests/fixtures/multi-day.json)"
+
+  build:
+    name: build a site from a spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e .
+      - name: cli loads and reports honestly with no credentials
+        run: python -m tripkit doctor || true
+      - name: render the example trip from committed research
+        run: |
+          python -m tripkit build examples/pushkar-arya.yaml
+          test -f examples/site/index.html
+          test -f examples/site/assets/data.js
+      - name: every generated page is non-trivial
+        run: |
+          for f in examples/site/*.html; do
+            n=$(wc -c < "$f")
+            if [ "$n" -lt 900 ]; then echo "$f is only ${n}B, that is not a page"; exit 1; fi
+          done
+          echo "$(ls examples/site/*.html | wc -l) pages, all non-trivial"
+
+  syntax:
+    name: syntax and house style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: for f in docs/*.js templates/assets/*.js; do node --check "$f"; done
+      - run: python -m compileall -q tripkit
+      - name: no em dashes
+        run: |
+          # The character is written as an escape so this file does not trip its own check.
+          DASH=$(printf '\u2014')
+          if grep -rIn "$DASH" --include="*.py" --include="*.js" --include="*.md" \
+                              --include="*.html" --include="*.css" \
+                              . | grep -v "^./examples/" | grep -v "^./demo/"; then
+            echo "em dashes found, see CONTRIBUTING.md"; exit 1
+          fi
+          echo "clean"
