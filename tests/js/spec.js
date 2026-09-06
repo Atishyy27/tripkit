@@ -359,4 +359,72 @@ describe("engine: robustness against thin data", () => {
   });
 });
 
+
+
+/* =========================================================================
+   The whole page, loaded the way a browser loads it.
+
+   This suite exists because the app shipped completely dead: engine.js and
+   app.js both declared `let TRIP` at top level, which across two script tags is
+   a SyntaxError that kills the page before a single line runs. Every other test
+   passed, because every other test loaded the files individually.
+   ========================================================================= */
+describe("the page loads as a browser would", () => {
+  const fs = require("fs"), path = require("path");
+  const DOCS = DOCS_DIR;
+  const FILES = ["sun.js", "sources.js", "engine.js", "app.js"];
+
+  it("has no duplicate top level declaration across the scripts", () => {
+    const seen = new Map();
+    const dupes = [];
+    for (const f of FILES) {
+      const src = fs.readFileSync(path.join(DOCS, f), "utf8");
+      const names = new Set();
+      const re = /^(?:const|let|var)\s+([^=;\n]+?)(?:=|;|$)/gm;
+      let m;
+      while ((m = re.exec(src)) !== null)
+        for (const part of m[1].split(","))
+          if (/^[A-Za-z_$][\w$]*$/.test(part.trim())) names.add(part.trim());
+      let fm; const fre = /^function\s+([A-Za-z_$][\w$]*)/gm;
+      while ((fm = fre.exec(src)) !== null) names.add(fm[1]);
+      for (const n of names) {
+        if (seen.has(n)) dupes.push(`${n} in both ${seen.get(n)} and ${f}`);
+        else seen.set(n, f);
+      }
+    }
+    eq(dupes, [], "a name declared twice across script tags is a SyntaxError, not a warning");
+  });
+
+  it("evaluates end to end without throwing", () => {
+    const mk = () => ({ value: "", textContent: "", innerHTML: "", style: {},
+      classList: { add() {}, remove() {} }, addEventListener() {}, onclick: null,
+      hidden: false, querySelector: () => mk(), setAttribute() {}, dataset: {},
+      showModal() {}, close() {} });
+    const sandbox = {
+      window: { addEventListener() {} },
+      location: { pathname: "/", search: "", origin: "x" },
+      navigator: {}, L: { map: () => ({}), tileLayer: () => ({ addTo() {} }) },
+      localStorage: { getItem: () => null, setItem() {} },
+      document: { querySelector: () => mk(), querySelectorAll: () => [],
+                  body: { insertAdjacentHTML() {} }, getElementById: () => mk(),
+                  addEventListener() {} },
+    };
+    const src = FILES.map(f => fs.readFileSync(path.join(DOCS, f), "utf8")).join("\n;\n");
+    const vm = require("vm");
+    const ctx = vm.createContext(Object.assign({ console, setInterval, clearInterval,
+                                                 setTimeout, require }, sandbox));
+    vm.runInContext(src, ctx);   // throws on any load time error
+  });
+
+  it("index.html loads every script the app needs, in an order that works", () => {
+    const html = fs.readFileSync(path.join(DOCS, "index.html"), "utf8");
+    const order = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
+    for (const f of FILES) ok(order.includes(f), `${f} is never loaded by index.html`);
+    ok(order.indexOf("vendor/leaflet.js") < order.indexOf("app.js"),
+       "Leaflet must load before the code that calls it");
+    ok(order.indexOf("engine.js") < order.indexOf("app.js"),
+       "the engine must load before the app that uses it");
+  });
+});
+
 report();

@@ -15,6 +15,8 @@ global.document = { querySelector: () => null, querySelectorAll: () => [],
                     body: { insertAdjacentHTML() {} }, getElementById: () => null };
 const H = require(${JSON.stringify(path.join(__dirname, "harness.js"))});
 const { describe, it, eq, ok, no, near, throws, report } = H;
+// the concatenated file lives in a temp dir, so hand it the real paths
+const DOCS_DIR = ${JSON.stringify(DOCS)};
 `;
 
 const sources = ["sun.js", "sources.js", "engine.js"]

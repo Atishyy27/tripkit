@@ -27,7 +27,10 @@ function guessTz(lat, lng, cc) {
 }
 
 /* ---------- state ---------- */
-let PLACE = null, TRIP = null;
+/* GUIDE is the whole saved trip. The engine separately owns TRIP, its derived
+   timing config. Two top level `let` of the same name across script tags is a
+   SyntaxError that kills the page before a line of it runs. */
+let PLACE = null, GUIDE = null;
 
 /* ---------- screen 1: search ---------- */
 let searchTimer = null;
@@ -153,7 +156,7 @@ async function build() {
   step("stSun", "done", `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}, calculated on this device, not fetched`);
   progress(95);
 
-  TRIP = {
+  GUIDE = {
     v: 1, built: Date.now(),
     place: PLACE, notes, intro, cautions, wvTitle,
     config: {
@@ -169,10 +172,10 @@ async function build() {
     },
     places
   };
-  save(TRIP);
+  save(GUIDE);
   step("stDone", "done", `${places.length} places ready, saved to this device`);
   progress(100);
-  setTimeout(() => open(TRIP), 500);
+  setTimeout(() => open(GUIDE), 500);
 }
 
 /* Merge Wikivoyage listings onto OSM places. OSM has the exact pin, Wikivoyage
@@ -206,7 +209,7 @@ function mergePlaces(osm, wv) {
 
 /* ---------- screen 4: the guide ---------- */
 function open(trip) {
-  TRIP = trip;
+  GUIDE = trip;
   init({ config: trip.config, conditions: trip.conditions, places: trip.places });
   show("s4");
   $("#gName").textContent = trip.place.name;
@@ -222,7 +225,7 @@ function open(trip) {
 }
 
 function buildCats() {
-  const cats = Array.from(new Set(TRIP.places.map(p => p.cat))).sort();
+  const cats = Array.from(new Set(GUIDE.places.map(p => p.cat))).sort();
   $("#cats").innerHTML = ['<button class="chip" data-c="all" aria-pressed="true">Anything</button>']
     .concat(cats.map(c => `<button class="chip" data-c="${c}" aria-pressed="false">${c}</button>`)).join("");
   $$("#cats .chip").forEach(b => b.onclick = () => {
@@ -268,7 +271,7 @@ function render() {
   $("#phase").textContent = r.phase.name;
   $("#phaseLine").textContent = r.phase.line;
 
-  const sr = TRIP.conditions.sunrise, ss = TRIP.conditions.sunset;
+  const sr = GUIDE.conditions.sunrise, ss = GUIDE.conditions.sunset;
   $("#sun").textContent = t < sr ? `🌑 sunrise ${HM(sr)}, ${sr - t} min away`
     : t < ss ? `☀️ sunset ${HM(ss)}, ${Math.floor((ss - t) / 60)}h ${(ss - t) % 60}m of light left`
     : `🌙 sun set at ${HM(ss)}`;
@@ -282,7 +285,7 @@ function render() {
   const top = r.list.slice(0, 40);
   $("#list").innerHTML = top.length ? top.map(card).join("")
     : `<div class="empty">Nothing in this filter is open and still fits.</div>`;
-  $("#count").textContent = `${r.list.length} of ${TRIP.places.length} places fit right now`;
+  $("#count").textContent = `${r.list.length} of ${GUIDE.places.length} places fit right now`;
 }
 
 /* ---------- map ---------- */
@@ -291,16 +294,16 @@ const PAL = ["#ffc857", "#6ee7d0", "#ff7ab8", "#8ab8ff", "#b98cff", "#ff8a4c", "
 
 function drawMap() {
   if (typeof L === "undefined") { $("#mapNote").textContent = "The map library did not load."; return; }
-  const pts = TRIP.places.filter(p => p.lat && p.lng && !p.loose);
+  const pts = GUIDE.places.filter(p => p.lat && p.lng && !p.loose);
   if (!MAP) {
     MAP = L.map("map", { scrollWheelZoom: false });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(MAP);
     if (pts.length) MAP.fitBounds(pts.map(p => [p.lat, p.lng]), { padding: [26, 26], maxZoom: 16 });
-    else MAP.setView([TRIP.place.lat, TRIP.place.lng], 14);
+    else MAP.setView([GUIDE.place.lat, GUIDE.place.lng], 14);
   }
   if (LAYER) MAP.removeLayer(LAYER);
-  const cats = Array.from(new Set(TRIP.places.map(p => p.cat))).sort();
+  const cats = Array.from(new Set(GUIDE.places.map(p => p.cat))).sort();
   const col = {}; cats.forEach((c, i) => col[c] = PAL[i % PAL.length]);
   const t = localMins();
   const markers = [];
@@ -317,7 +320,7 @@ function drawMap() {
   LAYER = L.layerGroup(markers).addTo(MAP);
   const openNow = pts.filter(p => ["open", "closing"].includes(openState(p, t).state)).length;
   $("#mapNote").innerHTML = `<b>${pts.length}</b> places with a real pin, <b>${openNow}</b> open right now (faded ones are shut). ` +
-    `${TRIP.places.length - pts.length} more have no exact coordinates and are list-only. ` +
+    `${GUIDE.places.length - pts.length} more have no exact coordinates and are list-only. ` +
     cats.map(c => `<span style="color:${col[c]}">&#9632; ${esc(c)}</span>`).join(" &nbsp; ");
   setTimeout(() => MAP.invalidateSize(), 60);
 }
@@ -334,9 +337,9 @@ function drawDay() {
       <div class="sub" style="font-size:12.5px">${esc(p.line)}</div>
       <div class="tiny" style="margin-top:3px">${fits} places suit this stretch</div></div>`;
   }).join("");
-  const hrs = TRIP.places.filter(p => p.open).length;
-  const txt = TRIP.places.filter(p => p.why).length;
-  const c = TRIP.conditions;
+  const hrs = GUIDE.places.filter(p => p.open).length;
+  const txt = GUIDE.places.filter(p => p.why).length;
+  const c = GUIDE.conditions;
   $("#dayStats").innerHTML = `
     <div class="grid2">
       <div class="stat"><div class="v">${HM(c.sunrise)}</div><div class="k">sunrise</div></div>
@@ -368,11 +371,11 @@ function wireGuide() {
   });
 
   $("#shareBtn").onclick = async () => {
-    const p = TRIP.place;
+    const p = GUIDE.place;
     const url = location.origin + location.pathname + "?" + new URLSearchParams({
       q: p.name, lat: p.lat.toFixed(5), lng: p.lng.toFixed(5),
-      tz: TRIP.config.tzOffsetMinutes,
-      a: HM(TRIP.config.arrive), d: HM(TRIP.config.depart)
+      tz: GUIDE.config.tzOffsetMinutes,
+      a: HM(GUIDE.config.arrive), d: HM(GUIDE.config.depart)
     });
     const text = `${p.name}: what is open right now`;
     try {
@@ -382,14 +385,14 @@ function wireGuide() {
   };
 
   $("#rebuildBtn").onclick = () => {
-    PLACE = TRIP.place;
-    $("#tz").value = TRIP.config.tzOffsetMinutes;
-    $("#arrive").value = HM(TRIP.config.arrive);
-    $("#depart").value = HM(TRIP.config.depart);
+    PLACE = GUIDE.place;
+    $("#tz").value = GUIDE.config.tzOffsetMinutes;
+    $("#arrive").value = HM(GUIDE.config.arrive);
+    $("#depart").value = HM(GUIDE.config.depart);
     build();
   };
   $("#aboutBtn").onclick = () => {
-    const t = TRIP;
+    const t = GUIDE;
     const osm = t.places.filter(p => p.from === "OpenStreetMap").length;
     const wv = t.places.filter(p => String(p.from).includes("Wikivoyage")).length;
     const hrs = t.places.filter(p => p.open).length;
