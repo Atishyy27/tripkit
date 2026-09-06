@@ -1,316 +1,211 @@
 # tripkit
 
-Turn a trip into a website that knows what time it is.
+**A travel guide that reads the clock.**
 
-You give it a YAML file: where you are going, when you arrive, when you leave, who is
-travelling. It researches the place, then builds a static, mobile-first site whose
-defining feature is that **time is the primary axis**. It does not ask what kind of day
-you want and hand you an itinerary. It reads the clock and answers a narrower, more
-useful question:
+### → [Open it](https://atishyy27.github.io/tripkit/)
 
-> It is 13:40, you are here, you leave at 19:00. What is open, what is worth doing,
-> and what no longer fits?
+No install. No account. No API key. No AI.
+
+Type a town. You get a guide that answers one question a normal guide never does:
+
+> It's 3pm and I leave at 7. What's open, what's worth it, and what no longer fits?
+
+Add it to your home screen and it behaves like an app. It keeps working with no signal.
+
+---
+
+## Why this is different
+
+Most travel guides hand you two hundred things with no sense of time. Half are shut, some
+are an hour away, a few take longer than you've got left. You end up reading instead of
+going.
+
+tripkit sorts by the clock. It knows what time it is where you are, when the sun rises and
+sets there today, when each place opens and closes, and how long you have before you need
+to leave. Then it puts the useful thing first.
+
+**Nothing here was written by a model.** Every sentence about a place came from a person:
+
+| what | where it comes from |
+|---|---|
+| Places, coordinates, opening hours | [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass, ODbL |
+| Descriptions, prices, safety warnings | [Wikivoyage](https://en.wikivoyage.org), CC BY-SA 4.0 |
+| Sunrise, sunset, twilight | NOAA solar equations, computed on your device |
+| Place search | Nominatim |
+
+Nothing is sent to us, because there is no us. It all happens in your browser tab, and the
+trip is saved on your phone.
+
+## What it does
+
+**Ranks by the hour, not by rating.** A place scores highest when this is genuinely its
+hour: a viewpoint at sunset, a shaded restaurant at the hottest part of the day, a market
+in the evening when it wakes up.
+
+**Refuses to waste your time.** If something takes 90 minutes and you have 40, it isn't
+shown. When nothing fits, it says so plainly instead of padding the screen.
+
+**Derives the day from the sun.** "Golden morning" means something different in Lisbon in
+October and Rajasthan in September. It's calculated for your date and coordinates, so it's
+right in both.
+
+**Runs on the destination's clock.** You often land with your phone still on the old
+timezone. A guide that's silently five hours out is worse than one with no clock at all.
+
+**Says what it doesn't know.** Hours nobody has recorded show as *hours unknown*, not as a
+guess. Coordinates that were inferred are marked *pin approx*. Every place links to its
+source so you can check.
+
+## The honest limitation
+
+Opening-hours coverage in OpenStreetMap varies enormously, and the guide is only as good as
+what's been mapped. Measured with the same query on the same day:
+
+| | places found | with opening hours |
+|---|---|---|
+| Lisbon | 811 | 270 (33%) |
+| Munich restaurants | 2,249 | 1,924 (86%) |
+| Pushkar | 129 | 9 (7%) |
+| Ajmer | 104 | 3 (3%) |
+
+Dense European cities are well covered. Small Indian towns are not. Wikivoyage fills a
+different part of the gap, and where a place is thin the guide shows fewer confident answers
+rather than inventing them.
+
+If somewhere you know is missing or wrong, the fix is to
+[edit OpenStreetMap](https://www.openstreetmap.org) or
+[Wikivoyage](https://en.wikivoyage.org). It's the same data everyone gets, and your fix
+helps everyone.
+
+---
+
+## For developers
+
+There's also a Python CLI that builds a bigger, richer, twelve-page site for one specific
+trip, optionally using Claude to research the things open data can't hold: whether a place
+is overrated, how the local scam opens, which hour is genuinely best.
 
 ```bash
 pip install tripkit
-tripkit doctor                       # check credentials
-tripkit new Pushkar                  # write a starter spec
-tripkit run pushkar.yaml --deploy    # osm + research + build + publish
+tripkit doctor              # check credentials and tools
+tripkit new Jaipur          # write a starter spec, then edit the dates
+tripkit run jaipur.yaml     # openstreetmap + research + build
+tripkit run jaipur.yaml --deploy
 ```
 
----
+Credentials are resolved at runtime and never stored: `ANTHROPIC_API_KEY` if set, otherwise
+your existing Claude Code CLI session. A tool that never holds a secret cannot lose one.
 
-## Why this exists
+Search is pluggable and optional: set `BRAVE_API_KEY`, `TAVILY_API_KEY`, `SERPER_API_KEY`
+or `EXA_API_KEY`. Without one, research still works but is slower and can hit a per-session
+cap partway through.
 
-It was extracted from a real one-off. A friend was on an overnight bus to Ajmer, landing
-at 06:00 with a 19:00 bus back, one day in Pushkar, and no plan. The site built for that
-trip is still live. Generalising it turned up a set of problems that every AI travel tool
-has and most of them hide, so those problems are what this README is mostly about.
+### Commands
 
-## What makes it different
-
-**Opening hours are the product.** Most travel guides list places. This one needs to know
-whether a place's doors are open at 13:40, so the dataset is built around `open`, `close`,
-and a `shut` window for the midday closure that most tourist pages omit and that is very
-real in a lot of the world. A place with sourced hours is worth more here than five
-without.
-
-**Everything is scored against a deadline.** If a thing takes 110 minutes and you have 45
-before you must set off, it is not shown. When nothing fits, the site says *"there is
-nothing to do but go"* rather than relaxing the filter to fill the screen. An empty result
-that is true beats a full one that is not.
-
-**The day is derived from the sun, not from a clock.** Phases come from the actual sunrise
-and sunset for that date and latitude, so "golden morning" means something different in
-Lisbon in October than in Rajasthan in September, and the site knows it.
-
-**It renders in destination time.** A traveller often lands with their phone still on the
-old timezone. A guide that silently shifts by five hours is worse than one with no clock.
-
-**Nulls stay null.** Every research prompt says the same thing: a fabricated opening hour
-sends a real person to a locked door, so `null` is a correct answer and a guess is not.
-Where sources disagree, the disagreement is reported rather than averaged. Where a venue
-looks closed, it is listed as closed rather than quietly dropped, because dropping it makes
-someone walk across town to a shutter.
-
----
-
-## Where the data comes from, and what that costs
-
-The first version asked an LLM for every field. That is the wrong architecture, and
-measuring it says so plainly. `tripkit osm` pulls OpenStreetMap through Overpass first,
-because name, coordinates and category are facts a free API already holds and a model can
-only approximate.
-
-The measured reality for opening hours, taken live on 2026-09-06 with the exact query in
-`tripkit/osm.py`:
-
-| place | category | with `opening_hours` | |
-|---|---|---|---|
-| Munich | restaurants | 1,924 / 2,249 | **85.5%** |
-| Jaipur | restaurants | 15 / 168 | **8.9%** |
-| Pushkar | all POIs | 9 / 129 | **7.0%** |
-| Ajmer | all POIs | 3 / 104 | **2.9%** |
-
-Global averages by category sit around 23–41% (restaurants 23.2%, museums 29.1%,
-supermarkets 40.9%, from taginfo). The `opening_hours` grammar itself is entirely capable
-of midday closures, seasonal rules and sunset-relative times. The gap is data entry, not
-expressiveness.
-
-So a no-LLM build genuinely works in Munich and collapses in Rajasthan, which is the
-opposite of a detail if you are building for the second case. The split tripkit settles on:
-
-| field | source |
+| command | does |
 |---|---|
-| name, coordinates, category, website, phone | OpenStreetMap — free, exact, verifiable |
-| opening hours | OSM where the tag exists, LLM research where it does not |
-| prices, warnings, "is this overrated", "how the scam opens", "its best hour" | LLM only, because no open dataset contains an opinion |
+| `tripkit doctor` | check credentials, search backend, tooling |
+| `tripkit new <name>` | write a starter spec |
+| `tripkit osm <spec>` | pull OpenStreetMap places into `research/osm.json` |
+| `tripkit research <spec>` | run the research fan-out |
+| `tripkit verify <spec>` | cross-check researched hours against OpenStreetMap |
+| `tripkit build <spec>` | merge everything and render the site |
+| `tripkit deploy <spec>` | push to GitHub Pages |
+| `tripkit run <spec>` | all of the above, `--deploy` to publish |
 
-On the Pushkar example this took exact coordinates from **1 place out of 217** to **194 out
-of 408**. The pins stopped being approximate.
+Research output is plain JSON on disk. Editing it by hand and re-running `build` is a
+supported workflow, not a hack.
 
-**And where both sources have hours, they check each other.** `tripkit verify` compares
-what the model claimed against what OSM says and prints every disagreement. It does not
-pick a winner, because OSM goes stale too. It just refuses to let the two quietly differ.
-When it reports no disagreements it also says why that is weaker evidence than it sounds:
-usually it means few places appear in both sets with hours on both sides.
-
-## Prior art
-
-Checked before publishing, written up in [PRIOR-ART.md](PRIOR-ART.md). The short version:
-plenty of LLM itinerary generators exist, several with the same parallel-agents-to-JSON
-shape, but none found combine agent research, a generated static site, and clock-driven
-ranking against a departure deadline. The most credentialed nearby academic work,
-[ITINERA](https://github.com/YihongT/ITINERA) (EMNLP 2024), does spatial optimisation and
-explicitly does not use current time, opening hours, or a deadline.
-
-Two honest caveats on that claim. First, it rests on a fetch-based scan: two general search
-engines were blocked during the check, so it is "nothing found", not "nothing exists".
-Second, [BestTime.app](https://besttime.app) does rank venues by predicted hourly crowd
-level, which is a different and arguably better axis than open-versus-shut. *Open* and *good
-hour to go* are not the same question, and tripkit currently only answers the first properly.
-
-The dead prior art is the instructive part. Triposo shut down in 2023 and the
-Wikivoyage-offline-guide lineage went stale around 2016–2018. They died of data going
-stale, not of the idea being wrong.
-
-## Install
-
-```bash
-pip install tripkit          # from PyPI
-# or, from source:
-git clone https://github.com/Atishyy27/tripkit && cd tripkit && pip install -e .
-```
-
-Python 3.10+. The only hard dependency is `pyyaml`.
-
-## Credentials
-
-tripkit never stores a secret. It resolves one at runtime and forgets it.
-
-**Either** an API key:
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-pip install "tripkit[api]"
-```
-
-**Or** the Claude Code CLI you may already have, in which case no API key needs to exist:
-
-```bash
-npm install -g @anthropic-ai/claude-code
-claude          # log in once
-```
-
-tripkit shells out to `claude -p` and your existing session does the work. This is the
-default for a reason: a tool that never holds a credential cannot lose one, which matters
-more than usual for something people will fork and run.
-
-Run `tripkit doctor` to see what it found.
-
-## Search
-
-Research is much better with a real search backend, and it is the difference between a
-tool that degrades loudly and one that degrades silently. Any one of these:
-
-```bash
-export BRAVE_API_KEY=...      # free tier available
-export TAVILY_API_KEY=...
-export SERPER_API_KEY=...
-export EXA_API_KEY=...
-```
-
-With a key set, tripkit runs the searches itself and hands the results to the model as
-context, so the model needs no tools at all. Without one, it asks the agent to search for
-itself, which is slower and can hit a per-session cap partway through a run. That is not
-hypothetical: it is exactly what happened on the first build this was extracted from, and
-five of twelve research slices quietly degraded to guessing URLs before anyone noticed.
-
----
-
-## The spec
+### The spec
 
 ```yaml
 trip:
   title: "Pushkar in one day"
-  traveller: Arya               # optional, goes on the page
   country: India
   places:
-    - name: Pushkar
-      role: destination
-      lat: 26.4869
-      lng: 74.5511
-    - name: Ajmer
-      role: hub                 # where you arrive and leave from
+    - { name: Pushkar, role: destination, lat: 26.4869, lng: 74.5511 }
+    - { name: Ajmer,   role: hub,         lat: 26.4562, lng: 74.6280 }
   hub: Ajmer
   arrive: 2026-09-06T06:00
   depart: 2026-09-06T19:00
-  hub_to_dest_minutes: 35       # drives the departure countdown
-  exit_buffer_minutes: 75       # how early to leave for a calm exit
-  timezone: Asia/Kolkata
-  tz_offset_minutes: 330        # the site renders in this, not the phone's zone
-  currency: INR
+  hub_to_dest_minutes: 35
+  exit_buffer_minutes: 75
+  tz_offset_minutes: 330
   currency_symbol: "₹"
-  profile: [solo, female, backpacker]
-  languages: [Hindi, Marwari]
-  interests: [temples, street food, photography]
+  profile: [solo, backpacker]
+  languages: [Hindi]
 
 research:
   slices: [sights, food, transport, safety, shopping,
            experiences, offbeat, phrases, conditions, help]
   parallel: 10
-  model: sonnet
 
 site:
   out: site
-  favicon: "🐪"
-  repo: youruser/your-repo      # for `tripkit deploy`
+  repo: youruser/your-trip
 ```
 
-Multi-day trips work: leave more than ~26 hours between `arrive` and `depart` and the
-departure pressure, the countdown and the deadline filtering all switch off.
+Leave more than about 26 hours between `arrive` and `depart` and it switches to multi-day
+mode: no departure countdown, no deadline filtering.
 
-## Commands
+### How the ranking works
 
-| command | does |
-|---|---|
-| `tripkit doctor` | check credentials, search backend and tooling |
-| `tripkit new <name>` | write a starter spec |
-| `tripkit research spec.yaml` | run the research fan-out into `research/*.json` |
-| `tripkit build spec.yaml` | merge the research and render the site |
-| `tripkit osm spec.yaml` | pull OpenStreetMap places into `research/osm.json` |
-| `tripkit verify spec.yaml` | cross-check researched hours against OSM |
-| `tripkit deploy spec.yaml` | push to GitHub Pages |
-| `tripkit run spec.yaml` | all three, `--deploy` to publish |
+- **Is this its hour** (+42), from a `best` array on each place
+- **Does it suit the light and heat** (+13 per matching tag, +20 for shade during the heat, −24 for exposed outdoors at noon)
+- **Is it open** (+12 open, −6 closing soon, −9 hours unknown)
+- **Was it written about by a person** (+8, and +10 if Wikivoyage)
+- **Is it a chore** (−34 for banks, bus stops, pharmacies)
+- **Does it fit before you leave**, which is a hard filter rather than a penalty
 
-Useful flags: `--only food,transport` to re-run one slice, `--skip-existing` to resume a
-run that partly failed, `--search brave` to force a backend, `--auth cli` to force one.
+That first weight is the largest and deserves scepticism: `best` hours are judgement, not
+measurement. Lower it if you want the ranking more conservative.
 
-Research output is plain JSON on disk. Edit it by hand and re-run `build` — that is a
-supported workflow, not a hack. Anything you drop into `research/` shaped like the schema
-gets picked up.
-
-## Research slices
-
-| slice | produces |
-|---|---|
-| `sights` | temples, monuments, museums, viewpoints, parks |
-| `food` | restaurants, cafés, street stalls, sweet shops |
-| `shopping` | markets and a what-to-buy guide with price anchors |
-| `experiences` | classes, tours, wellness, activities, nightlife |
-| `offbeat` | quiet corners, photo spots, walks, local rhythm |
-| `transport` | every way in, around and out, with fares marked official/reported/estimate |
-| `safety` | scams with their literal opening lines, and local rules |
-| `phrases` | lines for specific confrontations, in the local language |
-| `conditions` | sunrise, sunset, heat window, festivals on that date |
-| `help` | police, medical, women's helplines, ATMs, luggage — verified or explicitly not |
-
-Each is a prompt in `tripkit/slices.py`. Adding one is a dict entry.
-
----
-
-## The engine
-
-`templates/assets/core.js` is the whole thing, and it is trip-agnostic — every parameter
-comes from `DATA.config`, so the same file ships to every site.
-
-Ranking, in order of weight:
-
-- **is this its hour** (+42) — a `best` array on each place, hit within 35 minutes
-- **does it suit the light and heat** (+13 per matching tag, +20 for shade during the heat
-  window, −24 for an exposed outdoor thing at noon)
-- **is it open** (+12 open, −6 closing soon, −9 hours unknown)
-- **is it in the right town** (−26 if not, and an outright cut once returning is absurd)
-- **does it fit before you must leave** — a hard filter, not a penalty
-
-That first weight is the largest term and it deserves scepticism: `best` hours come from
-model judgement, not measurement. If you want the ranking to be more conservative, lower it.
-
-## Honesty features, since they are the point
-
-- Every price and hour carries a `src` URL, or the field is null.
-- The UI distinguishes *shut*, *opening soon*, *closing soon*, and *hours never found*.
-  The fourth is a real state, shown as such, not hidden.
-- Coordinates the model inferred are marked `pin approx` on the card and faded on the map.
-- Transport fares are labelled **official**, **reported** or **estimate**.
-- Emergency contacts show **verified** or **unverified**, and an unverified entry says what
-  to use instead. A wrong number in an emergency is worse than no number.
-- Where a build could not source something, the page says so instead of omitting it.
-
-## Deploy
-
-```bash
-tripkit deploy spec.yaml --repo youruser/trip-site
-```
-
-Needs the `gh` CLI, authenticated. Creates the repo if it does not exist, pushes, enables
-Pages, prints the URL. `--private` if you would rather. `--author-name` / `--author-email`
-if you have more than one git identity and do not trust your global config, which is a
-mistake worth avoiding once.
-
-The output is plain static files. Any host works — Netlify, Cloudflare Pages, S3, a folder.
-
----
-
-## Development
+### Development
 
 ```bash
 pip install -e .
-./tests/run.sh "$(cat tests/fixtures/single-day.json)"   # engine assertions
-python3 -m tripkit build examples/pushkar-arya.yaml      # render from real research
+./tests/run.sh "$(cat tests/fixtures/single-day.json)"
+./tests/run.sh "$(cat tests/fixtures/multi-day.json)"
+python3 -m tripkit build examples/pushkar-arya.yaml
+node docs/e2e.js                     # exercises the live web pipeline
+git config core.hooksPath .githooks  # blocks pushing as the wrong GitHub account
 ```
 
-`tests/run.sh` concatenates the shims, the data and the engine exactly the way a browser
-loads them, then asserts the invariants: phases tile the whole day with no gap or overlap,
-every minute resolves to exactly one phase, and `openState` never contradicts a venue's own
-hours, including venues that close after midnight.
+`tests/run.sh` concatenates the shims, data and engine exactly the way a browser loads them,
+then asserts the invariants: phases tile the whole day with no gaps, every minute resolves to
+exactly one phase, and a venue is never reported shut during its own opening hours, including
+ones that close after midnight.
+
+## Prior art
+
+Checked before publishing, written up in [PRIOR-ART.md](PRIOR-ART.md). Plenty of LLM
+itinerary generators exist, several with the same shape. None found combine open-data
+research, a generated static site, and clock-driven ranking against a departure deadline.
+[ITINERA](https://github.com/YihongT/ITINERA) (EMNLP 2024), the most credentialed nearby
+academic work, does spatial optimisation and explicitly ignores time.
+
+Two caveats. That scan was fetch-based, with two search engines blocked, so it is "nothing
+found" rather than "nothing exists". And [BestTime.app](https://besttime.app) ranks venues by
+predicted hourly crowd level, which is a different and arguably better axis. *Open* and *good
+hour to go* are not the same question.
+
+The instructive prior art is the dead kind: Triposo shut down in 2023, and the
+Wikivoyage-offline-guide lineage went stale around 2016. They died of data going stale, not
+of the idea being wrong. Which is the argument for generating a guide per trip instead of
+maintaining one forever.
+
+Full data-source research, including live coverage measurements, is in
+[DATA-SOURCES.md](DATA-SOURCES.md).
 
 ## Contributing
 
-Issues and PRs welcome. The one rule that is not negotiable is the one the whole thing
-rests on: **never make the tool invent a fact to fill a field.** If a change makes output
-look more complete without making it more true, it will not be merged.
+See [CONTRIBUTING.md](CONTRIBUTING.md). One rule is not negotiable, because the whole thing
+rests on it: **never make the tool invent a fact to fill a field.** A change that makes
+output look more complete without making it more true will not be merged.
 
 ## Licence
 
-MIT.
+MIT. See [LICENSE](LICENSE).
+
+Data from OpenStreetMap contributors (ODbL) and Wikivoyage (CC BY-SA 4.0). Those licences
+apply to the data, not to this code, and the app credits both in the interface.
