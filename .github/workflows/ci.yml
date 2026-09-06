@@ -8,16 +8,28 @@ on:
 
 jobs:
   engine:
-    name: engine invariants
+    name: javascript tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
-      - name: phases tile the day, hours never contradict themselves
-        run: |
-          ./tests/run.sh "$(cat tests/fixtures/single-day.json)"
-          ./tests/run.sh "$(cat tests/fixtures/multi-day.json)"
+      - name: engine, sun and parser tests
+        run: node tests/js/run.js
+
+  python:
+    name: python tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - run: pip install -e . pytest
+      - run: python -m pytest tests/ -q
 
   build:
     name: build a site from a spec

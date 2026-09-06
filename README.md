@@ -163,18 +163,27 @@ measurement. Lower it if you want the ranking more conservative.
 ### Development
 
 ```bash
-pip install -e .
-./tests/run.sh "$(cat tests/fixtures/single-day.json)"
-./tests/run.sh "$(cat tests/fixtures/multi-day.json)"
-python3 -m tripkit build examples/pushkar-arya.yaml
-node docs/e2e.js                     # exercises the live web pipeline
+pip install -e . pytest
+./tests/all.sh                       # everything, one command
 git config core.hooksPath .githooks  # blocks pushing as the wrong GitHub account
 ```
 
-`tests/run.sh` concatenates the shims, data and engine exactly the way a browser loads them,
-then asserts the invariants: phases tile the whole day with no gaps, every minute resolves to
-exactly one phase, and a venue is never reported shut during its own opening hours, including
-ones that close after midnight.
+**137 Python and 58 JavaScript tests**, none of which need a network or a model.
+
+| suite | covers |
+|---|---|
+| `tests/js/` | the ranking engine, the sun maths, the OpenStreetMap and Wikivoyage parsers |
+| `tests/test_llm.py` | JSON recovery, including the truncation case that once silently discarded a whole slice |
+| `tests/test_merge.py` | normalising and deduplicating, including the bracketed-name traps |
+| `tests/test_spec.py` | spec loading, and that every bad input fails with a message rather than a traceback |
+| `tests/test_osm.py` | the Overpass query, `opening_hours` parsing, and the cross-check |
+| `tests/test_smoke.py` | builds a real site and inspects the output, plus house style |
+| `tests/test_live.py` | the real services. Opt in with `TRIPKIT_LIVE=1`, deliberately not in CI, so 5 more |
+
+The JS runner concatenates the shipped browser scripts the way a page loads them, so the
+tests exercise the real files rather than a copy. Two of those tests exist because the thing
+they check has already broken: a regex quantifier that a cosmetic sweep silently widened, and
+a truncated array that parsed cleanly into one entry and reported success.
 
 ## Prior art
 
