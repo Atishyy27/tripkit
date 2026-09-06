@@ -1,8 +1,11 @@
 /* Cache the shell so the app opens with no signal. Trip data lives in
    localStorage, not here, so a stale cache can never serve stale places. */
-const V = "tripkit-v1";
+const V = "tripkit-v2";
 const SHELL = ["./", "./index.html", "./style.css", "./engine.js",
-               "./sources.js", "./sun.js", "./app.js", "./manifest.webmanifest", "./icon.svg"];
+               "./sources.js", "./sun.js", "./app.js", "./manifest.webmanifest", "./icon.svg",
+               "./vendor/leaflet.js", "./vendor/leaflet.css",
+               "./vendor/images/marker-icon.png", "./vendor/images/marker-icon-2x.png",
+               "./vendor/images/marker-shadow.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
