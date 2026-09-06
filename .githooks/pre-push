@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Refuse to push as the wrong GitHub account.
+#
+# What this DOES catch: the dangerous case, where the wrong account genuinely has
+# write access and the push would otherwise succeed under the wrong identity.
+#
+# What it does NOT catch, verified rather than assumed: a wrong account with no
+# access. Git authenticates with the remote before running pre-push, so that push
+# dies with a 403 at connection time and this hook never runs. Loud, but not here.
+#
+# It also cannot help `gh repo create`, which is not a push at all and is where the
+# real damage happened. The control for that one is to name the owner explicitly:
+#     gh repo create Atishyy27/tripkit      not      gh repo create tripkit
+# With the owner spelled out, a wrong active account errors instead of silently
+# publishing somewhere else.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+
+want="$(git config --get tripkit.owner)"
+[ -z "$want" ] && want="$(git remote get-url origin 2>/dev/null | sed -E 's#.*github\.com[:/]([^/]+)/.*#\1#')"
+[ -z "$want" ] && exit 0
+
+command -v gh >/dev/null 2>&1 || exit 0
+have="$(gh api user --jq .login 2>/dev/null)"
+[ -z "$have" ] && exit 0
+
+if [ "$(printf %s "$have" | tr 'A-Z' 'a-z')" != "$(printf %s "$want" | tr 'A-Z' 'a-z')" ]; then
+  echo ""
+  echo "  PUSH BLOCKED — wrong GitHub account."
+  echo "    remote wants : $want"
+  echo "    gh is now    : $have"
+  echo ""
+  echo "  Fix:  gh auth switch -u $want"
+  echo ""
+  exit 1
+fi
+
+email="$(git config user.email)"
+case "$email" in
+  *noreply.github.com) ;;
+  *) echo "  note: committing as $email — commits will be attributed by that address," ;;
+esac
+exit 0
