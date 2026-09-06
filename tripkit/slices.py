@@ -102,7 +102,11 @@ BRIEFS: dict[str, dict] = {
   in "why" - travellers get charged for facts that are wrong.""",
   queries=["{dest} opening hours temple monument", "{dest} entry fee timings 2026",
            "{dest} top sights what to see", "{dest} best time of day to visit",
-           "{dest} viewpoint sunrise sunset spot"], target=30),
+           "{dest} viewpoint sunrise sunset spot"], target=30,
+  chunks=["religious sites: temples, churches, mosques, shrines, monasteries",
+          "museums, galleries and indoor collections",
+          "monuments, forts, palaces, ruins and historic architecture",
+          "viewpoints, hills, waterfronts, parks and green space"]),
 
 "food": dict(
   shape="places", title="food, cafes and street eating",
@@ -115,7 +119,11 @@ BRIEFS: dict[str, dict] = {
   lists but that you cannot confirm exist at all.""",
   queries=["{dest} best restaurants cafes", "{dest} street food what to eat",
            "{dest} open early breakfast", "{dest} restaurant opening hours",
-           "{dest} local speciality dish where to eat"], target=40),
+           "{dest} local speciality dish where to eat"], target=40,
+  chunks=["anything open early, at or before breakfast: stalls, chai/coffee, bakeries",
+          "sit-down restaurants serving the local/regional cuisine",
+          "cafes, rooftops and places to sit for an hour",
+          "street food, sweets and snacks, with per-item prices"]),
 
 "shopping": dict(
   shape="places", title="markets and shops",
@@ -135,7 +143,11 @@ BRIEFS: dict[str, dict] = {
   for a female practitioner), state what you could and could not confirm.""",
   queries=["{dest} things to do activities booking", "{dest} classes workshops tours",
            "{dest} yoga massage spa class timings", "{dest} day tour price"],
-  target=30),
+  target=30,
+  chunks=["classes and workshops: cooking, craft, music, language, art",
+          "wellness: yoga, meditation, massage, spa, with class times",
+          "outdoor and adventure activities, tours and guided walks",
+          "evening and nightlife: live music, shows, bars, night markets"]),
 
 "offbeat": dict(
   shape="places", title="quiet, offbeat and photogenic",
@@ -288,18 +300,36 @@ def queries_for(name: str, spec: Spec) -> list[str]:
     return out
 
 
-def prompt_for(name: str, spec: Spec, context: str | None) -> str:
+def chunks_for(name: str) -> list[str | None]:
+    """
+    A slice asking for thirty detailed entries in one reply gets truncated, and a
+    truncated reply is worthless however carefully it is parsed. Splitting a slice
+    into sub-topics keeps each response comfortably inside what comes back intact,
+    and has a second benefit: each sub-topic gets the model's full attention instead
+    of one-thirtieth of it.
+    """
+    return ALL.get(name, {}).get("chunks") or [None]
+
+
+def prompt_for(name: str, spec: Spec, context: str | None,
+               chunk: str | None = None) -> str:
     d = ALL.get(name)
     if not d:
         raise KeyError(f"unknown slice {name!r}. Known: {', '.join(sorted(ALL))}")
     schema = d.get("schema") or PLACE_SCHEMA
+    n_chunks = len(d.get("chunks") or [None])
     target = d.get("target", 20)
+    if n_chunks > 1:
+        target = max(6, round(target / n_chunks))
     parts = [
         f"You are researching {d['title']} for a real traveller. Be specific, be "
         f"honest, and never invent anything.",
         "",
         "THE TRIP", "--------", _ctx(spec), "",
         "YOUR SLICE", "----------", d["brief"], "",
+        (f"NARROW THIS RUN TO ONE SUB-TOPIC: {chunk}\nOther sub-topics of this slice are "
+         f"being researched separately, so cover this one properly rather than sampling "
+         f"across all of them. Return nothing outside it." if chunk else ""), "",
         f"Aim for around {target} entries if the material genuinely supports it. "
         f"Fewer well-sourced entries beat more padded ones - never invent an entry "
         f"to reach a count." if target > 1 else "",

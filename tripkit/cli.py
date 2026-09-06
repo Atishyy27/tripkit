@@ -139,12 +139,16 @@ def cmd_research(args):
     else:
         contexts = {n: None for n in names}
 
-    jobs, skipped = {}, []
+    jobs, skipped, owner = {}, [], {}
     for n in names:
         p = os.path.join(outdir, n + ".json")
         if args.skip_existing and os.path.exists(p):
             skipped.append(n); continue
-        jobs[n] = SL.prompt_for(n, spec, contexts.get(n))
+        chunks = SL.chunks_for(n)
+        for i, ch in enumerate(chunks):
+            key = n if len(chunks) == 1 else f"{n}[{i+1}/{len(chunks)}]"
+            jobs[key] = SL.prompt_for(n, spec, contexts.get(n), ch)
+            owner[key] = n
     for n in skipped:
         dim(f"skip {n} (already in {args.research_dir}/)")
     if not jobs:
@@ -154,34 +158,54 @@ def cmd_research(args):
     t0 = time.time()
     done = {"n": 0}
 
+    collected: dict[str, list] = {}
+
     def on_done(r: llm.Result):
         done["n"] += 1
         tag = f"[{done['n']}/{len(jobs)}]"
+        base = owner.get(r.name, r.name)
         if r.ok:
             # Shape guard. Every slice except `conditions` must be a list; a dict here
             # means the model returned one entry where a list was asked for, and logging
             # that as a tidy success is how a slice quietly loses most of its content.
-            wants_list = SHAPE_OF.get(r.name, "places") != "conditions"
+            wants_list = SHAPE_OF.get(base, "places") != "conditions"
             if wants_list and not isinstance(r.data, list):
-                bad(f"{tag} {r.name:<12} returned a {type(r.data).__name__}, expected a list "
+                bad(f"{tag} {r.name:<16} returned a {type(r.data).__name__}, expected a list "
                     f"- saving it anyway so you can look, but treat this slice as failed")
             elif wants_list and len(r.data) <= 2:
-                warn(f"{tag} {r.name:<12} only {len(r.data)} entries in {r.seconds}s "
-                     f"- suspiciously few, likely truncated. Re-run with --only {r.name}")
+                warn(f"{tag} {r.name:<16} only {len(r.data)} entries in {r.seconds}s "
+                     f"- suspiciously few, likely truncated. Re-run with --only {base}")
             else:
                 size = len(r.data) if isinstance(r.data, list) else 1
-                ok(f"{tag} {r.name:<12} {size:>3} entries  {r.seconds}s")
-            with open(os.path.join(outdir, r.name + ".json"), "w", encoding="utf-8") as f:
-                json.dump(r.data, f, ensure_ascii=False, indent=1)
+                ok(f"{tag} {r.name:<16} {size:>3} entries  {r.seconds}s")
+            if wants_list and isinstance(r.data, list):
+                collected.setdefault(base, []).extend(r.data)
+            elif not wants_list:
+                collected[base] = r.data
         else:
-            bad(f"{tag} {r.name:<12} {r.error[:90]}")
+            bad(f"{tag} {r.name:<16} {r.error[:110]}")
 
     res = llm.fanout(jobs, a, model=spec.model, parallel=spec.parallel,
                      on_done=on_done, allow_tools=(prov is None),
                      timeout=args.timeout)
+
+    # write one file per slice, with every chunk of it merged in
+    say("")
+    for base, payload in collected.items():
+        with open(os.path.join(outdir, base + ".json"), "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=1)
+        n = len(payload) if isinstance(payload, list) else 1
+        ok(f"{base:<16} {n:>3} entries -> {args.research_dir}/{base}.json")
+
     good = sum(1 for r in res.values() if r.ok)
-    say(f"\n  {good}/{len(jobs)} slices in {round(time.time()-t0)}s "
-        f"→ {args.research_dir}/\n")
+    partial = [b for b in collected
+               if sum(1 for k, v in owner.items() if v == b) >
+                  sum(1 for k, r in res.items() if owner.get(k) == b and r.ok)]
+    if partial:
+        warn(f"partly complete: {', '.join(partial)} - some sub-topics failed, so these "
+             f"files hold less than they should. Re-run with --only " + ",".join(partial))
+    say(f"\n  {good}/{len(jobs)} calls, {len(collected)} slice file(s), "
+        f"{round(time.time()-t0)}s\n")
     return 0 if good else 1
 
 
