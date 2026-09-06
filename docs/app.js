@@ -87,12 +87,37 @@ function step(id, state, text) {
   const el = $("#" + id);
   if (!el) return;
   el.className = "step " + state;
-  el.querySelector("i").textContent = state === "done" ? "✓" : state === "fail" ? "✗" : state === "now" ? "◐" : "○";
-  if (text) el.querySelector("span").textContent = text;
+  const icon = el.querySelector("i"), label = el.querySelector("span");
+  if (icon) icon.textContent =
+    state === "done" ? "\u2713" : state === "fail" ? "\u2717" : state === "now" ? "\u25D0" : "\u25CB";
+  if (label && text) label.textContent = text;
 }
-function progress(pct) { $("#bar>div").style.width = pct + "%"; }
+function progress(pct) {
+  // A missing node here used to throw and abort the whole build, leaving the user
+  // staring at a step list frozen on the first tick. Progress reporting must never
+  // be able to stop the thing it is reporting on.
+  const el = $("#bar>div");
+  if (el) el.style.width = pct + "%";
+}
 
 async function build() {
+  try {
+    await runBuild();
+  } catch (e) {
+    // Anything unhandled in here used to leave the step list frozen with no
+    // explanation, which reads as "the app is broken" and gives nobody a clue.
+    step("stDone", "fail", "Build failed: " + (e && e.message ? e.message : e));
+    const el = $("#alerts") || $("#hits");
+    if (el) el.innerHTML =
+      '<div class="card warn"><h3>That did not work</h3><p class="sub">' +
+      esc(String((e && e.message) || e)) +
+      '</p><p class="tiny">OpenStreetMap and Wikivoyage are free shared services and ' +
+      'sometimes rate limit. Waiting a minute and trying again usually fixes it.</p></div>';
+    throw e;
+  }
+}
+
+async function runBuild() {
   show("s3");
   ["stGeo", "stOsm", "stWv", "stSun", "stDone"].forEach(i => step(i, "", null));
   const notes = [];

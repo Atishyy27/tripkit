@@ -416,6 +416,20 @@ describe("the page loads as a browser would", () => {
     vm.runInContext(src, ctx);   // throws on any load time error
   });
 
+  it("every element the code reaches for actually exists in the markup", () => {
+    // The app shipped frozen on its first step because progress() looked for
+    // "#bar>div" while the markup said class="bar". The selector returned null,
+    // reading .style threw, and the whole build aborted with no message.
+    const app = fs.readFileSync(path.join(DOCS, "app.js"), "utf8");
+    const html = fs.readFileSync(path.join(DOCS, "index.html"), "utf8");
+    const wanted = new Set();
+    for (const m of app.matchAll(/\$\("#([A-Za-z0-9_-]+)/g)) wanted.add(m[1]);
+    for (const m of app.matchAll(/getElementById\("([A-Za-z0-9_-]+)"/g)) wanted.add(m[1]);
+    const have = new Set([...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]));
+    const missing = [...wanted].filter(id => !have.has(id)).sort();
+    eq(missing, [], "app.js reaches for ids that index.html does not define");
+  });
+
   it("index.html loads every script the app needs, in an order that works", () => {
     const html = fs.readFileSync(path.join(DOCS, "index.html"), "utf8");
     const order = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
