@@ -27,7 +27,7 @@ def data_dir(spec, out): return os.path.join(out, "..", "research") if False els
 def cmd_doctor(args):
     say(f"\n{C['b']}tripkit doctor{C['x']}\n")
     a = A.resolve(args.auth)
-    (ok if a.ok else bad)(f"Claude access: {a.mode} — {a.detail}")
+    (ok if a.ok else bad)(f"Claude access: {a.mode}, {a.detail}")
     prov = None
     try:
         prov = S.pick(args.search)
@@ -111,7 +111,7 @@ def cmd_research(args):
     outdir = os.path.join(os.path.dirname(os.path.abspath(args.spec)), args.research_dir)
     os.makedirs(outdir, exist_ok=True)
 
-    names = args.only.split(",") if args.only else spec.slices
+    names = args.only.split(", ") if args.only else spec.slices
     unknown = [n for n in names if n not in SL.ALL]
     if unknown:
         bad(f"unknown slice(s): {', '.join(unknown)}")
@@ -203,7 +203,7 @@ def cmd_research(args):
                   sum(1 for k, r in res.items() if owner.get(k) == b and r.ok)]
     if partial:
         warn(f"partly complete: {', '.join(partial)} - some sub-topics failed, so these "
-             f"files hold less than they should. Re-run with --only " + ",".join(partial))
+             f"files hold less than they should. Re-run with --only " + ", ".join(partial))
     say(f"\n  {good}/{len(jobs)} calls, {len(collected)} slice file(s), "
         f"{round(time.time()-t0)}s\n")
     return 0 if good else 1
@@ -306,7 +306,7 @@ def cmd_verify(args):
 # ---------------------------------------------------------------- build
 SHAPE_OF = {n: d.get("shape", "places") for n, d in SL.ALL.items()}
 KEYS = {"move": ("mode", "from", "to"), "say": ("situation", "say"),
-        "help": ("name", "phone"), "scams": ("name", "opener"), "buy": ("item",)}
+        "help": ("name", "phone"), "scams": ("name", "opener"), "buy": ("item", )}
 
 
 def cmd_build(args):
@@ -336,7 +336,7 @@ def cmd_build(args):
         elif shape == "conditions":
             extras["conditions"] = raw if isinstance(raw, dict) else {}
         else:
-            extras[shape] = merge.keep_list(raw, KEYS.get(shape, ("name",)))
+            extras[shape] = merge.keep_list(raw, KEYS.get(shape, ("name", )))
 
     # a file named after a data shape loads as that shape, whatever the slice was called
     for shape in ("buy", "scams", "move", "say", "help"):
@@ -344,7 +344,7 @@ def cmd_build(args):
         if shape not in extras and os.path.exists(p):
             try:
                 with open(p, encoding="utf-8") as f:
-                    extras[shape] = merge.keep_list(json.load(f), KEYS.get(shape, ("name",)))
+                    extras[shape] = merge.keep_list(json.load(f), KEYS.get(shape, ("name", )))
                 dim(f"loaded {shape}.json as {shape}")
             except json.JSONDecodeError as e:
                 bad(f"{shape}.json is not valid JSON: {e}")

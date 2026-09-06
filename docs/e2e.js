@@ -58,7 +58,7 @@ async function run(query, tz) {
       const wh = listings.filter(x => x.open).length;
       const wp = listings.filter(x => x.priceNote).length;
       const wc = listings.filter(x => x.lat).length;
-      console.log(`  wikivoyage “${art.title}” — ${listings.length} listings, ${wh} with hours, ${wp} with prices, ${wc} with coordinates`);
+      console.log(`  wikivoyage “${art.title}”, ${listings.length} listings, ${wh} with hours, ${wp} with prices, ${wc} with coordinates`);
       const intro = introOf(art.wikitext);
       console.log(`  intro      ${intro ? intro.slice(0, 150).replace(/\s+/g, " ") + "…" : "(none found)"}`);
       const c = cautionsOf(art.wikitext);

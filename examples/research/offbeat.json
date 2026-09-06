@@ -27,7 +27,7 @@
   },
   {
     "id": "fifty-two-ghats-explainer",
-    "name": "The 52 ghats — are there really 52, and which ones have a story",
+    "name": "The 52 ghats, are there really 52, and which ones have a story",
     "cat": "practical",
     "town": "pushkar",
     "lat": 26.4869,
@@ -41,7 +41,7 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Sources agree on '52' as the traditional count (both Wikipedia's Pushkar and Pushkar Lake articles state 52 ghats ring the lake), but only around 20 are individually named across all sources combined this pass found — most of the remainder are unnamed or locally known steps between the marquee ones, not each individually storied. Of the ones with a documented name and history: Brahma Ghat (holiest, where Brahma performed his yagna), Varaha Ghat (where Vishnu's boar avatar reportedly appeared), Gau Ghat (cow-related etymology; also the ghat commonly claimed for Gandhi's ashes, though Wikipedia's own ghat list carries no ghat named 'Gandhi' — see the Gobind Ghat and Gau Ghat entries in this dataset for the naming tangle), Raj Ghat (built by Maharaja Man Singh I of Amber), Gobind Ghat (built by Sikhs in memory of Guru Gobind Singh), and Nart Singh Ghat, the odd one out, which reportedly displays a stuffed crocodile. The rest of the named-but-story-less set — Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, and Saptarishi ghats — are flagged by Wikipedia as Monuments of National Importance but got no individual story in any source checked here. Treat '52' as the accepted traditional number, not a count this research independently walked and verified step by step.",
+    "why": "Sources agree on '52' as the traditional count (both Wikipedia's Pushkar and Pushkar Lake articles state 52 ghats ring the lake), but only around 20 are individually named across all sources combined this pass found, most of the remainder are unnamed or locally known steps between the marquee ones, not each individually storied. Of the ones with a documented name and history: Brahma Ghat (holiest, where Brahma performed his yagna), Varaha Ghat (where Vishnu's boar avatar reportedly appeared), Gau Ghat (cow-related etymology; also the ghat commonly claimed for Gandhi's ashes, though Wikipedia's own ghat list carries no ghat named 'Gandhi', see the Gobind Ghat and Gau Ghat entries in this dataset for the naming tangle), Raj Ghat (built by Maharaja Man Singh I of Amber), Gobind Ghat (built by Sikhs in memory of Guru Gobind Singh), and Nart Singh Ghat, the odd one out, which reportedly displays a stuffed crocodile. The rest of the named-but-story-less set, Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, and Saptarishi ghats, are flagged by Wikipedia as Monuments of National Importance but got no individual story in any source checked here. Treat '52' as the accepted traditional number, not a count this research independently walked and verified step by step.",
     "warn": "The exact number 52 is traditional/religious, not independently re-counted in this pass.",
     "best": null,
     "tags": [
@@ -53,7 +53,7 @@
   },
   {
     "id": "lake-parikrama-pilgrim-circuit",
-    "name": "The full parikrama — not just a lap of one lake",
+    "name": "The full parikrama, not just a lap of one lake",
     "cat": "do",
     "town": "pushkar",
     "lat": 26.4869,
@@ -67,8 +67,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 210,
-    "why": "The full pilgrim parikrama is not the 20-30 minute walk around one lake's edge that most visitors do. Per Wikipedia's Pushkar Lake article, the actual circumambulation route is about 16km and visits all three of Pushkar's sacred lakes: the main Pushkar lake, Madhya Pushkar (Hanuman temple, old banyan tree), and Kanistha Pushkar (Krishna temple) — a half-day undertaking, not a stroll. Along the main lake's own edge, the walk gets genuinely interesting at the less-visited far-side ghats: Nart Singh Ghat's stuffed crocodile and the run of unnamed/undocumented ghats (Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, Saptarishi — all covered individually in this dataset) that no tour group stops at.",
-    "warn": "No source in this pass gave the walking direction (clockwise vs anticlockwise) or a typical pilgrim completion time for the full 16km route — treat those as open questions to confirm locally, distinct from the shorter lake-edge-only walk already covered elsewhere in this project's dataset.",
+    "why": "The full pilgrim parikrama is not the 20-30 minute walk around one lake's edge that most visitors do. Per Wikipedia's Pushkar Lake article, the actual circumambulation route is about 16km and visits all three of Pushkar's sacred lakes: the main Pushkar lake, Madhya Pushkar (Hanuman temple, old banyan tree), and Kanistha Pushkar (Krishna temple): a half-day undertaking, not a stroll. Along the main lake's own edge, the walk gets genuinely interesting at the less-visited far-side ghats: Nart Singh Ghat's stuffed crocodile and the run of unnamed/undocumented ghats (Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, Saptarishi, all covered individually in this dataset) that no tour group stops at.",
+    "warn": "No source in this pass gave the walking direction (clockwise vs anticlockwise) or a typical pilgrim completion time for the full 16km route, treat those as open questions to confirm locally, distinct from the shorter lake-edge-only walk already covered elsewhere in this project's dataset.",
     "best": [
       "06:00",
       "08:00"
@@ -97,8 +97,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -123,8 +123,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -149,8 +149,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -175,8 +175,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -201,8 +201,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -227,8 +227,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -253,8 +253,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -279,8 +279,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass — which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
-    "warn": "UNVERIFIED beyond the name — no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
+    "why": "One of Pushkar's 52 ghats, named and listed by Wikipedia's Pushkar Lake article as a Monument of National Importance alongside Varaha, Dadhich, Saptarishi, Gwalior, Kota, Gau, Yag, Jaipur, Karni, and Gangaur ghats. No individual history or story beyond the name turned up in this research pass, which is itself the offbeat appeal: it's quiet precisely because there's no story here to draw a tour group or a priest working the donation circuit.",
+    "warn": "UNVERIFIED beyond the name, no dedicated history, aarti role, or crowd pattern confirmed for this specific ghat.",
     "best": null,
     "tags": [
       "quiet",
@@ -305,7 +305,7 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "Built by Maharaja Man Singh I of Amber — the same king behind Man Mahal on the lake edge — per Wikipedia's Pushkar Lake article. One of the few named ghats with a documented royal patron rather than only a Puranic origin story.",
+    "why": "Built by Maharaja Man Singh I of Amber: the same king behind Man Mahal on the lake edge, per Wikipedia's Pushkar Lake article. One of the few named ghats with a documented royal patron rather than only a Puranic origin story.",
     "warn": null,
     "best": null,
     "tags": [
@@ -331,8 +331,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "The genuinely strange one: per Wikipedia's Pushkar Lake article, Nart Singh Ghat 'has a stuffed crocodile on display' — no explanation is offered anywhere for why a taxidermied crocodile sits at a Hindu bathing ghat in a landlocked desert town. Worth the detour on a parikrama for exactly that reason; it is the single strangest, least-guidebook fact found in this entire research pass.",
-    "warn": "UNVERIFIED beyond the one Wikipedia line — current display status, condition, or whether it is even still there was not confirmed.",
+    "why": "The genuinely strange one: per Wikipedia's Pushkar Lake article, Nart Singh Ghat 'has a stuffed crocodile on display', no explanation is offered anywhere for why a taxidermied crocodile sits at a Hindu bathing ghat in a landlocked desert town. Worth the detour on a parikrama for exactly that reason; it is the single strangest, least-guidebook fact found in this entire research pass.",
+    "warn": "UNVERIFIED beyond the one Wikipedia line, current display status, condition, or whether it is even still there was not confirmed.",
     "best": null,
     "tags": [
       "weird",
@@ -357,8 +357,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 10,
-    "why": "Built by Sikhs in memory of Guru Gobind Singh, per Wikipedia's Pushkar article — a rare non-Hindu-founded ghat on a lake otherwise dominated by Puranic mythology. Pushkar's Sikh community also runs a gurudwara nearby. Note the naming tangle flagged elsewhere in this project's data: travel writing commonly claims a 'Gandhi Ghat' for Gandhi's ashes, but Wikipedia's own ghat list has no ghat by that name — only 'Gobind.' Treat the two claims as genuinely unresolved rather than assuming one is simply a typo of the other.",
-    "warn": "Possible name confusion with the commonly-claimed 'Gandhi Ghat' — not resolved in this pass.",
+    "why": "Built by Sikhs in memory of Guru Gobind Singh, per Wikipedia's Pushkar article: a rare non-Hindu-founded ghat on a lake otherwise dominated by Puranic mythology. Pushkar's Sikh community also runs a gurudwara nearby. Note the naming tangle flagged elsewhere in this project's data: travel writing commonly claims a 'Gandhi Ghat' for Gandhi's ashes, but Wikipedia's own ghat list has no ghat by that name, only 'Gobind.' Treat the two claims as genuinely unresolved rather than assuming one is simply a typo of the other.",
+    "warn": "Possible name confusion with the commonly-claimed 'Gandhi Ghat', not resolved in this pass.",
     "best": null,
     "tags": [
       "quiet",
@@ -383,8 +383,8 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "No source in this pass gave a ghat-by-ghat crowd timetable, so this is informed inference, not a measured fact: the named/storied ghats (Brahma, Varah, Gobind/Gandhi) sit closest to the main bazaar and Brahma Temple, which is also where every tour group and every priest-donation approach gets funneled (that scam pattern is documented elsewhere in this project's dataset for the lake generally). The unnamed, story-less ghats on the lake's far side and back lanes — Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, Saptarishi, Raj, and Nart Singh, all covered individually in this dataset — are the ones actually empty outside the two daily aarti windows. Early-to-mid afternoon, roughly noon to 4pm, is when even the named ghats thin out, since that overlaps the midday temple-closure window and the day's heat peak documented elsewhere in this project's data.",
-    "warn": "UNVERIFIED — this is geographic and behavioral inference (bazaar-proximity drives crowding), not a sourced or measured crowd count. Treat as a reasonable bet, not a confirmed schedule.",
+    "why": "No source in this pass gave a ghat-by-ghat crowd timetable, so this is informed inference, not a measured fact: the named/storied ghats (Brahma, Varah, Gobind/Gandhi) sit closest to the main bazaar and Brahma Temple, which is also where every tour group and every priest-donation approach gets funneled (that scam pattern is documented elsewhere in this project's dataset for the lake generally). The unnamed, story-less ghats on the lake's far side and back lanes, Gwalior, Kota, Yag, Jaipur, Karni, Gangaur, Dadhich, Saptarishi, Raj, and Nart Singh, all covered individually in this dataset, are the ones actually empty outside the two daily aarti windows. Early-to-mid afternoon, roughly noon to 4pm, is when even the named ghats thin out, since that overlaps the midday temple-closure window and the day's heat peak documented elsewhere in this project's data.",
+    "warn": "UNVERIFIED: this is geographic and behavioral inference (bazaar-proximity drives crowding), not a sourced or measured crowd count. Treat as a reasonable bet, not a confirmed schedule.",
     "best": [
       "12:00",
       "16:00"
@@ -398,7 +398,7 @@
   },
   {
     "id": "aloo-baba-sadhu",
-    "name": "Aloo Baba — the potato sadhu",
+    "name": "Aloo Baba: the potato sadhu",
     "cat": "do",
     "town": "pushkar",
     "lat": 26.4869,
@@ -412,8 +412,8 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Pushkar-area travel lore describes a sadhu known as 'Aloo Baba' who reportedly took a vow decades ago to eat nothing but potatoes as an act of tapasya (penance) — exactly the kind of human-interest curiosity that circulates through guides and touts more than it gets documented by any single traceable source. This research pass could not locate a working, current source confirming his exact location, whether he is still alive, or whether a 'visit' is a real, arrangeable thing versus something a tout invents on the spot.",
-    "warn": "UNVERIFIED — could not confirm alive/dead status, exact location, or whether visiting is real versus a tout invention. Do not pay a guide upfront for an 'Aloo Baba visit' without independent confirmation on the ground; the same donation-pressure pattern already documented at the lake's ghats elsewhere in this project's data applies here.",
+    "why": "Pushkar-area travel lore describes a sadhu known as 'Aloo Baba' who reportedly took a vow decades ago to eat nothing but potatoes as an act of tapasya (penance), exactly the kind of human-interest curiosity that circulates through guides and touts more than it gets documented by any single traceable source. This research pass could not locate a working, current source confirming his exact location, whether he is still alive, or whether a 'visit' is a real, arrangeable thing versus something a tout invents on the spot.",
+    "warn": "UNVERIFIED, could not confirm alive/dead status, exact location, or whether visiting is real versus a tout invention. Do not pay a guide upfront for an 'Aloo Baba visit' without independent confirmation on the ground; the same donation-pressure pattern already documented at the lake's ghats elsewhere in this project's data applies here.",
     "best": null,
     "tags": [
       "unverified",
@@ -437,8 +437,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 180,
-    "why": "Desert-safari operators around Pushkar run jeep, tractor, and camel-cart routes that pass through small Rajasthani villages on the town's outskirts, per Wikipedia's Pushkar article and Holidify's Pushkar sightseeing guide — a look at rustic daily life rather than another sand-dune photo op. Neither source named specific villages or gave a distance-from-town figure, so treat this as a real, bookable category of activity, not a confirmed itinerary.",
-    "warn": "UNVERIFIED specifics: no village names, no distance-from-town figure, and no independently-verified operator found in this pass — the same gap flagged for camel/horse safari elsewhere in this project's dataset. Confirm the actual route with the operator before paying.",
+    "why": "Desert-safari operators around Pushkar run jeep, tractor, and camel-cart routes that pass through small Rajasthani villages on the town's outskirts, per Wikipedia's Pushkar article and Holidify's Pushkar sightseeing guide: a look at rustic daily life rather than another sand-dune photo op. Neither source named specific villages or gave a distance-from-town figure, so treat this as a real, bookable category of activity, not a confirmed itinerary.",
+    "warn": "UNVERIFIED specifics: no village names, no distance-from-town figure, and no independently-verified operator found in this pass: the same gap flagged for camel/horse safari elsewhere in this project's dataset. Confirm the actual route with the operator before paying.",
     "best": null,
     "tags": [
       "village",
@@ -463,7 +463,7 @@
     "hi": null,
     "priceNote": null,
     "dur": 20,
-    "why": "Built in the 1920s and containing 361 separate deity images under one roof, per Nativeplanet's Pushkar attractions page — a genuinely unusual concentration of murtis compared with Pushkar's other single-deity temples (Brahma, Varaha, Rangji, all covered elsewhere in this project's data), and one that doesn't appear in most standard Pushkar itineraries.",
+    "why": "Built in the 1920s and containing 361 separate deity images under one roof, per Nativeplanet's Pushkar attractions page: a genuinely unusual concentration of murtis compared with Pushkar's other single-deity temples (Brahma, Varaha, Rangji, all covered elsewhere in this project's data), and one that doesn't appear in most standard Pushkar itineraries.",
     "warn": "Hours, entry fee, and photography rules were not found in this pass.",
     "best": null,
     "tags": [
@@ -489,8 +489,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 90,
-    "why": "A 7-acre adventure park offering zorbing, rock climbing, and quad biking, per Holidify's Pushkar sightseeing guide — a non-spiritual, non-desert-safari activity option in a town otherwise built entirely around temples and dunes.",
-    "warn": "UNVERIFIED hours, pricing, and whether it is still operating — only one aggregator source found it in this pass.",
+    "why": "A 7-acre adventure park offering zorbing, rock climbing, and quad biking, per Holidify's Pushkar sightseeing guide: a non-spiritual, non-desert-safari activity option in a town otherwise built entirely around temples and dunes.",
+    "warn": "UNVERIFIED hours, pricing, and whether it is still operating, only one aggregator source found it in this pass.",
     "best": null,
     "tags": [
       "adventure",
@@ -500,7 +500,7 @@
   },
   {
     "id": "stepwell-baori-none-found",
-    "name": "Stepwell / baori — the honest answer is none found",
+    "name": "Stepwell / baori: the honest answer is none found",
     "cat": "practical",
     "town": "pushkar",
     "lat": 26.4869,
@@ -514,8 +514,8 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Pushkar itself has no documented stepwell or baori in any source checked in this pass — not in Wikipedia's Pushkar or Pushkar Lake articles, not in Wikivoyage, and not in this project's own Ajmer dataset (which covers Ana Sagar, Taragarh, and Foy Sagar in detail but names no stepwell either). Rajasthan's famous stepwells (Chand Baori, Toorji ka Jhalra) are all several hours away in other districts, not a Pushkar day-trip.",
-    "warn": "This is a negative finding from the sources checked, not proof that none exists — stated as a search gap, not a confirmed absence.",
+    "why": "Pushkar itself has no documented stepwell or baori in any source checked in this pass, not in Wikipedia's Pushkar or Pushkar Lake articles, not in Wikivoyage, and not in this project's own Ajmer dataset (which covers Ana Sagar, Taragarh, and Foy Sagar in detail but names no stepwell either). Rajasthan's famous stepwells (Chand Baori, Toorji ka Jhalra) are all several hours away in other districts, not a Pushkar day-trip.",
+    "warn": "This is a negative finding from the sources checked, not proof that none exists, stated as a search gap, not a confirmed absence.",
     "best": null,
     "tags": [
       "gap",
@@ -525,7 +525,7 @@
   },
   {
     "id": "sunrise-vs-sunset-ranking",
-    "name": "Sunrise vs sunset — which spot for which",
+    "name": "Sunrise vs sunset, which spot for which",
     "cat": "view",
     "town": "pushkar",
     "lat": 26.4869,
@@ -619,8 +619,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 30,
-    "why": "Pushkar's old town lanes around and behind Sadar Bazaar include older Rajasthani haveli-style buildings with carved facades in varying states of upkeep — some converted into guesthouses or shops, some visibly crumbling. No source in this pass named specific addresses or an individual haveli worth seeking out beyond Man Mahal, which is a separate, actively maintained heritage-hotel entry already covered elsewhere in this project's data, not a crumbling one.",
-    "warn": "UNVERIFIED — no specific crumbling haveli was named or located by this research pass; this is a general observation about the old town's building stock, not a pinpointed sight.",
+    "why": "Pushkar's old town lanes around and behind Sadar Bazaar include older Rajasthani haveli-style buildings with carved facades in varying states of upkeep, some converted into guesthouses or shops, some visibly crumbling. No source in this pass named specific addresses or an individual haveli worth seeking out beyond Man Mahal, which is a separate, actively maintained heritage-hotel entry already covered elsewhere in this project's data, not a crumbling one.",
+    "warn": "UNVERIFIED, no specific crumbling haveli was named or located by this research pass; this is a general observation about the old town's building stock, not a pinpointed sight.",
     "best": null,
     "tags": [
       "street",
@@ -646,7 +646,7 @@
     "priceNote": null,
     "dur": 30,
     "why": "Not independently sourced this pass with a dedicated photography citation, but it follows from facts already confirmed elsewhere in this project's data: Sadar/Sarafa Bazaar's ~1km market strip is busiest and best-lit in the last hour before Brahma Temple's evening closing (winter 8:30pm / summer 9pm), when shopfronts light up and foot traffic peaks without yet being the harsh midday sun that drives the temple midday-closures documented elsewhere in this dataset.",
-    "warn": "UNVERIFIED as a photography-specific recommendation — inferred from bazaar hours and temple-closure patterns, not from a source discussing photography directly.",
+    "warn": "UNVERIFIED as a photography-specific recommendation, inferred from bazaar hours and temple-closure patterns, not from a source discussing photography directly.",
     "best": [
       "17:00",
       "19:00"
@@ -660,7 +660,7 @@
   },
   {
     "id": "camels-at-dawn-desert-edge",
-    "name": "Camels at dawn — where the actual shot is",
+    "name": "Camels at dawn, where the actual shot is",
     "cat": "view",
     "town": "pushkar",
     "lat": 26.479,
@@ -674,8 +674,8 @@
     "hi": null,
     "priceNote": null,
     "dur": 30,
-    "why": "Camel-safari operators stage and depart from the desert edge outside town, per this project's existing camel-safari activity entry — which means camels are tethered and saddled there before dawn departures. The real 'camels at dawn' photo opportunity is at that safari staging point, not in town itself. No source in this pass gave the staging point's exact location or a confirmed dawn-departure time.",
-    "warn": "UNVERIFIED location and timing — ask a camel-safari operator directly for their staging point and earliest departure slot if a dawn shot is the goal.",
+    "why": "Camel-safari operators stage and depart from the desert edge outside town, per this project's existing camel-safari activity entry, which means camels are tethered and saddled there before dawn departures. The real 'camels at dawn' photo opportunity is at that safari staging point, not in town itself. No source in this pass gave the staging point's exact location or a confirmed dawn-departure time.",
+    "warn": "UNVERIFIED location and timing, ask a camel-safari operator directly for their staging point and earliest departure slot if a dawn shot is the goal.",
     "best": [
       "06:00",
       "06:30"
@@ -690,7 +690,7 @@
   },
   {
     "id": "bhang-holi-tradition",
-    "name": "Bhang at Holi — a real, dated tradition",
+    "name": "Bhang at Holi: a real, dated tradition",
     "cat": "practical",
     "town": "pushkar",
     "lat": 26.4869,
@@ -704,7 +704,7 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Per Wikipedia's Pushkar article, bhang (a cannabis-based edible) is traditionally served during Holi in Pushkar, and the town is described as having 'some of the best Bhang in India' — a specific, dated cultural tradition distinct from the everyday bhang-lassi-at-cafes question covered elsewhere in this project's data (which found no confirmed licensed bhang shop in town).",
+    "why": "Per Wikipedia's Pushkar article, bhang (a cannabis-based edible) is traditionally served during Holi in Pushkar, and the town is described as having 'some of the best Bhang in India': a specific, dated cultural tradition distinct from the everyday bhang-lassi-at-cafes question covered elsewhere in this project's data (which found no confirmed licensed bhang shop in town).",
     "warn": null,
     "best": null,
     "tags": [
@@ -715,7 +715,7 @@
   },
   {
     "id": "leukoderma-healing-legend",
-    "name": "The king whose skin marks vanished — the lake's healing legend",
+    "name": "The king whose skin marks vanished: the lake's healing legend",
     "cat": "practical",
     "town": "pushkar",
     "lat": 26.4869,
@@ -729,7 +729,7 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Per Wikipedia's Pushkar Lake article, a 9th-century king reportedly dipped his hand in the lake and watched his leukoderma (a skin depigmentation condition) marks disappear — the origin story behind the lake's continuing reputation for curative bathing waters, distinct from the Brahma creation myth covered elsewhere in this project's data.",
+    "why": "Per Wikipedia's Pushkar Lake article, a 9th-century king reportedly dipped his hand in the lake and watched his leukoderma (a skin depigmentation condition) marks disappear: the origin story behind the lake's continuing reputation for curative bathing waters, distinct from the Brahma creation myth covered elsewhere in this project's data.",
     "warn": null,
     "best": null,
     "tags": [
@@ -754,7 +754,7 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Because of its holy status, the sale of meat, fish, eggs, and alcohol is banned within Pushkar town, per Wikipedia's Pushkar article — genuinely affects what's available to eat or drink and easy for a first-time visitor not to expect, unlike most other tourist towns in Rajasthan.",
+    "why": "Because of its holy status, the sale of meat, fish, eggs, and alcohol is banned within Pushkar town, per Wikipedia's Pushkar article, genuinely affects what's available to eat or drink and easy for a first-time visitor not to expect, unlike most other tourist towns in Rajasthan.",
     "warn": "Applies to Pushkar town itself; nearby Ajmer does not carry the same restriction.",
     "best": null,
     "tags": [
@@ -779,7 +779,7 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Most of Pushkar's temples and ghats actually date from the 18th century or later, not from antiquity, because earlier structures were destroyed during Muslim conquests, per Wikipedia's Pushkar article — worth knowing before taking a guide's claim that a given temple is '1000 years old' at face value. The one confirmed exception is Varaha Temple, whose original construction dates to roughly 1123-1150 AD despite being rebuilt at least three times since, per this project's existing Varaha Temple entry.",
+    "why": "Most of Pushkar's temples and ghats actually date from the 18th century or later, not from antiquity, because earlier structures were destroyed during Muslim conquests, per Wikipedia's Pushkar article, worth knowing before taking a guide's claim that a given temple is '1000 years old' at face value. The one confirmed exception is Varaha Temple, whose original construction dates to roughly 1123-1150 AD despite being rebuilt at least three times since, per this project's existing Varaha Temple entry.",
     "warn": null,
     "best": null,
     "tags": [
@@ -790,7 +790,7 @@
   },
   {
     "id": "jagarana-savitri-night-vigil",
-    "name": "Jagarana — Savitri Temple's all-night vigil",
+    "name": "Jagarana, Savitri Temple's all-night vigil",
     "cat": "do",
     "town": "pushkar",
     "lat": 26.493,
@@ -804,8 +804,8 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Savitri Mata Temple holds a Jagarana (all-night vigil/celebration) on the night of Saptami in the Hindu month of Bhado (roughly August-September), per Wikipedia's Savitri Mata Mandir article — a real, dateable local ritual a visitor could watch rather than a generic 'temples have festivals sometimes' claim.",
-    "warn": "UNVERIFIED whether Saptami of Bhado falls inside any specific visit window in a given year — confirm the exact Hindu-calendar date locally; Bhado usually runs roughly Aug-Sept so there is a real chance of overlap with a September trip.",
+    "why": "Savitri Mata Temple holds a Jagarana (all-night vigil/celebration) on the night of Saptami in the Hindu month of Bhado (roughly August-September), per Wikipedia's Savitri Mata Mandir article: a real, dateable local ritual a visitor could watch rather than a generic 'temples have festivals sometimes' claim.",
+    "warn": "UNVERIFIED whether Saptami of Bhado falls inside any specific visit window in a given year, confirm the exact Hindu-calendar date locally; Bhado usually runs roughly Aug-Sept so there is a real chance of overlap with a September trip.",
     "best": null,
     "tags": [
       "ritual",
@@ -830,8 +830,8 @@
     "hi": 0,
     "priceNote": "free",
     "dur": 30,
-    "why": "No source in this pass found a rooftop in Pushkar that's free to sit on without ordering — every named rooftop cafe in this project's data (Laughing Buddha, Cafe Lake View, Sunset Cafe) is a paying business with a menu. The genuine free-and-cheap equivalent is the lake's own ghat steps: the same elevated, open-air sightline over the water, zero cost, available at any of the quiet unnamed ghats covered elsewhere in this dataset — trading the espresso machine for a stone step.",
-    "warn": "UNVERIFIED that no free rooftop exists at all — only that this research pass didn't find one; a hotel or guesthouse terrace might let a non-guest sit for free, but none was confirmed.",
+    "why": "No source in this pass found a rooftop in Pushkar that's free to sit on without ordering, every named rooftop cafe in this project's data (Laughing Buddha, Cafe Lake View, Sunset Cafe) is a paying business with a menu. The genuine free-and-cheap equivalent is the lake's own ghat steps: the same elevated, open-air sightline over the water, zero cost, available at any of the quiet unnamed ghats covered elsewhere in this dataset, trading the espresso machine for a stone step.",
+    "warn": "UNVERIFIED that no free rooftop exists at all, only that this research pass didn't find one; a hotel or guesthouse terrace might let a non-guest sit for free, but none was confirmed.",
     "best": null,
     "tags": [
       "free",
@@ -857,8 +857,8 @@
     "hi": null,
     "priceNote": null,
     "dur": null,
-    "why": "Two enforcement zones for photography in Pushkar, per this project's existing data: inside Brahma Temple (no photography) and photographing pilgrims mid-bathing or mid-ritual at any of the 52 ghats. Both are treated as genuinely intrusive in Hindu pilgrimage-town etiquette, and doing it risks a real confrontation, not just disapproval — on top of the priest-donation approach pattern already documented for the ghats generally.",
-    "warn": "This pass's own direct fetch of Brahma Temple's Wikipedia article did not itself state a no-photography rule — that claim is asserted elsewhere in this project's dataset from a different, unnamed source. Treat the temple-interior photography ban as likely true but not independently re-confirmed by this specific research pass.",
+    "why": "Two enforcement zones for photography in Pushkar, per this project's existing data: inside Brahma Temple (no photography) and photographing pilgrims mid-bathing or mid-ritual at any of the 52 ghats. Both are treated as genuinely intrusive in Hindu pilgrimage-town etiquette, and doing it risks a real confrontation, not just disapproval, on top of the priest-donation approach pattern already documented for the ghats generally.",
+    "warn": "This pass's own direct fetch of Brahma Temple's Wikipedia article did not itself state a no-photography rule: that claim is asserted elsewhere in this project's dataset from a different, unnamed source. Treat the temple-interior photography ban as likely true but not independently re-confirmed by this specific research pass.",
     "best": null,
     "tags": [
       "photography",

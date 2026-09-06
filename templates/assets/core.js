@@ -10,7 +10,7 @@ const CUR = CFG.currencySymbol || "";
 /* ---------- time ---------- */
 const M = s => { if(!s) return null; const p=String(s).split(":"); return (+p[0])*60+(+p[1]||0); };
 const HM = n => { n=((Math.round(n)%1440)+1440)%1440;
-  return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0"); };
+  return String(Math.floor(n/60)).padStart(2, "0")+":"+String(n%60).padStart(2, "0"); };
 function localMins(){
   // Render in the DESTINATION's timezone, not the viewer's. A traveller often
   // lands with their phone still on the old zone, and a guide that silently
@@ -45,24 +45,24 @@ const HEAT    = (COND.heatWindow && COND.heatWindow.length===2)
 /* ---------- day phases, derived from the sun rather than hardcoded ---------- */
 const PHASES = (function(){
   const p = [];
-  const add=(from,to,id,name,tags,line)=>{ if(to>from) p.push({id,from,to,name,tags,line}); };
-  add(0, Math.max(0,SUNRISE-70), "night", "Before dawn", ["indoor","transit"],
+  const add=(from, to, id, name, tags, line)=>{ if(to>from) p.push({id, from, to, name, tags, line}); };
+  add(0, Math.max(0, SUNRISE-70), "night", "Before dawn", ["indoor", "transit"],
       "Dark. This is a get-somewhere hour, not a look-at-things hour.");
-  add(Math.max(0,SUNRISE-70), SUNRISE-20, "predawn", "First light", ["quiet","transit","sunrise"],
+  add(Math.max(0, SUNRISE-70), SUNRISE-20, "predawn", "First light", ["quiet", "transit", "sunrise"],
       "The sky is going. Cold light, empty streets, almost nothing open yet.");
-  add(SUNRISE-20, SUNRISE+40, "sunrise", "Sunrise", ["sunrise","quiet","photo","outdoor"],
+  add(SUNRISE-20, SUNRISE+40, "sunrise", "Sunrise", ["sunrise", "quiet", "photo", "outdoor"],
       "The best forty minutes of the day. Soft, empty and cool.");
-  add(SUNRISE+40, HEAT[0], "morning", "Golden morning", ["outdoor","quiet","photo","walk","sunrise"],
+  add(SUNRISE+40, HEAT[0], "morning", "Golden morning", ["outdoor", "quiet", "photo", "walk", "sunrise"],
       "Cool, well lit, not yet crowded. Spend these hours outside; you cannot get them back.");
-  add(HEAT[0], HEAT[1], "heat", "The hot hours", ["indoor","shade","aircon","food","rest"],
+  add(HEAT[0], HEAT[1], "heat", "The hot hours", ["indoor", "shade", "aircon", "food", "rest"],
       "Nobody local is walking around now. Eat, sit somewhere shaded, wait it out.");
-  add(HEAT[1], SUNSET-80, "afternoon", "Cooling off", ["outdoor","shop","walk","view"],
+  add(HEAT[1], SUNSET-80, "afternoon", "Cooling off", ["outdoor", "shop", "walk", "view"],
       "It comes back to life. Markets are better now than at midday.");
-  add(SUNSET-80, SUNSET+10, "golden", "Golden evening", ["view","sunset","photo","rooftop","outdoor"],
+  add(SUNSET-80, SUNSET+10, "golden", "Golden evening", ["view", "sunset", "photo", "rooftop", "outdoor"],
       "Second best light of the day. Get somewhere high or somewhere with a view.");
-  add(SUNSET+10, M("21:00"), "dusk", "Dusk", ["food","evening","nightlife","shop"],
+  add(SUNSET+10, M("21:00"), "dusk", "Dusk", ["food", "evening", "nightlife", "shop"],
       "Evening proper. Streets light up, kitchens open, the day softens.");
-  add(M("21:00"), 1440, "late", "Late", ["food","indoor","nightlife"],
+  add(M("21:00"), 1440, "late", "Late", ["food", "indoor", "nightlife"],
       "Late. Fewer options, better atmosphere in the ones that are left.");
   return p;
 })();
@@ -91,7 +91,7 @@ function openState(p, t){
 
 /* ---------- where the traveller is ---------- */
 function where(){ try{ return localStorage.getItem("tk_where")||"auto"; }catch(e){ return "auto"; } }
-function setWhere(v){ try{ localStorage.setItem("tk_where",v); }catch(e){} }
+function setWhere(v){ try{ localStorage.setItem("tk_where", v); }catch(e){} }
 function effectiveTown(t){
   const w=where();
   if(w && w!=="auto") return w;
@@ -106,14 +106,14 @@ function exitState(t){
   const soft=TRIP.lastExit-t, hard=TRIP.hardExit-t, bus=TRIP.depart-t;
   if(bus<=0)  return {level:"gone",  msg:"Your departure time has passed."};
   if(hard<=0) return {level:"now",   msg:"You are past the last safe moment to set off. "+bus+" minutes until departure and the journey takes about "+TRIP.hop+". Go now."};
-  if(soft<=0) return {level:"urgent",msg:"Past the comfortable departure. "+hard+" minutes before you have no margin at all."};
+  if(soft<=0) return {level:"urgent", msg:"Past the comfortable departure. "+hard+" minutes before you have no margin at all."};
   if(soft<=45)return {level:"soon",  msg:"Set off in "+soft+" minutes for a calm departure. Sort your ride now, not then."};
   return {level:"ok", msg:null};
 }
 
 /* ---------- scoring ---------- */
 function score(p, t, town, phase){
-  const st=openState(p,t);
+  const st=openState(p, t);
   let s=0; const why=[];
   if(st.state==="shut") return null;
   if(st.state==="soon")    s-=14;
@@ -127,7 +127,7 @@ function score(p, t, town, phase){
   } else s+=10;
 
   if(p.best && p.best.length){
-    const d=Math.min.apply(null,p.best.map(b=>Math.abs(M(b)-t)));
+    const d=Math.min.apply(null, p.best.map(b=>Math.abs(M(b)-t)));
     if(d<=35){ s+=42; why.push("this is exactly its hour"); }
     else if(d<=75){ s+=22; why.push("close to its best time"); }
   }
@@ -151,30 +151,30 @@ function score(p, t, town, phase){
   // to go, no best hour, no price. Left unchecked an open pharmacy outranks a shut
   // viewpoint, which is technically correct and useless. Infrastructure you only want
   // when you need it is pushed down; anything with a human reason attached is pulled up.
-  const chore = ["practical","move","hub","stay"].indexOf(p.cat) >= 0;
+  const chore = ["practical", "move", "hub", "stay"].indexOf(p.cat) >= 0;
   if(chore) s -= 34;
   if(!p.why && !(p.best||[]).length) s -= 12;   // no judgement of any kind
   else if(p.why) s += 8;
 
-  return {p,s,st,why};
+  return {p, s, st, why};
 }
 
 function rankNow(t, opts){
   opts=opts||{};
   const town=opts.town||effectiveTown(t), phase=phaseAt(t);
   const pool=(typeof DATA!=="undefined"?DATA.places:[])||[];
-  let out=pool.map(p=>score(p,t,town,phase)).filter(Boolean);
+  let out=pool.map(p=>score(p, t, town, phase)).filter(Boolean);
   if(opts.cat && opts.cat!=="all") out=out.filter(r=>r.p.cat===opts.cat);
   if(opts.cats) out=out.filter(r=>opts.cats.indexOf(r.p.cat)>=0);
   if(opts.tag) out=out.filter(r=>(r.p.tags||[]).indexOf(opts.tag)>=0);
-  out.sort((a,b)=> b.s-a.s || (a.p.dur||30)-(b.p.dur||30));
+  out.sort((a, b)=> b.s-a.s || (a.p.dur||30)-(b.p.dur||30));
   return {phase, town, list: out};
 }
 const _pool = () => (typeof DATA!=="undefined"?DATA.places:[])||[];
-const openingSoon = t => _pool().map(p=>({p,st:openState(p,t)}))
-  .filter(r=>r.st.state==="soon").sort((a,b)=>a.st.opensIn-b.st.opensIn);
-const closingSoon = t => _pool().map(p=>({p,st:openState(p,t)}))
-  .filter(r=>r.st.state==="closing").sort((a,b)=>a.st.closesIn-b.st.closesIn);
+const openingSoon = t => _pool().map(p=>({p, st:openState(p, t)}))
+  .filter(r=>r.st.state==="soon").sort((a, b)=>a.st.opensIn-b.st.opensIn);
+const closingSoon = t => _pool().map(p=>({p, st:openState(p, t)}))
+  .filter(r=>r.st.state==="closing").sort((a, b)=>a.st.closesIn-b.st.closesIn);
 
 /* ---------- outbound links ---------- */
 const enc = encodeURIComponent;
@@ -184,18 +184,18 @@ const townLabel = p => {
 };
 const LINK = {
   map:  p => "https://www.google.com/maps/search/?api=1&query="+enc(p.name+", "+townLabel(p)+(CFG.country?", "+CFG.country:"")),
-  dir:  p => "https://www.google.com/maps/dir/?api=1&destination="+p.lat+","+p.lng+"&travelmode=driving",
-  walk: p => "https://www.google.com/maps/dir/?api=1&destination="+p.lat+","+p.lng+"&travelmode=walking",
+  dir:  p => "https://www.google.com/maps/dir/?api=1&destination="+p.lat+", "+p.lng+"&travelmode=driving",
+  walk: p => "https://www.google.com/maps/dir/?api=1&destination="+p.lat+", "+p.lng+"&travelmode=walking",
   uber: p => "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]="+p.lat+"&dropoff[longitude]="+p.lng+"&dropoff[nickname]="+enc(p.name),
   ride: p => (CFG.rideLinks||[]).map(r=>({label:r.label, url:r.url})),
   food: p => (CFG.foodLink||"https://www.google.com/search?q=")+enc(p.name+" "+townLabel(p))
 };
-const EATS = ["food","cafe","sweet","street","bar"];
+const EATS = ["food", "cafe", "sweet", "street", "bar"];
 
 function price(p){
   if((p.lo===0||p.lo===null)&&(p.hi===0)) return "free";
   if(p.lo===null||p.lo===undefined) return p.priceNote||"price unknown";
-  if(p.hi && p.hi!==p.lo) return CUR+p.lo+"–"+p.hi+(p.priceNote?" "+p.priceNote:"");
+  if(p.hi && p.hi!==p.lo) return CUR+p.lo+"-"+p.hi+(p.priceNote?" "+p.priceNote:"");
   return CUR+p.lo+(p.priceNote?" "+p.priceNote:"");
 }
 

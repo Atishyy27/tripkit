@@ -1,5 +1,5 @@
 {
-  "name": "tripkit — what's open right now",
+  "name": "tripkit, what's open right now",
   "short_name": "tripkit",
   "description": "A travel guide that reads the clock. Works offline. No account, no tracking.",
   "start_url": "./",
