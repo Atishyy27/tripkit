@@ -182,3 +182,13 @@ ul.tight li{margin-bottom:6px}
 .big{width:100%;background:var(--hot);color:#1a0e06;border:0;border-radius:12px;padding:14px;
  font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:6px}
 .big.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
+
+#map{height:64vh;min-height:340px;border-radius:var(--r);border:1px solid var(--line);
+ background:#12101a;margin:4px 0 8px}
+.leaflet-popup-content-wrapper{background:#1a1622;color:var(--ink);border-radius:11px;border:1px solid var(--line)}
+.leaflet-popup-tip{background:#1a1622}
+.leaflet-popup-content{margin:11px 13px;font-size:13px;line-height:1.5}
+.leaflet-popup-content a{color:var(--gold)}
+.leaflet-container{background:#12101a;font:inherit}
+.leaflet-bar a{background:#1a1622;color:var(--ink);border-color:var(--line)}
+.leaflet-bar a:hover{background:#241d30}

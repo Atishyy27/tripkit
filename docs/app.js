@@ -98,7 +98,7 @@ async function build() {
   const arrive = $("#arrive").value || "09:00";
   const depart = $("#depart").value || "21:00";
 
-  step("stGeo", "done", `${PLACE.name} — ${PLACE.lat.toFixed(4)}, ${PLACE.lng.toFixed(4)}`);
+  step("stGeo", "done", `${PLACE.name}, ${PLACE.lat.toFixed(4)}, ${PLACE.lng.toFixed(4)}`);
   progress(10);
 
   /* --- OpenStreetMap --- */
@@ -112,7 +112,7 @@ async function build() {
     places = cap.kept;
     const withHours = places.filter(p => p.open).length;
     step("stOsm", "done",
-      `${all.length} places found, keeping ${places.length}${cap.dropped ? ` (dropped ${cap.dropped} least useful — mostly banks and bus stops)` : ""}, ${withHours} with opening hours`);
+      `${all.length} places found, keeping ${places.length}${cap.dropped ? ` (dropped ${cap.dropped} least useful, mostly banks and bus stops)` : ""}, ${withHours} with opening hours`);
     if (cap.dropped) notes.push(`${PLACE.name} is big: ${all.length} mapped places came back and the ${cap.dropped} least useful were dropped so this fits on a phone. Nothing with a description or opening hours was removed first.`);
   } catch (e) {
     step("stOsm", "fail", `OpenStreetMap unavailable: ${e.message}`);
@@ -137,7 +137,7 @@ async function build() {
       intro = introOf(art.wikitext);
       cautions = cautionsOf(art.wikitext);
       places = mergePlaces(places, listings);
-      step("stWv", "done", `“${art.title}” — ${listings.length} listings written by travellers`);
+      step("stWv", "done", `“${art.title}”, ${listings.length} listings written by travellers`);
     } else {
       step("stWv", "fail", "no Wikivoyage article for this place");
       notes.push("No Wikivoyage guide exists here, so descriptions come only from map data.");
@@ -150,7 +150,7 @@ async function build() {
   /* --- sun, computed here --- */
   step("stSun", "now", "computing the sun…");
   const s = sunTimes(new Date(), PLACE.lat, PLACE.lng, tz);
-  step("stSun", "done", `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)} — calculated on this device, not fetched`);
+  step("stSun", "done", `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}, calculated on this device, not fetched`);
   progress(95);
 
   TRIP = {
@@ -170,7 +170,7 @@ async function build() {
     places
   };
   save(TRIP);
-  step("stDone", "done", `${places.length} places ready — saved to this device`);
+  step("stDone", "done", `${places.length} places ready, saved to this device`);
   progress(100);
   setTimeout(() => open(TRIP), 500);
 }
@@ -212,8 +212,13 @@ function open(trip) {
   $("#gName").textContent = trip.place.name;
   buildCats();
   render();
+  setView("list");
   clearInterval(window._tick);
-  window._tick = setInterval(render, 30000);
+  window._tick = setInterval(() => {
+    render();
+    if (!$("#vMap").hidden) drawMap();
+    if (!$("#vDay").hidden) drawDay();
+  }, 30000);
 }
 
 function buildCats() {
@@ -237,7 +242,7 @@ function card(r, i) {
     : p.from === "OpenStreetMap + Wikivoyage" ? '<span class="src-badge src-wv">OSM + Wikivoyage</span>'
     : '<span class="src-badge src-osm">OpenStreetMap</span>';
   const price = p.priceNote ? esc(p.priceNote) : ((p.lo === 0 && p.hi === 0) ? "free" : "");
-  const g = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
+  const g = `https://www.google.com/maps/dir/?api=1&destination=${p.lat}, ${p.lng}&travelmode=walking`;
   const o = `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`;
   return `<div class="card${i === 0 ? " hi" : ""}">
     <h3>${esc(p.name)}${price ? `<span class="money">${price}</span>` : ""}</h3>
@@ -271,7 +276,7 @@ function render() {
   let alerts = "";
   if (ex.msg) alerts += `<div class="card ${ex.level === "soon" ? "cool" : "warn"}"><h3>${ex.level === "soon" ? "Start heading back" : "Time to go"}</h3><p class="sub" style="margin:6px 0 0">${esc(ex.msg)}</p></div>`;
   const cs = closingSoon(t);
-  if (cs.length) alerts += `<div class="card warn"><h3>Closing soon</h3>${cs.slice(0, 4).map(x => `<p class="sub" style="margin:4px 0"><b>${esc(x.p.name)}</b> — ${esc(x.st.label)}</p>`).join("")}</div>`;
+  if (cs.length) alerts += `<div class="card warn"><h3>Closing soon</h3>${cs.slice(0, 4).map(x => `<p class="sub" style="margin:4px 0"><b>${esc(x.p.name)}</b>, ${esc(x.st.label)}</p>`).join("")}</div>`;
   $("#alerts").innerHTML = alerts;
 
   const top = r.list.slice(0, 40);
@@ -280,9 +285,109 @@ function render() {
   $("#count").textContent = `${r.list.length} of ${TRIP.places.length} places fit right now`;
 }
 
+/* ---------- map ---------- */
+let MAP = null, LAYER = null;
+const PAL = ["#ffc857", "#6ee7d0", "#ff7ab8", "#8ab8ff", "#b98cff", "#ff8a4c", "#7ee0a8", "#ff5f6d", "#a99fc4"];
+
+function drawMap() {
+  if (typeof L === "undefined") { $("#mapNote").textContent = "The map library did not load."; return; }
+  const pts = TRIP.places.filter(p => p.lat && p.lng && !p.loose);
+  if (!MAP) {
+    MAP = L.map("map", { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(MAP);
+    if (pts.length) MAP.fitBounds(pts.map(p => [p.lat, p.lng]), { padding: [26, 26], maxZoom: 16 });
+    else MAP.setView([TRIP.place.lat, TRIP.place.lng], 14);
+  }
+  if (LAYER) MAP.removeLayer(LAYER);
+  const cats = Array.from(new Set(TRIP.places.map(p => p.cat))).sort();
+  const col = {}; cats.forEach((c, i) => col[c] = PAL[i % PAL.length]);
+  const t = localMins();
+  const markers = [];
+  for (const p of pts) {
+    const st = openState(p, t), shut = st.state === "shut";
+    markers.push(L.circleMarker([p.lat, p.lng], {
+      radius: shut ? 5 : 8, color: col[p.cat] || "#a99fc4", fillColor: col[p.cat] || "#a99fc4",
+      fillOpacity: shut ? 0.25 : 0.85, weight: shut ? 1 : 2
+    }).bindPopup(
+      `<b>${esc(p.name)}</b><br><span style="color:#a99fc4">${esc(st.label)}${p.priceNote ? " · " + esc(p.priceNote) : ""}</span>` +
+      (p.why ? `<br><span style="color:#a99fc4">${esc(p.why).slice(0, 140)}</span>` : "") +
+      `<br><a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking" target="_blank" rel="noopener">Walk there</a>`));
+  }
+  LAYER = L.layerGroup(markers).addTo(MAP);
+  const openNow = pts.filter(p => ["open", "closing"].includes(openState(p, t).state)).length;
+  $("#mapNote").innerHTML = `<b>${pts.length}</b> places with a real pin, <b>${openNow}</b> open right now (faded ones are shut). ` +
+    `${TRIP.places.length - pts.length} more have no exact coordinates and are list-only. ` +
+    cats.map(c => `<span style="color:${col[c]}">&#9632; ${esc(c)}</span>`).join(" &nbsp; ");
+  setTimeout(() => MAP.invalidateSize(), 60);
+}
+
+/* ---------- the day ---------- */
+function drawDay() {
+  const t = localMins();
+  $("#tl").innerHTML = PHASES.map(p => {
+    const on = t >= p.from && t < p.to, past = t >= p.to;
+    const fits = rankNow(Math.floor((p.from + p.to) / 2), {}).list.length;
+    return `<div class="tlrow${on ? " on" : past ? " past" : ""}">
+      <div class="h">${HM(p.from)} - ${HM(p.to)}${on ? ' &nbsp;<span class="tag t-open">now</span>' : ""}</div>
+      <div style="font-weight:700;font-size:14px;margin:1px 0 2px">${esc(p.name)}</div>
+      <div class="sub" style="font-size:12.5px">${esc(p.line)}</div>
+      <div class="tiny" style="margin-top:3px">${fits} places suit this stretch</div></div>`;
+  }).join("");
+  const hrs = TRIP.places.filter(p => p.open).length;
+  const txt = TRIP.places.filter(p => p.why).length;
+  const c = TRIP.conditions;
+  $("#dayStats").innerHTML = `
+    <div class="grid2">
+      <div class="stat"><div class="v">${HM(c.sunrise)}</div><div class="k">sunrise</div></div>
+      <div class="stat"><div class="v">${HM(c.sunset)}</div><div class="k">sunset</div></div>
+      <div class="stat"><div class="v">${hrs}</div><div class="k">with real opening hours</div></div>
+      <div class="stat"><div class="v">${txt}</div><div class="k">with a human description</div></div>
+    </div>
+    <p class="tiny" style="margin:10px 0 0">Sunrise and sunset were calculated on this device
+    from the date and your coordinates. Nothing was fetched to work them out, so they are right
+    even with no signal.</p>`;
+}
+
+/* ---------- views ---------- */
+function setView(v) {
+  $("#vList").hidden = v !== "list";
+  $("#vMap").hidden = v !== "map";
+  $("#vDay").hidden = v !== "day";
+  if (v === "map") drawMap();
+  if (v === "day") drawDay();
+}
+
 /* ---------- extras ---------- */
 function wireGuide() {
   $("#filter").addEventListener("input", render);
+  $$("#views .chip").forEach(b => b.onclick = () => {
+    $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    setView(b.dataset.v);
+  });
+
+  $("#shareBtn").onclick = async () => {
+    const p = TRIP.place;
+    const url = location.origin + location.pathname + "?" + new URLSearchParams({
+      q: p.name, lat: p.lat.toFixed(5), lng: p.lng.toFixed(5),
+      tz: TRIP.config.tzOffsetMinutes,
+      a: HM(TRIP.config.arrive), d: HM(TRIP.config.depart)
+    });
+    const text = `${p.name}: what is open right now`;
+    try {
+      if (navigator.share) await navigator.share({ title: text, url });
+      else { await navigator.clipboard.writeText(url); $("#shareBtn").textContent = "Link copied"; setTimeout(() => $("#shareBtn").textContent = "Share this guide", 1800); }
+    } catch (e) { /* the user closed the sheet; nothing to report */ }
+  };
+
+  $("#rebuildBtn").onclick = () => {
+    PLACE = TRIP.place;
+    $("#tz").value = TRIP.config.tzOffsetMinutes;
+    $("#arrive").value = HM(TRIP.config.arrive);
+    $("#depart").value = HM(TRIP.config.depart);
+    build();
+  };
   $("#aboutBtn").onclick = () => {
     const t = TRIP;
     const osm = t.places.filter(p => p.from === "OpenStreetMap").length;
@@ -303,7 +408,7 @@ function wireGuide() {
       <h3 style="margin-top:14px">Where this comes from</h3>
       <p class="tiny">Places and opening hours: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, ODbL.
       Descriptions and safety notes: <a href="https://en.wikivoyage.org/wiki/${encodeURIComponent(t.wvTitle || t.place.name)}" target="_blank" rel="noopener">Wikivoyage</a>, CC BY-SA 4.0.
-      Search: Nominatim. No AI wrote any of the text about these places — people did.</p>
+      Search: Nominatim. No AI wrote any of the text about these places, people did.</p>
       <p class="tiny">Nothing here is sent anywhere. This trip is stored only on this device and disappears if you clear your browser data.</p>`;
     $("#about").showModal();
   };
@@ -314,6 +419,17 @@ function wireGuide() {
 /* ---------- boot ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   wireSearch(); wireTimes(); wireGuide();
+  const u = new URLSearchParams(location.search);
+  if (u.get("lat") && u.get("lng")) {
+    PLACE = { name: u.get("q") || "there", label: u.get("q") || "", lat: +u.get("lat"),
+              lng: +u.get("lng"), country: "", countryCode: "", bbox: null };
+    $("#tz").value = u.get("tz") || guessTz(PLACE.lat, PLACE.lng, "");
+    $("#arrive").value = u.get("a") || "09:00";
+    $("#depart").value = u.get("d") || "21:00";
+    build();
+    return;
+  }
+
   const saved = load();
   if (saved && saved.v === 1) {
     $("#resume").style.display = "block";

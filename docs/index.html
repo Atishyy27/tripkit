@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d0b12">
-<title>tripkit — what's open right now</title>
+<title>tripkit, what's open right now</title>
 <meta name="description" content="A travel guide that reads the clock. Built from OpenStreetMap and Wikivoyage, in your browser. No account, no key, no AI.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="vendor/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -77,7 +78,7 @@
       <p class="sub">Guessed <b>UTC<span id="tzGuess"></span></b> from longitude. The guide
       runs on the destination's clock, not your phone's, which matters if you've just
       landed and your phone hasn't caught up.</p>
-      <label class="tiny" for="tz">Minutes offset from UTC — change it if the guess is wrong</label>
+      <label class="tiny" for="tz">Minutes offset from UTC, change it if the guess is wrong</label>
       <input id="tz" type="number" step="15" style="width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font-size:16px;font-family:inherit;margin-top:6px">
       <p class="tiny" style="margin-top:8px">It's an estimate from where the place sits east
       or west, not a lookup. Half-hour zones like India are handled; oddities may not be.</p>
@@ -120,12 +121,34 @@
   </div></div>
   <div class="wrap">
     <div id="alerts"></div>
-    <input class="search" id="filter" type="search" placeholder="Filter by name…" aria-label="Filter" style="margin-bottom:4px">
-    <div class="chips" id="cats"></div>
-    <p class="tiny" id="count"></p>
-    <div id="list"></div>
+    <div class="chips" id="views">
+      <button class="chip" data-v="list" aria-pressed="true">List</button>
+      <button class="chip" data-v="map" aria-pressed="false">Map</button>
+      <button class="chip" data-v="day" aria-pressed="false">The day</button>
+    </div>
+
+    <div id="vList">
+      <input class="search" id="filter" type="search" placeholder="Filter by name…" aria-label="Filter" style="margin-bottom:4px">
+      <div class="chips" id="cats"></div>
+      <p class="tiny" id="count"></p>
+      <div id="list"></div>
+    </div>
+
+    <div id="vMap" hidden>
+      <div id="map"></div>
+      <p class="tiny" id="mapNote"></p>
+    </div>
+
+    <div id="vDay" hidden>
+      <p class="sub">Not a plan to follow. What each stretch of today is good for here,
+      worked out from this place's own sunrise and sunset.</p>
+      <div class="tl" id="tl"></div>
+      <div class="card flat" id="dayStats"></div>
+    </div>
     <div class="btns" style="margin:18px 0 8px">
       <button class="btn" id="aboutBtn">Where this came from</button>
+      <button class="btn" id="shareBtn">Share this guide</button>
+      <button class="btn" id="rebuildBtn">Refresh the data</button>
       <button class="btn" id="newBtn">Somewhere else</button>
     </div>
   </div>
@@ -136,6 +159,7 @@
   <button class="big" id="closeAbout" style="margin-top:14px">Close</button>
 </dialog>
 
+<script src="vendor/leaflet.js"></script>
 <script src="sun.js"></script>
 <script src="sources.js"></script>
 <script src="engine.js"></script>
