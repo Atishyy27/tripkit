@@ -12,6 +12,35 @@ const STORE = "tripkit.trip";
 const esc = s => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/* esc() makes a string safe as TEXT. It does not make it safe as a URL, and the
+   difference is a real hole: OpenStreetMap and Wikivoyage are edited by anyone, so
+   a place's website tag is untrusted input. Set it to "javascript:..." and esc()
+   passes it through unchanged into an href, and every visitor who taps that place
+   runs the attacker's script on this origin.
+
+   Only http and https get through here. Anything else, including a scheme hidden
+   behind whitespace or odd casing, becomes nothing and the link is simply not
+   rendered. */
+function safeUrl(u) {
+  if (!u) return null;
+  const t = String(u).trim().replace(/[\u0000-\u001F\u007F]/g, "");
+  if (!t) return null;
+  const base = (typeof location !== "undefined" && location.href) ? location.href : undefined;
+  try {
+    // absolute first, so this works anywhere, including in tests and in a worker
+    const parsed = base ? new URL(t, base) : new URL(t);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") ? parsed.href : null;
+  } catch (e) {
+    if (!base) {
+      try {
+        const parsed = new URL(t, "https://example.invalid/");
+        return (parsed.protocol === "http:" || parsed.protocol === "https:") ? parsed.href : null;
+      } catch (e2) { return null; }
+    }
+    return null;
+  }
+}
+
 function save(trip) { try { localStorage.setItem(STORE, JSON.stringify(trip)); } catch (e) {} }
 function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return null; } }
 
@@ -376,8 +405,8 @@ function card(r, i) {
   const icon = CAT_ICON[p.cat] || "\u{1F4CD}";
   const dim = st.state === "shut";
 
-  const media = p.photo
-    ? `<div class="pc-img"><img src="${esc(p.photo)}" loading="lazy" decoding="async"
+  const media = safeUrl(p.photo)
+    ? `<div class="pc-img"><img src="${esc(safeUrl(p.photo))}" loading="lazy" decoding="async"
          alt="${esc(p.name)}" onerror="this.closest('.pc-img').classList.add('pc-glyph');this.remove()">
        ${p.photoExact ? "" : '<span class="pc-near">nearby</span>'}</div>`
     : `<div class="pc-img pc-glyph"><span>${icon}</span></div>`;
@@ -397,7 +426,7 @@ function card(r, i) {
         <button class="btn ${inPlan(p.id) ? "picked" : "o"}" data-pick="${esc(p.id)}">${inPlan(p.id) ? "\u2713 in your day" : "+ add to day"}</button>
         <a class="btn g" target="_blank" rel="noopener" href="${g}">Walk there</a>
         <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
-        ${p.website ? `<a class="btn b" target="_blank" rel="noopener" href="${esc(p.website)}">Website</a>` : ""}
+        ${safeUrl(p.website) ? `<a class="btn b" target="_blank" rel="noopener noreferrer" href="${esc(safeUrl(p.website))}">Website</a>` : ""}
       </div>
     </div>
   </article>`;
@@ -771,7 +800,7 @@ function drawHero() {
   const el = $("#hero");
   el.innerHTML = `
     <div class="dhero">
-      ${shot ? `<img src="${esc(shot.thumb)}" alt="${esc(g.place.name)}" loading="eager">` : ""}
+      ${safeUrl(shot && shot.thumb) ? `<img src="${esc(safeUrl(shot.thumb))}" alt="${esc(g.place.name)}" loading="eager">` : ""}
       <div class="in">
         <h1>${esc(g.place.name)}</h1>
         <p class="sub" style="margin:0;color:#cfc6e6" data-liveline></p>
@@ -906,14 +935,12 @@ function drawLocal() {
   if (ph.length) {
     html += `<h2><span class="n">0${tr.length ? 2 : 1}</span> What it looks like</h2>
       <p class="sub">Photographed near here, from Wikimedia Commons.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">` +
-      ph.map(p => `<a href="${esc(p.full)}" target="_blank" rel="noopener"
-        style="display:block;border-radius:11px;overflow:hidden;border:1px solid var(--line);background:var(--bg2)">
-        <img src="${esc(p.thumb)}" loading="lazy" alt="${esc(p.title)}"
-             style="width:100%;height:120px;object-fit:cover;display:block">
-        <div class="tiny" style="padding:6px 8px">${esc(p.title).slice(0, 60)}</div></a>`).join("") +
-      `</div><p class="tiny" style="margin-top:8px">Images are licensed by their photographers,
-       follow a photo for the terms.</p>`;
+      <div class="gal">` +
+      ph.filter(p => safeUrl(p.thumb)).map(p => `<a href="${esc(safeUrl(p.full) || safeUrl(p.thumb))}" target="_blank" rel="noopener noreferrer">
+        <img src="${esc(safeUrl(p.thumb))}" loading="lazy" alt="${esc(p.title)}">
+        <div class="cap">${esc(p.title).slice(0, 42)}</div></a>`).join("") +
+      `</div><p class="tiny" style="margin-top:8px">Each image is licensed by whoever took it,
+       follow one for the terms.</p>`;
   }
 
   if (!html) html = '<div class="empty">Nothing extra was available for this place.</div>';
