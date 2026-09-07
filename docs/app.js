@@ -628,6 +628,16 @@ function togglePick(id) {
   if (!$("#vPlan").hidden) drawPlan();
 }
 
+function movePick(id, dir) {
+  const a = GUIDE.plan || [];
+  const i = a.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= a.length) return;
+  a.splice(j, 0, a.splice(i, 1)[0]);
+  GUIDE.manualOrder = true;       // stop reordering it underneath them
+  save(GUIDE); drawPlan();
+}
+
 function planPlaces() {
   const byId = {};
   (GUIDE.places || []).forEach(p => byId[p.id] = p);
@@ -652,7 +662,9 @@ function drawPlan() {
       dropping something.</p></div>`;
     return;
   }
-  const s = schedule(picks);
+  // A day being planned for tomorrow should not be laid out from this minute.
+  const startAt = GUIDE.planStart != null ? GUIDE.planStart : null;
+  const s = schedule(picks, startAt, { keepOrder: !!GUIDE.manualOrder });
   const used = new Set(GUIDE.plan);
 
   const rows = s.rows.map((r, i) => {
@@ -679,7 +691,11 @@ function drawPlan() {
       <div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
       <div class="pbody">
         <div class="pname">${esc(r.p.name)}
-          <button class="btn drop" data-pick="${esc(r.p.id)}" title="remove">\u00D7</button></div>
+          <span style="display:flex;gap:2px;flex:0 0 auto">
+            <button class="btn drop" data-up="${esc(r.p.id)}" title="earlier">\u2191</button>
+            <button class="btn drop" data-down="${esc(r.p.id)}" title="later">\u2193</button>
+            <button class="btn drop" data-pick="${esc(r.p.id)}" title="remove">\u00D7</button>
+          </span></div>
         <div class="tiny">${r.walk ? `${r.walk} min walk. ` : ""}${dur(r.stay)} here.${r.p.lo ? ` About ${inr(r.p.lo)}.` : ""}</div>
         ${r.issues.map(x => `<div class="pissue">\u26A0 ${esc(x)}</div>`).join("")}
       </div>
@@ -701,6 +717,18 @@ function drawPlan() {
            and each stop is at or near its best time of day.</p>`
         : `<p class="sub" style="margin:10px 0 0">${s.problems} thing${s.problems > 1 ? "s" : ""} to look at, marked below.</p>`}
     </div>
+    <div class="card flat" style="margin:10px 0">
+      <div class="rangerow">
+        <label class="tiny" for="planStart" style="flex:0 0 auto">Start the day at</label>
+        <input id="planStart" type="time" value="${HM(s.start)}"
+               style="background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+                      border-radius:9px;padding:8px;font-family:inherit;font-size:15px">
+        <button class="btn" id="startNow">now</button>
+      </div>
+      ${GUIDE.manualOrder ? `<p class="tiny" style="margin:6px 0 0">You have reordered this by
+        hand, so it is left alone. <button class="btn" id="reorder"
+        style="padding:3px 8px">let it re-sort by time</button></p>` : ""}
+    </div>
     <div class="btns" style="margin:10px 0 14px">
       <button class="btn o" id="printPlan">Print or save as PDF</button>
       <button class="btn b" id="icsPlan">Add to calendar</button>
@@ -712,6 +740,14 @@ function drawPlan() {
     third added for real streets, which is a realistic pace in a place you do not know.</p>`;
 
   $$("#vPlan [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+  $$("#vPlan [data-up]").forEach(b => b.onclick = () => movePick(b.dataset.up, -1));
+  $$("#vPlan [data-down]").forEach(b => b.onclick = () => movePick(b.dataset.down, 1));
+  const ps = $("#planStart");
+  if (ps) ps.onchange = () => { GUIDE.planStart = M(ps.value); save(GUIDE); drawPlan(); };
+  const sn = $("#startNow");
+  if (sn) sn.onclick = () => { GUIDE.planStart = null; save(GUIDE); drawPlan(); };
+  const ro = $("#reorder");
+  if (ro) ro.onclick = () => { GUIDE.manualOrder = false; save(GUIDE); drawPlan(); };
   $("#printPlan").onclick = () => { track("/plan/printed"); window.print(); };
   $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(s); };
   $("#clearPlan").onclick = () => { GUIDE.plan = []; save(GUIDE); render(); paintPlanCount(); drawPlan(); };

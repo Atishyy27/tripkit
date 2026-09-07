@@ -213,8 +213,11 @@ function orderPlan(picks) {
 }
 
 /* Lay the ordered stops onto the clock and report every problem found. */
-function schedule(picks, startMins) {
-  const order = orderPlan(picks);
+function schedule(picks, startMins, opts) {
+  // Once somebody has dragged their day into the order they want, re-sorting it
+  // underneath them is the rudest thing this could do. keepOrder respects that and
+  // still reports every collision the new order creates.
+  const order = (opts && opts.keepOrder) ? picks.slice() : orderPlan(picks);
   const start = startMins != null ? startMins
     : Math.max(localMins(), TRIP.arrive != null ? TRIP.arrive : 0);
   const hardEnd = TRIP.multiDay ? 22 * 60 : TRIP.hardExit;
