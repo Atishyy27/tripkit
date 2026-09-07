@@ -66,40 +66,90 @@
 
 <!-- ============ 1. where ============ -->
 <div class="screen on" id="s1">
-  <div class="hero"><div class="wrap">
-    <h1>What's open right now.</h1>
-    <p class="lead">Type where you are. You get a guide that reads the clock: what's open
-    this minute, what the light is doing, and what still fits before you have to leave.</p>
-  </div></div>
+  <div class="land">
+    <div class="land-glow"></div>
+    <div class="wrap land-in">
+      <div class="land-mark">
+        <svg viewBox="0 0 100 100" width="34" height="34" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#2c2438" stroke-width="7"/>
+          <path d="M50 50 L50 20" stroke="#ffc857" stroke-width="8" stroke-linecap="round"/>
+          <path d="M50 50 L72 62" stroke="#ff8a4c" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="6" fill="#ff8a4c"/>
+        </svg>
+        <span>tripkit</span>
+      </div>
+
+      <h1 class="land-h">What's open<br><em>right now.</em></h1>
+      <p class="land-p">Type where you are. Get a guide that reads the clock: what's open
+      this minute, what suits the hour, and what no longer fits before you leave.</p>
+
+      <input class="search land-q" id="q" type="search" autocomplete="off"
+             placeholder="A town or a city&#8230;" aria-label="Where are you going?">
+      <div id="hits"></div>
+
+      <div class="land-eg">
+        <span class="tiny">Try</span>
+        <button class="chip" data-eg="Lisbon">Lisbon</button>
+        <button class="chip" data-eg="Pushkar">Pushkar</button>
+        <button class="chip" data-eg="Kyoto">Kyoto</button>
+        <button class="chip" data-eg="Porto">Porto</button>
+      </div>
+
+      <div class="card cool" id="resume" style="display:none">
+        <h3>Carry on with <span id="resumeName"></span></h3>
+        <p class="sub" style="margin:6px 0 0">Already saved on this device. Opens with no signal.</p>
+        <button class="big" id="resumeBtn" style="margin-top:10px">Open it</button>
+      </div>
+
+      <div class="land-pills">
+        <span class="pill">No install</span>
+        <span class="pill">No account</span>
+        <span class="pill">No API key</span>
+        <span class="pill">No AI</span>
+        <span class="pill">Works offline</span>
+        <span class="pill">Free, forever</span>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap">
-    <input class="search" id="q" type="search" autocomplete="off" placeholder="A town or city…" aria-label="Where are you going?">
-    <div id="hits"></div>
-
-    <div class="card cool" id="resume" style="display:none">
-      <h3>Carry on with <span id="resumeName"></span></h3>
-      <p class="sub" style="margin:6px 0 0">Already saved on this device. Opens with no signal.</p>
-      <button class="big" id="resumeBtn" style="margin-top:10px">Open it</button>
+    <div class="feat">
+      <div class="f">
+        <i>&#9201;</i><h3>It knows the time</h3>
+        <p>A viewpoint scores highest at sunset, a shaded restaurant at the hottest part of
+        the day, a market in the evening. Anything that will not fit before you leave is
+        hidden rather than listed.</p>
+      </div>
+      <div class="f">
+        <i>&#128197;</i><h3>It builds the day</h3>
+        <p>Pick places and they become an ordered plan with times on it. It waits rather
+        than sending you somewhere four hours early, and it says when something collides
+        with opening hours instead of quietly moving it.</p>
+      </div>
+      <div class="f">
+        <i>&#128506;</i><h3>Written by people</h3>
+        <p>Places and opening hours from OpenStreetMap. Descriptions, prices and safety
+        notes from Wikivoyage. Sunrise worked out on your own device. Not a sentence of it
+        was generated.</p>
+      </div>
+      <div class="f">
+        <i>&#128244;</i><h3>It works with no signal</h3>
+        <p>Add it to your home screen and it behaves like an app. Your trip is saved on
+        your phone, not on a server, because there is no server.</p>
+      </div>
     </div>
 
-    <h2><span class="n">01</span> How this works</h2>
-    <div class="card">
-      <p class="sub">Everything happens in this tab. Your browser asks
-      <b>OpenStreetMap</b> what's nearby and when it opens, asks <b>Wikivoyage</b> what
-      travellers have written about those places, and works out sunrise and sunset from
-      orbital maths on your own device.</p>
-      <p class="sub">There is no account, no server of ours, no API key, and no AI. Every
-      sentence you'll read about a place was written by a person, not generated.</p>
-      <p class="tiny">Once it's loaded it works offline, and you can add it to your home
-      screen like an app. Nothing is sent anywhere; the trip is stored only on this device.</p>
+    <div class="card flat" style="margin-top:18px">
+      <h3>Where it is good, and where it is thin</h3>
+      <p class="sub">The guide is only as good as what has been mapped, and that varies a
+      lot. In central Lisbon a third of places carry opening hours. In a small town in
+      Rajasthan it is closer to one in twenty.</p>
+      <p class="sub">So it tells you which one you are in, shows <i>hours unknown</i> rather
+      than guessing, and points you at
+      <a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+      if you want to fix your own town, which helps everyone rather than one app.</p>
     </div>
 
-    <h2><span class="n">02</span> What it's for</h2>
-    <div class="card flat">
-      <p class="sub">You land somewhere with a few hours. A normal guide lists two hundred
-      things with no sense of time. Half are shut, some are an hour away, a few take longer
-      than you've got. This one answers a narrower question: <b>it's 3pm and I leave at 7,
-      so what now?</b></p>
-    </div>
     <details style="margin-top:18px">
       <summary>What this knows about you</summary>
       <p class="sub">Nothing that identifies you, and nothing about where you searched.</p>
@@ -112,11 +162,16 @@
       <p class="sub">Counting is currently <b>off entirely</b>. If it is ever switched on it
       will be a cookieless counter recording which screens get opened, never what you typed
       or where you are. You can check that claim in
-      <a href="https://github.com/Atishyy27/tripkit/blob/main/docs/app.js" target="_blank" rel="noopener">the source</a>,
+      <a href="https://github.com/Atishyy27/tripkit/blob/main/docs/app.js" target="_blank" rel="noopener noreferrer">the source</a>,
       which is the only kind of privacy promise worth anything.</p>
     </details>
-    <p class="src">Places and hours from OpenStreetMap contributors (ODbL). Descriptions
-    from Wikivoyage (CC BY-SA 4.0). Search by Nominatim. Open source, MIT.</p>
+
+    <p class="src">Places and hours from
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+      contributors, ODbL. Descriptions from
+      <a href="https://en.wikivoyage.org" target="_blank" rel="noopener noreferrer">Wikivoyage</a>,
+      CC BY-SA 4.0. Search by Nominatim.
+      <a href="https://github.com/Atishyy27/tripkit" target="_blank" rel="noopener noreferrer">Open source</a>, MIT.</p>
   </div>
 </div>
 

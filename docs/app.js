@@ -90,6 +90,10 @@ let PLACE = null, GUIDE = null, SHARED_PLAN = null;
 let searchTimer = null;
 function wireSearch() {
   const box = $("#q");
+  $$(".land-eg .chip").forEach(b => b.onclick = () => {
+    box.value = b.dataset.eg;
+    box.dispatchEvent(new Event("input"));
+  });
   box.addEventListener("input", () => {
     clearTimeout(searchTimer);
     const v = box.value.trim();
