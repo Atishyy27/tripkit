@@ -292,3 +292,7 @@ ul.tight li{margin-bottom:6px}
   .plan:before{content:"tripkit  ·  atishyy27.github.io/tripkit";display:block;
    font-size:8pt;color:#888;margin-bottom:8px}
 }
+.prow.journey{border-style:dashed;background:var(--bg2)}
+.prow.journey .ptime{color:var(--blue)}
+.prow.journey .pname{color:var(--blue);font-size:13.5px}
+#towns{margin-bottom:2px}

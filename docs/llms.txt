@@ -1,0 +1,36 @@
+# tripkit
+
+> A travel guide that reads the clock. Type a town and see what is open right now, ranked by
+> whether this is genuinely that place's hour, with anything that will not fit before you have
+> to leave hidden. Built entirely from OpenStreetMap and Wikivoyage; sunrise and sunset are
+> computed on-device. No account, no API key, no backend, no AI in the data path. Installs to a
+> home screen and works offline. MIT licensed.
+
+Tripkit runs entirely in the browser tab. When someone searches a town, the browser asks
+OpenStreetMap (via the Overpass API) what places exist nearby and their opening hours, asks
+Wikivoyage what travellers have written about them, and computes sunrise, sunset and twilight
+from NOAA solar equations on the user's own device. Results are ranked by whether the current
+moment is genuinely that place's hour — a viewpoint at sunset, a market in the evening — and
+anything that will not fit in the time the user has left before they must leave is hidden rather
+than listed. Every sentence of description text comes from a human-written OpenStreetMap or
+Wikivoyage source; none of it is model-generated. There is no account, no server operated by the
+project, no API key, and no tracking. It installs as a Progressive Web App and keeps working
+offline once loaded.
+
+## Docs
+- [README](https://github.com/Atishyy27/tripkit/blob/main/README.md): what it does, why it
+  differs from a normal guide, and the exact data sources it reads.
+- [DATA-SOURCES.md](https://github.com/Atishyy27/tripkit/blob/main/DATA-SOURCES.md): field-by-field
+  data provenance and licensing (OpenStreetMap/ODbL, Wikivoyage/CC BY-SA 4.0, Nominatim).
+- [PRIOR-ART.md](https://github.com/Atishyy27/tripkit/blob/main/PRIOR-ART.md): how tripkit differs
+  from existing travel-guide apps and prior OSM/Wikivoyage tools.
+- [CHANGELOG.md](https://github.com/Atishyy27/tripkit/blob/main/CHANGELOG.md): version history.
+- [LICENSE](https://github.com/Atishyy27/tripkit/blob/main/LICENSE): MIT.
+
+## App
+- [Open tripkit](https://atishyy27.github.io/tripkit/): the live app. No signup, no install
+  required to try it.
+
+## Optional
+- [CONTRIBUTING.md](https://github.com/Atishyy27/tripkit/blob/main/CONTRIBUTING.md): how to
+  contribute code or data fixes.

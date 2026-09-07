@@ -223,7 +223,20 @@ function schedule(picks, startMins) {
   const rows = [];
   for (let i = 0; i < order.length; i++) {
     const p = order[i];
-    const walk = i === 0 ? 0 : walkMinutes(order[i - 1], p);
+    const prev = i === 0 ? null : order[i - 1];
+    // A plan spanning two towns must not pretend you can walk between them. Anything
+    // over an hour on foot is a journey, and it gets its own row rather than being
+    // buried inside a walking time nobody would believe.
+    const sameTown = !prev || !prev.town || !p.town || prev.town === p.town;
+    const raw = prev ? walkMinutes(prev, p) : 0;
+    const travel = sameTown && raw <= 60;
+    const walk = travel ? raw : 0;
+    if (prev && !travel) {
+      const est = Math.max(30, Math.round(raw / 4));   // a vehicle, roughly
+      rows.push({ journey: true, from: prev, to: p, arrive: t, leave: t + est,
+                  mins: est, issues: [] });
+      t += est;
+    }
     t += walk;
 
     // A person would wait rather than turn up four hours before a sunset viewpoint
@@ -264,12 +277,16 @@ function schedule(picks, startMins) {
   }
   return {
     rows, start, end: t,
+    journeys: rows.filter(r => r.journey).length,
     overruns: t > hardEnd,
     minutes: t - start,
-    walking: rows.reduce((a, r) => a + r.walk, 0),
+    // Journey rows carry no place, so every summary has to step over them. Reading
+    // r.p.lo across all rows threw the moment a plan crossed a town boundary.
+    walking: rows.reduce((a, r) => a + (r.journey ? 0 : r.walk), 0),
     waiting: rows.reduce((a, r) => a + (r.gap || 0), 0),
-    problems: rows.reduce((a, r) => a + r.issues.length, 0),
-    cost: rows.reduce((a, r) => a + (r.p.lo || 0), 0),
+    travelling: rows.reduce((a, r) => a + (r.journey ? r.mins : 0), 0),
+    problems: rows.reduce((a, r) => a + (r.issues || []).length, 0),
+    cost: rows.reduce((a, r) => a + (r.journey ? 0 : (r.p.lo || 0)), 0),
   };
 }
 

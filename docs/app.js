@@ -26,6 +26,31 @@ function guessTz(lat, lng, cc) {
   return Math.round(lng / 15) * 60;
 }
 
+/* ---------- counting, without following anyone ----------
+
+   Off unless ANALYTICS is given an endpoint. When it is on, what leaves this
+   device is a page path and nothing else: no cookie, no identifier, no location,
+   never the town you typed. The point is to know whether anyone uses this, not
+   who they are, and a product whose front page promises not to track people has
+   to be able to prove that from its own source.
+
+   Turn it on by setting ANALYTICS to a GoatCounter count endpoint. */
+const ANALYTICS = null;
+
+function track(path, title) {
+  if (!ANALYTICS) return;
+  try {
+    const u = new URL(ANALYTICS);
+    u.searchParams.set("p", path);
+    if (title) u.searchParams.set("t", title);
+    u.searchParams.set("r", "");        // deliberately no referrer
+    u.searchParams.set("rnd", String(Math.random()).slice(2, 10));
+    const img = new Image();
+    img.referrerPolicy = "no-referrer";
+    img.src = u.toString();
+  } catch (e) { /* counting must never break the thing being counted */ }
+}
+
 /* ---------- state ---------- */
 /* GUIDE is the whole saved trip. The engine separately owns TRIP, its derived
    timing config. Two top level `let` of the same name across script tags is a
@@ -255,6 +280,7 @@ async function runBuild() {
   save(GUIDE);
   step("stDone", "done", `${places.length} places ready, saved to this device`);
   progress(100);
+  track("/built", `${places.length} places`);
   setTimeout(() => open(GUIDE), 500);
 }
 
@@ -293,6 +319,7 @@ function open(trip) {
   init({ config: trip.config, conditions: trip.conditions, places: trip.places });
   show("s4");
   drawHero();
+  drawTowns();
   buildCats();
   render();
   setView("list");
@@ -380,7 +407,7 @@ function render() {
   const t = localMins();
   const cat = ($("#cats .chip[aria-pressed=true]") || { dataset: { c: "all" } }).dataset.c;
   const q = $("#filter").value.trim();
-  const r = rankNow(t, { cat, q });
+  const r = rankNow(t, { cat, q, town: (GUIDE.townFilter && GUIDE.townFilter !== "all") ? GUIDE.townFilter : undefined });
   const ex = exitState(t);
 
   $("#clock").textContent = HM(t);
@@ -470,12 +497,97 @@ function drawDay() {
     even with no signal.</p>`;
 }
 
+/* ---------- more than one town ----------
+
+   A trip is often several places: a night here, two nights there. Rather than
+   inventing a second concept, another town simply appends its places to the same
+   guide, tagged with where they are. Everything downstream already understands
+   towns, so the filters, the map and the plan all keep working.
+
+   The scheduler adds the journey between towns as its own row, because a plan that
+   silently teleports you between two cities is worse than no plan. */
+async function addTown(q) {
+  const found = await findPlace(q, () => {});
+  const rows = found.value || [];
+  if (!rows.length) throw new Error(`Could not find "${q}"`);
+  const p = rows[0];
+
+  const key = p.name.toLowerCase();
+  if ((GUIDE.towns || []).some(t => t.key === key)) throw new Error(`${p.name} is already here`);
+
+  const r = Math.min(radiusFor(p), 4000);
+  const els = await overpass(p.lat, p.lng, r, () => {});
+  let fresh = capPlaces(osmToPlaces(els, key), 700).kept;
+
+  try {
+    let art = null;
+    try { art = await wikivoyage(p.name); }
+    catch (e) {
+      const c = await wikivoyageSearch(p.name + " " + (p.country || ""));
+      if (c.length) art = await wikivoyage(c[0]);
+    }
+    if (art) fresh = mergeInto(fresh, parseListings(art.wikitext, key), p);
+  } catch (e) { /* a town without a Wikivoyage article is still a town */ }
+
+  try {
+    const ph = await getPhotos(p.lat, p.lng, Math.min(r, 6000), () => {});
+    if (ph.value && ph.value.length) await attachPhotos(fresh, ph.value, () => {});
+  } catch (e) {}
+
+  const have = new Set(GUIDE.places.map(x => x.id));
+  const added = fresh.filter(x => !have.has(x.id));
+  GUIDE.places = GUIDE.places.concat(added);
+  GUIDE.towns = (GUIDE.towns || []).concat([{
+    key, name: p.name, lat: p.lat, lng: p.lng, country: p.country, added: added.length
+  }]);
+  save(GUIDE);
+  init({ config: GUIDE.config, conditions: GUIDE.conditions, places: GUIDE.places });
+  return { name: p.name, added: added.length };
+}
+
+/* the same merge the first town gets, factored out so a second one behaves identically */
+function mergeInto(base, listings, place) {
+  const key = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 22);
+  const idx = new Map(); base.forEach(p => idx.set(key(p.name), p));
+  const out = base.slice();
+  for (const w of listings) {
+    const hit = idx.get(key(w.name));
+    if (hit) {
+      if (w.why && w.why.length > (hit.why || "").length) { hit.why = w.why; hit.from = "OpenStreetMap + Wikivoyage"; }
+      if (!hit.open && w.open) { hit.open = w.open; hit.close = w.close; hit.shut = w.shut; }
+      if (!hit.priceNote && w.priceNote) hit.priceNote = w.priceNote;
+    } else {
+      if (w.lat == null) { w.lat = place.lat; w.lng = place.lng; w.loose = true; }
+      out.push(w); idx.set(key(w.name), w);
+    }
+  }
+  return out;
+}
+
+function drawTowns() {
+  const towns = [{ key: (GUIDE.place.name || "").toLowerCase(), name: GUIDE.place.name, first: true }]
+    .concat(GUIDE.towns || []);
+  const el = $("#towns");
+  if (!el) return;
+  if (towns.length < 2) { el.innerHTML = ""; return; }
+  const active = (GUIDE.townFilter || "all");
+  el.innerHTML = `<button class="chip" data-town="all" aria-pressed="${active === "all"}">Everywhere</button>` +
+    towns.map(t => {
+      const n = (GUIDE.places || []).filter(p => p.town === t.key).length;
+      return `<button class="chip" data-town="${esc(t.key)}" aria-pressed="${active === t.key}">${esc(t.name)} <span class="tiny">${n}</span></button>`;
+    }).join("");
+  $$("#towns .chip").forEach(b => b.onclick = () => {
+    GUIDE.townFilter = b.dataset.town; save(GUIDE); drawTowns(); render();
+  });
+}
+
 /* ---------- the plan ---------- */
 const inPlan = id => (GUIDE && GUIDE.plan || []).indexOf(id) >= 0;
 
 function togglePick(id) {
   GUIDE.plan = GUIDE.plan || [];
   const i = GUIDE.plan.indexOf(id);
+  track(i >= 0 ? "/plan/removed" : "/plan/added");
   if (i >= 0) GUIDE.plan.splice(i, 1); else GUIDE.plan.push(id);
   save(GUIDE);
   render();
@@ -511,6 +623,13 @@ function drawPlan() {
   const used = new Set(GUIDE.plan);
 
   const rows = s.rows.map((r, i) => {
+    if (r.journey) return `<div class="prow journey">
+      <div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+      <div class="pbody">
+        <div class="pname">${esc(r.from.town || "there")} \u2192 ${esc(r.to.town || "there")}</div>
+        <div class="tiny">About ${r.mins} minutes between towns. Too far to walk, so this is a
+        bus, a train or a taxi, and the estimate is rough.</div>
+      </div></div>`;
     const gapBlock = r.gap > 20 ? (() => {
       const opts = fillGap(i > 0 ? s.rows[i - 1].p : r.p, r.arrive - r.gap, r.gap, [...used]);
       return `<div class="gap">
@@ -540,7 +659,7 @@ function drawPlan() {
       <div class="grid2" style="margin-top:10px">
         <div class="stat"><div class="v">${HM(s.start)} to ${HM(s.end)}</div><div class="k">start and finish</div></div>
         <div class="stat"><div class="v">${picks.length}</div><div class="k">stops</div></div>
-        <div class="stat"><div class="v">${s.walking} min</div><div class="k">walking</div></div>
+        <div class="stat"><div class="v">${s.walking} min</div><div class="k">walking${s.travelling ? ` + ${s.travelling} travelling` : ""}</div></div>
         <div class="stat"><div class="v">${s.cost ? inr(s.cost) : "free"}</div><div class="k">entries and food</div></div>
       </div>
       ${s.overruns ? `<p class="sub" style="margin:10px 0 0">It runs past when you have to
@@ -551,6 +670,7 @@ function drawPlan() {
     </div>
     <div class="btns" style="margin:10px 0 14px">
       <button class="btn o" id="printPlan">Print or save as PDF</button>
+      <button class="btn b" id="icsPlan">Add to calendar</button>
       <button class="btn b" id="sharePlan">Share this day</button>
       <button class="btn r" id="clearPlan">Clear</button>
     </div>
@@ -559,7 +679,8 @@ function drawPlan() {
     third added for real streets, which is a realistic pace in a place you do not know.</p>`;
 
   $$("#vPlan [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
-  $("#printPlan").onclick = () => window.print();
+  $("#printPlan").onclick = () => { track("/plan/printed"); window.print(); };
+  $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(s); };
   $("#clearPlan").onclick = () => { GUIDE.plan = []; save(GUIDE); render(); paintPlanCount(); drawPlan(); };
   $("#sharePlan").onclick = async () => {
     const u = location.origin + location.pathname + "?" + new URLSearchParams({
@@ -573,6 +694,72 @@ function drawPlan() {
       else { await navigator.clipboard.writeText(u); btn.textContent = "Link copied"; setTimeout(() => btn.textContent = "Share this day", 1800); }
     } catch (e) {}
   };
+}
+
+/* Calendar export. Written by hand rather than with a library: the format is a
+   dozen lines, and a dependency here would be more code than the feature.
+
+   Times are written as local wall clock with no timezone, which is deliberate.
+   A stop at 13:00 in Pushkar should read 13:00 in your calendar whatever your
+   phone thinks the timezone is, and floating times are how the format says that. */
+function icsTime(mins) {
+  const d = new Date();
+  const off = CFG.tzOffsetMinutes || 0;
+  const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
+  const y = local.getFullYear(), m = local.getMonth() + 1, day = local.getDate();
+  const roll = Math.floor(mins / 1440);
+  const base = new Date(y, m - 1, day + roll);
+  const hh = Math.floor((mins % 1440) / 60), mm = mins % 60;
+  const p = n => String(n).padStart(2, "0");
+  return `${base.getFullYear()}${p(base.getMonth() + 1)}${p(base.getDate())}T${p(hh)}${p(mm)}00`;
+}
+
+function icsEscape(t) {
+  return String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;")
+    .replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+
+function downloadIcs(s) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//tripkit//EN",
+                 "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+                 `X-WR-CALNAME:${icsEscape("A day in " + GUIDE.place.name)}`];
+  s.rows.filter(r => !r.journey).forEach((r, i) => {
+    const p = r.p;
+    const where = [p.name, p.town ? p.town.charAt(0).toUpperCase() + p.town.slice(1) : null,
+                   GUIDE.place.country].filter(Boolean).join(", ");
+    const desc = [p.why || "", p.warn ? "Note: " + p.warn : "",
+                  `Map: https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`,
+                  ...(r.issues || []).map(x => "Watch out: " + x)].filter(Boolean).join("\n");
+    lines.push("BEGIN:VEVENT",
+      `UID:tripkit-${Date.now()}-${i}@atishyy27.github.io`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART:${icsTime(r.arrive)}`,
+      `DTEND:${icsTime(r.leave)}`,
+      `SUMMARY:${icsEscape(p.name)}`,
+      `LOCATION:${icsEscape(where)}`,
+      `GEO:${p.lat};${p.lng}`,
+      `DESCRIPTION:${icsEscape(desc)}`,
+      "END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+
+  // fold at 75 octets, which the spec requires and most parsers quietly rely on
+  const folded = lines.map(l => {
+    if (l.length <= 74) return l;
+    const out = [l.slice(0, 74)];
+    let rest = l.slice(74);
+    while (rest.length > 73) { out.push(" " + rest.slice(0, 73)); rest = rest.slice(73); }
+    if (rest) out.push(" " + rest);
+    return out.join("\r\n");
+  }).join("\r\n") + "\r\n";
+
+  const blob = new Blob([folded], { type: "text/calendar;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${GUIDE.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-day.ics`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 
 /* ---------- the destination header ---------- */
@@ -751,6 +938,7 @@ function wireGuide() {
   $$("#views .chip").forEach(b => b.onclick = () => {
     $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true");
+    track("/view/" + b.dataset.v);
     setView(b.dataset.v);
   });
 
@@ -770,6 +958,7 @@ function wireGuide() {
 
   $("#widerBtn").onclick = async () => {
     const btn = $("#widerBtn");
+    track("/widened");
     const from = GUIDE.radius || 2500, to = Math.min(from + 2500, 15000);
     if (to <= from) { btn.textContent = "Already as wide as it goes"; return; }
     btn.textContent = `Looking out to ${(to / 1000).toFixed(1)} km…`;
@@ -795,6 +984,24 @@ function wireGuide() {
     } finally {
       btn.disabled = false;
       setTimeout(() => { btn.textContent = "Look further out"; }, 4000);
+    }
+  };
+
+  $("#addTownBtn").onclick = async () => {
+    const q = prompt("Which other town or city is on this trip?");
+    if (!q || !q.trim()) return;
+    const btn = $("#addTownBtn");
+    btn.textContent = `Looking up ${q.trim()}\u2026`; btn.disabled = true;
+    try {
+      track("/town/added");
+      const res = await addTown(q.trim());
+      drawTowns(); buildCats(); render(); drawHero();
+      btn.textContent = `Added ${res.name}, ${res.added} places`;
+    } catch (e) {
+      btn.textContent = e.message.slice(0, 40);
+    } finally {
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = "+ another town"; }, 4000);
     }
   };
 

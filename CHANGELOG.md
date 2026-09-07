@@ -5,6 +5,50 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-07
+
+It plans a day now, rather than only describing one.
+
+### Added
+- **A plan.** Every place has an add control, and picked places become an ordered
+  day with times on it. The scheduler puts time first and walking second, waits
+  rather than arriving somewhere hours before it is worth seeing, and names every
+  collision it finds instead of quietly resolving it. On six stops that produced
+  five problems when packed back to back, it now produces none, with lunch landing
+  at exactly 13:00 and the bazaar at exactly 17:00.
+- **Gaps suggest what could fill them.** The engine already knows what is open,
+  close by and short enough, so a wait offers three or four options rather than
+  being dead time.
+- **Print, which is the PDF export.** A print stylesheet, no library, no network.
+- **Calendar export**, hand written iCalendar with floating local times so a stop
+  at 13:00 reads 13:00 whatever your phone thinks the timezone is.
+- **More than one town in a trip.** Another town appends its places to the same
+  guide rather than introducing a second concept, so the filters, the map and the
+  plan all keep working. A plan crossing towns gets a journey row, because one
+  that silently teleports you between two cities is worse than no plan.
+- **Places to sleep** included in the picture, with star ratings and room counts.
+- `llms.txt` and schema.org structured data, so the thing is legible to crawlers
+  and retrieval systems rather than only to people who already know it exists.
+- A weekly workflow snapshotting GitHub traffic, since the API only keeps 14 days
+  and history is the only part worth having.
+
+### Changed
+- Photographs on every card, with a tinted category glyph where there is none, so
+  a card is never an empty rectangle. Nearby photographs are matched within 40 m
+  rather than 120 m, after 120 m attached a picture of a monkey to a pizzeria.
+- The search radius is adjustable before a build and appendable afterwards.
+- Analytics groundwork, switched off. When it is ever turned on it will be a
+  cookieless counter of which screens are opened, never what was typed, and the
+  page says so in plain language with a link to the source.
+
+### Fixed
+- **Every "walk there" link was broken.** The cosmetic dash sweep had put a space
+  inside a coordinate pair, so the destination read "26.48, 74.55" and pointed
+  nowhere. Live for a day. A test now rejects a space inside any coordinate.
+- The dataset cap deleted every hotel in a large city.
+- Summarising a plan crashed the moment it crossed a town boundary, because the
+  journey rows carry no place and every reducer assumed one.
+
 ## [0.3.1] - 2026-09-07
 
 ### Added
@@ -132,6 +176,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.4.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.2.0
