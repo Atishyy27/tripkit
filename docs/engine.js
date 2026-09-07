@@ -275,10 +275,14 @@ function schedule(picks, startMins, opts) {
     const stay = p.dur || 30;
     const leave = arrive + stay;
     const st = openState(p, arrive);
+    // A collision is a problem with the plan. A missing opening time is a gap in
+    // the map. Counting both as problems made a perfectly good day report five
+    // faults and look broken, when the day was fine and OpenStreetMap was thin.
     const issues = [];
+    const unknowns = [];
     if (st.state === "shut") issues.push(`shut at ${HM(arrive)}, ${st.label}`);
     if (st.state === "soon") issues.push(`does not open until ${p.open}`);
-    if (st.state === "unknown") issues.push("nobody has recorded its hours");
+    if (st.state === "unknown") unknowns.push("nobody has recorded its hours, so this could be shut");
     if (p.close && M(p.close) > M(p.open || "00:00") && leave > M(p.close))
       issues.push(`you would still be there after it closes at ${p.close}`);
     if (leave > hardEnd) issues.push("this runs past when you have to leave");
@@ -286,7 +290,7 @@ function schedule(picks, startMins, opts) {
       const d = Math.min.apply(null, p.best.map(b => Math.abs(M(b) - arrive)));
       if (d > 150) issues.push(`its best hour is ${p.best[0]}, this is well off it`);
     }
-    rows.push({ p, walk, gap, arrive, leave, stay, issues, state: st.state });
+    rows.push({ p, walk, gap, arrive, leave, stay, issues, unknowns, state: st.state });
     t = leave;
   }
   return {
@@ -300,6 +304,7 @@ function schedule(picks, startMins, opts) {
     waiting: rows.reduce((a, r) => a + (r.gap || 0), 0),
     travelling: rows.reduce((a, r) => a + (r.journey ? r.mins : 0), 0),
     problems: rows.reduce((a, r) => a + (r.issues || []).length, 0),
+    unknowns: rows.reduce((a, r) => a + (r.unknowns || []).length, 0),
     cost: rows.reduce((a, r) => a + (r.journey ? 0 : (r.p.lo || 0)), 0),
   };
 }

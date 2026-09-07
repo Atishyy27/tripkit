@@ -331,3 +331,51 @@ describe("building a day automatically", () => {
     for (const p of a.picks) eq(p._at, undefined, `${p.name} still carries a scratch field`);
   });
 });
+
+describe("regression: a missing opening time is not a broken plan", () => {
+  /* An automatically built day reported "5 things to look at" and looked faulty.
+     All five were "nobody has recorded its hours", which is a gap in OpenStreetMap
+     rather than a collision in the plan. Conflating the two made a good day look
+     broken and buried the warnings that actually matter. */
+
+  it("counts a place with no hours as unknown, not as a problem", () => {
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), tzOffsetMinutes: 0 },
+           conditions: { sunrise: M("06:00"), sunset: M("18:00") }, places: [] });
+    const s = schedule([
+      { name: "Unmapped temple", lat: 26.487, lng: 74.551, dur: 30, open: null, close: null },
+      { name: "Known cafe", lat: 26.488, lng: 74.552, dur: 30, open: "08:00", close: "20:00" },
+    ], M("10:00"));
+    eq(s.problems, 0, "neither of these collides with anything");
+    eq(s.unknowns, 1, "one of them has no hours recorded");
+    ok(s.rows[0].unknowns.length === 1 || s.rows[1].unknowns.length === 1);
+  });
+
+  it("still counts a genuine collision as a problem", () => {
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), tzOffsetMinutes: 0 },
+           conditions: { sunrise: M("06:00"), sunset: M("18:00") }, places: [] });
+    const s = schedule([
+      { name: "Shut place", lat: 26.487, lng: 74.551, dur: 30, open: "20:00", close: "22:00" },
+    ], M("10:00"));
+    ok(s.problems > 0, "arriving while somewhere is shut is a real problem");
+  });
+
+  it("a day built automatically from real shaped data reports no problems", () => {
+    const P = [];
+    const cats = ["view", "temple", "food", "cafe", "shop", "museum"];
+    for (let i = 0; i < 30; i++) {
+      const c = cats[i % cats.length];
+      P.push({ id: "p" + i, name: c + i, cat: c, town: "t",
+               lat: 26.487 + (i % 5) * 0.002, lng: 74.551 + (i % 4) * 0.002,
+               dur: 30, why: "x",
+               // half of them have no hours, which is what a real town looks like
+               open: i % 2 ? "08:00" : null, close: i % 2 ? "21:00" : null,
+               best: [HM(480 + (i * 37) % 700)] });
+    }
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), exitBufferMinutes: 45, tzOffsetMinutes: 0 },
+           conditions: { sunrise: M("06:00"), sunset: M("18:00") }, places: P });
+    const a = autoPlan({ start: M("10:00"), end: M("19:00"), pace: "steady" });
+    const s = schedule(a.picks, M("10:00"));
+    eq(s.problems, 0, "the builder should not produce a day with collisions in it");
+    ok(a.picks.length > 0);
+  });
+});

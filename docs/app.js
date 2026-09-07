@@ -718,6 +718,7 @@ function drawPlan() {
           </span></div>
         <div class="tiny">${r.walk ? `${r.walk} min walk. ` : ""}${dur(r.stay)} here.${r.p.lo ? ` About ${inr(r.p.lo)}.` : ""}</div>
         ${r.issues.map(x => `<div class="pissue">\u26A0 ${esc(x)}</div>`).join("")}
+        ${(r.unknowns || []).map(x => `<div class="punknown">${esc(x)}</div>`).join("")}
       </div>
     </div>`;
   }).join("");
@@ -725,17 +726,20 @@ function drawPlan() {
   el.innerHTML = `
     <div class="card ${s.overruns ? "warn" : "ok"}">
       <h3>${s.overruns ? "This does not fit" : "Your day"}</h3>
-      <div class="grid2" style="margin-top:10px">
-        <div class="stat"><div class="v">${HM(s.start)} to ${HM(s.end)}</div><div class="k">start and finish</div></div>
-        <div class="stat"><div class="v">${picks.length}</div><div class="k">stops</div></div>
-        <div class="stat"><div class="v">${s.walking} min</div><div class="k">walking${s.travelling ? ` + ${s.travelling} travelling` : ""}</div></div>
-        <div class="stat"><div class="v">${s.cost ? inr(s.cost) : "free"}</div><div class="k">entries and food</div></div>
+      <div class="sumrow">
+        <div><b>${HM(s.start)} to ${HM(s.end)}</b><span>the day</span></div>
+        <div><b>${picks.length}</b><span>stops</span></div>
+        <div><b>${s.walking}m</b><span>walking${s.travelling ? ` +${s.travelling} travel` : ""}</span></div>
+        <div><b>${s.cost ? inr(s.cost) : "free"}</b><span>to spend</span></div>
       </div>
       ${s.overruns ? `<p class="sub" style="margin:10px 0 0">It runs past when you have to
         leave. Drop a stop, or start earlier.</p>` : s.problems === 0
-        ? `<p class="sub" style="margin:10px 0 0">Everything lands inside its opening hours,
-           and each stop is at or near its best time of day.</p>`
+        ? `<p class="sub" style="margin:10px 0 0">Everything lands inside the opening hours we
+           know about, and each stop is at or near its best time of day.</p>`
         : `<p class="sub" style="margin:10px 0 0">${s.problems} thing${s.problems > 1 ? "s" : ""} to look at, marked below.</p>`}
+      ${s.unknowns ? `<p class="tiny" style="margin:8px 0 0">${s.unknowns} of these have no
+        opening hours recorded in OpenStreetMap, so they might be shut. That is a gap in the
+        map rather than a fault in the plan.</p>` : ""}
     </div>
     <div class="card flat" style="margin:10px 0">
       <div class="rangerow">
