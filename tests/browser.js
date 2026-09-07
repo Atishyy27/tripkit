@@ -383,6 +383,49 @@ const ok = (cond, what) => {
     await page.reload({ waitUntil: "networkidle" });
     ok(await page.locator("#resume").isVisible(), "the saved trip is offered on return");
 
+    console.log("\n  the cache leaves room for the trip you are actually on");
+    /* localStorage is about 5 MB and the current trip saves separately from the
+       cache. A cache that fills the ceiling breaks the thing it exists to help:
+       the active trip silently stops saving, which is the worst way to fail. */
+    const quota = await page.evaluate(() => {
+      // Snapshot first. This test deliberately overfills the cache, and without
+      // restoring it afterwards it silently breaks whatever runs next, which is
+      // exactly the kind of order dependency that makes a suite untrustworthy.
+      const before = { cache: localStorage.getItem("tripkit.cache"),
+                       trip: localStorage.getItem("tripkit.trip") };
+      const big = n => ({ v: 1, built: Date.now(),
+        place: { name: "Town" + n, lat: 1 + n / 100, lng: 1, country: "X" },
+        notes: [], intro: "", cautions: [],
+        config: { tzOffsetMinutes: 0, arrive: 540, depart: 1260 },
+        conditions: { sunrise: 400, sunset: 1100 },
+        days: [{ label: "Day 1", plan: [], start: null }], day: 0,
+        places: Array.from({ length: 1400 }, (_, i) => ({
+          id: "t" + n + "-" + i, name: "Place " + i + " ".repeat(12), cat: "view",
+          town: "town" + n, lat: 1, lng: 1, dur: 30,
+          why: "a description long enough to matter ".repeat(6),
+          open: "09:00", close: "18:00", tags: ["free"], best: ["12:00"],
+          src: "https://www.openstreetmap.org/node/" + i })) });
+      for (let n = 0; n < 14; n++) cachePut(big(n));
+      const raw = (localStorage.getItem("tripkit.cache") || "").length;
+      let activeSaved = false;
+      try { localStorage.setItem("tripkit.trip", JSON.stringify(big(99))); activeSaved = true; }
+      catch (e) {}
+      let readable = false;
+      try { readable = cacheList().length > 0; } catch (e) {}
+      const out = { kb: Math.round(raw / 1024), activeSaved, readable, kept: cacheList().length };
+      try {
+        if (before.cache) localStorage.setItem("tripkit.cache", before.cache);
+        else localStorage.removeItem("tripkit.cache");
+        if (before.trip) localStorage.setItem("tripkit.trip", before.trip);
+      } catch (e) { /* restoring is best effort */ }
+      return out;
+    });
+    ok(quota.kb < 3400, `the cache stays inside its budget (${quota.kb}KB)`);
+    ok(quota.activeSaved, "the trip you are on can still be saved after the cache fills");
+    ok(quota.readable, `the cache is still readable, holding ${quota.kept} towns`);
+    await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await page.reload({ waitUntil: "networkidle" });
+
     ok(errors.length === 0, "no javascript exceptions after using it" +
        (errors.length ? "\n        " + errors.slice(0, 3).join("\n        ") : ""));
     if (subres.length)

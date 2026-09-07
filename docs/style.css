@@ -333,3 +333,10 @@ ul.tight li{margin-bottom:6px}
 .daytabs{margin:0 0 8px}
 .daytabs .chip[data-addday],.daytabs .chip[data-rmday]{color:var(--dimmer);border-style:dashed}
 .daytabs .chip[data-rmday]:hover{color:var(--red);border-color:#5c2b2b}
+#printAll{display:none}
+@media print{
+  body.printing-all #vPlan{display:none!important}
+  body.printing-all #printAll{display:block!important}
+  .printday{font-size:14pt;margin:14px 0 6px;page-break-before:auto;color:#000!important}
+  .printday:first-child{page-break-before:avoid}
+}

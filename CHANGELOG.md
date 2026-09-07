@@ -5,6 +5,44 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-09-07
+
+A second adversarial review, and the worst bug of the project so far.
+
+### Fixed
+- **The day builder crashed on any place tagged free.** autoPlan called
+  score(place, time, town, phase) and score takes three arguments, so `phase` was
+  silently receiving a town name. Two consequences, and the quiet one was worse: the
+  hour based scoring did nothing at all, so a day "built for the clock" was ignoring
+  the clock; and the moment a candidate carried any tag, it threw and the button hung
+  with no error. OpenStreetMap tags every fee=no place "free", so this would have hit
+  almost immediately. Every test fixture happened to have no tags, and an empty array
+  never runs its filter callback, so the whole suite sailed past it.
+- **The calendar export used the wrong dates.** There was no trip date anywhere, so
+  it anchored day one to whatever day you pressed the button. Exporting for next
+  week put everything on this week, and re-exporting moved it all again. There is a
+  date field now.
+- **Calendar lines folded on characters rather than octets**, so a Devanagari or
+  Chinese name produced lines more than twice the length the spec allows.
+- **A place with no recorded position offered walking directions to a pin we
+  invented.** Wikivoyage listings without coordinates sit on the town centre. Those
+  now offer a search instead, in the app and in the calendar, and the calendar no
+  longer exports coordinates it made up.
+- **A cafe was counted as a meal**, so the "nothing to eat fitted" warning could
+  never fire and a day whose only food was a coffee looked fed.
+- **Printing a multi day trip printed one day** and looked complete.
+- **The disposable cache had stronger quota handling than the trip you are on.** On
+  a full device the active trip would silently stop saving while the cache carried
+  on. It now sacrifices the cache, then the optional extras, and keeps the plan
+  itself to the last.
+- **One photograph could be pinned to several different places**, so a street of
+  cafes all showed the same picture, each implying it was theirs. A nearby photo is
+  used once, and a place pinned at the town centre no longer takes one at all.
+
+### Changed
+- score() is defensive about its arguments now. A slip should cost accuracy, never
+  the whole feature.
+
 ## [0.7.0] - 2026-09-07
 
 ### Added
@@ -268,6 +306,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.8.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.8.0
 [0.7.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.7.0
 [0.6.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.5.0

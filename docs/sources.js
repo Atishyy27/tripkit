@@ -740,10 +740,18 @@ async function attachPhotos(places, commons, onNote) {
   }
   let named = 0, near = 0;
   const pool = (commons || []).filter(c => c.lat != null && c.lng != null);
+  // One photograph could be attached to several different places, so a street full
+  // of cafes all showed the same picture and each of them implied it was theirs.
+  // A nearby photo is used once.
+  const taken = new Set();
   for (const p of places) {
+    // A place pinned at the town centre because nothing recorded its position must
+    // not take "the nearest photo", which would be a photo of the town centre.
+    if (p.loose && !(p.wikidata && exact[p.wikidata])) continue;
     if (p.wikidata && exact[p.wikidata]) { p.photo = exact[p.wikidata]; p.photoExact = true; named++; continue; }
     let best = null, bestD = 1e9;
     for (const c of pool) {
+      if (taken.has(c.thumb)) continue;
       const d = metres(p.lat, p.lng, c.lat, c.lng);
       if (d < bestD) { bestD = d; best = c; }
     }
@@ -754,6 +762,7 @@ async function attachPhotos(places, commons, onNote) {
     if (best && bestD < 40) {
       p.photo = best.thumb; p.photoExact = false;
       p.photoTitle = best.title; p.photoDist = Math.round(bestD); near++;
+      taken.add(best.thumb);
     }
   }
   if (onNote && (named || near))

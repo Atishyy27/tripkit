@@ -96,6 +96,11 @@ function exitState(t) {
 }
 
 function score(p, t, phase) {
+  // Defensive because it has already been called wrongly once: an argument slip
+  // passed a string here, which disabled the hour based scoring silently and then
+  // threw the moment a place carried a tag. Missing context should cost accuracy,
+  // never the whole feature.
+  if (!phase || !Array.isArray(phase.tags)) phase = phaseAt(t);
   const st = openState(p, t);
   let s = 0; const why = [];
   if (st.state === "shut") return null;
@@ -346,7 +351,13 @@ const MEAL_WINDOWS = [
   [M("12:00"), M("15:00"), "lunch"],
   [M("18:30"), M("21:30"), "dinner"],
 ];
-const EATING = ["food", "cafe", "street", "sweet"];
+/* A cafe is somewhere to sit, not lunch. Counting one as a meal meant the "no meal
+   fitted" warning could never fire, and a day whose only food was a coffee looked
+   fed. Meals and snacks are separate now: a meal window wants a meal, and a snack
+   is a pleasant thing to find in a gap. */
+const MEALS = ["food", "street"];
+const SNACKS = ["cafe", "sweet", "bar"];
+const EATING = MEALS.concat(SNACKS);
 
 function autoPlan(opts) {
   opts = opts || {};
@@ -375,7 +386,7 @@ function autoPlan(opts) {
   while (t < end && guard++ < 40) {
     const mealNow = MEAL_WINDOWS.find(([a, b]) => t >= a && t <= b);
     const eatenThisWindow = mealNow && picks.some(p =>
-      EATING.includes(p.cat) && p._at >= mealNow[0] && p._at <= mealNow[1]);
+      MEALS.includes(p.cat) && p._at >= mealNow[0] && p._at <= mealNow[1]);
     const wantFood = !!mealNow && !eatenThisWindow;
 
     let best = null, bestScore = -Infinity;
@@ -391,7 +402,12 @@ function autoPlan(opts) {
       if (leave > end) continue;
 
       const phase = phaseAt(arrive);
-      const s = score(p, arrive, p.town, phase);
+      // score takes (place, time, phase). Passing a town here shifted every
+      // argument along, so `phase` was silently receiving a string: the hour based
+      // scoring did nothing, and the moment a candidate carried any tag at all
+      // (OpenStreetMap tags every fee=no place "free") it threw and the day builder
+      // hung with no error.
+      const s = score(p, arrive, phase);
       if (!s) continue;
       let v = s.s - walk * 1.4;
 
@@ -400,8 +416,8 @@ function autoPlan(opts) {
       v -= seen * seen * 9;
 
       // eat at meal times, and do not eat at other times
-      if (wantFood) v += EATING.includes(p.cat) ? 55 : -25;
-      else if (EATING.includes(p.cat)) v -= 30;
+      if (wantFood) v += MEALS.includes(p.cat) ? 55 : (SNACKS.includes(p.cat) ? 18 : -25);
+      else if (MEALS.includes(p.cat)) v -= 30;
 
       if (v > bestScore) { bestScore = v; best = { p, walk, arrive, leave }; }
     }
@@ -416,8 +432,9 @@ function autoPlan(opts) {
   }
 
   if (!picks.length) notes.push("nothing was open and close enough to build a day from");
-  const meals = picks.filter(p => EATING.includes(p.cat)).length;
-  if (!meals && (end - start) > 300) notes.push("no meal fitted; nothing was open at the right hours");
+  const meals = picks.filter(p => MEALS.includes(p.cat)).length;
+  if (!meals && (end - start) > 300)
+    notes.push("nothing to eat fitted into this day. Nowhere serving a meal was open at the right hours, so plan food separately.");
   picks.forEach(p => { delete p._at; });
   return { picks, notes, pace, from: start, to: end };
 }

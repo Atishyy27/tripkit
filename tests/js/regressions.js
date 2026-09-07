@@ -236,9 +236,14 @@ describe("building a day automatically", () => {
     const P = [];
     for (let i = 0; i < n; i++) {
       const [c, b] = cats[i % cats.length];
+      // Tags matter here. Every earlier fixture had none, and an empty array means
+      // .filter never runs its callback, which hid a crash for as long as the tests
+      // stayed synthetic. Real OpenStreetMap data tags fee=no places "free".
+      const TAGS = [["free"], ["outdoor"], ["indoor", "shade"], [], ["free", "photo"], ["evening"]];
       P.push({ id: "p" + i, name: c + " " + i, cat: c, town: "t",
                lat: 26.487 + (i % 5) * 0.002, lng: 74.551 + (i % 4) * 0.002,
                dur: c === "food" ? 60 : c === "view" ? 45 : 30,
+               tags: TAGS[i % TAGS.length],
                best: b, open: "07:00", close: "22:00", why: "a real place", lo: i * 10 });
     }
     init({ config: { arrive: M("09:00"), depart: M("21:00"), hopMinutes: 0,
@@ -391,6 +396,7 @@ describe("more than one day", () => {
       P.push({ id: "p" + i, name: c + i, cat: c, town: "t",
                lat: 26.487 + (i % 5) * 0.002, lng: 74.551 + (i % 4) * 0.002,
                dur: 30, why: "x", open: "08:00", close: "21:00",
+               tags: [["free"], ["outdoor"], ["indoor", "shade"], []][i % 4],
                best: [HM(480 + (i * 41) % 700)] });
     }
     init({ config: { arrive: M("09:00"), depart: M("21:00"), exitBufferMinutes: 45,
@@ -441,5 +447,158 @@ describe("more than one day", () => {
     });
     const all = days.flat().map(p => p.id);
     eq(all.length, new Set(all).size, "a place appears on more than one day");
+  });
+});
+
+
+describe("regression: the day builder crashed on any tagged place", () => {
+  /* autoPlan called score(place, time, town, phase). score takes three arguments,
+     so `phase` was silently receiving a town name. Two consequences, and the quiet
+     one was worse:
+
+       the hour based scoring did nothing at all, so a day "built for the clock"
+       was ignoring the clock entirely;
+
+       and the moment a candidate carried any tag, phase.tags threw and the button
+       hung with no error at all.
+
+     Every test fixture happened to have no tags, and an empty array never runs its
+     filter callback, so the suite sailed past it. OpenStreetMap tags every fee=no
+     place "free", so this would have hit almost immediately in the wild. */
+
+  const tagged = (id, cat, tags, best) => ({
+    id, name: cat + " " + id, cat, town: "t",
+    lat: 26.487 + id.length * 0.001, lng: 74.551,
+    dur: 30, why: "x", open: "08:00", close: "21:00", best: [best], tags });
+
+  function boot(places) {
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), exitBufferMinutes: 45,
+                     tzOffsetMinutes: 330 },
+           conditions: { sunrise: M("06:12"), sunset: M("18:48"),
+                         heatWindow: [M("11:30"), M("15:30")] }, places });
+  }
+
+  it("builds a day from places that carry tags", () => {
+    boot([tagged("a", "view", ["free"], "17:30"),
+          tagged("b", "food", ["indoor", "shade"], "13:00"),
+          tagged("c", "temple", ["free", "outdoor"], "09:00"),
+          tagged("d", "cafe", [], "10:00"),
+          tagged("e", "museum", ["free"], "11:00")]);
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    ok(a.picks.length >= 3, `only ${a.picks.length} stops from five tagged places`);
+  });
+
+  it("scores differently at different hours, which is the whole point", () => {
+    boot([]);
+    const outdoors = tagged("z", "view", ["outdoor"], "09:00");
+    const morning = score(outdoors, M("09:00"), phaseAt(M("09:00")));
+    const heat = score(outdoors, M("13:00"), phaseAt(M("13:00")));
+    ok(morning.s > heat.s,
+       `an exposed viewpoint should score worse in the heat: ${morning.s} vs ${heat.s}`);
+  });
+
+  it("survives being called with the wrong arguments rather than throwing", () => {
+    boot([]);
+    const p = tagged("y", "view", ["outdoor", "free"], "09:00");
+    let threw = null;
+    try { score(p, M("09:00"), "a town name, which is not a phase"); }
+    catch (e) { threw = e.message; }
+    eq(threw, null, "a wrong argument should cost accuracy, never the feature");
+  });
+
+  it("every tag shape is safe", () => {
+    boot([]);
+    const p = tagged("x", "view", ["outdoor"], "09:00");
+    for (const tags of [[], ["free"], ["a", "b", "c"], undefined, null]) {
+      let threw = null;
+      try { score(Object.assign({}, p, { tags }), M("12:00"), phaseAt(M("12:00"))); }
+      catch (e) { threw = e.message; }
+      eq(threw, null, `tags ${JSON.stringify(tags)} threw`);
+    }
+  });
+});
+
+describe("regression: findings from the second review", () => {
+  const mk = (id, cat, best, open, close) => ({
+    id: "m" + id, name: cat + id, cat, town: "t",
+    lat: 26.487 + id * 0.001, lng: 74.551, dur: cat === "food" ? 60 : 30,
+    why: "x", open: open || "08:00", close: close || "21:00",
+    best: [best], tags: ["free"] });
+
+  function boot(places) {
+    init({ config: { arrive: M("08:00"), depart: M("21:00"), exitBufferMinutes: 45,
+                     tzOffsetMinutes: 330 },
+           conditions: { sunrise: M("06:12"), sunset: M("18:48") }, places });
+  }
+
+  it("a cafe is not a meal, so a day of only coffee says so", () => {
+    /* EATING lumped cafes in with restaurants, which meant the "nothing to eat"
+       warning could never fire and a day whose only food was a coffee looked fed. */
+    boot([mk(1, "view", "10:00"), mk(2, "cafe", "11:00"), mk(3, "temple", "09:00"),
+          mk(4, "cafe", "14:00"), mk(5, "museum", "15:00")]);
+    const a = autoPlan({ start: M("08:00"), end: M("20:00"), pace: "steady" });
+    ok(a.notes.some(n => /eat/i.test(n)),
+       `a day with no meal in it should say so, got: ${JSON.stringify(a.notes)}`);
+  });
+
+  it("and a town with real food gets lunch at lunchtime and no warning", () => {
+    boot([mk(1, "view", "10:00"), mk(2, "cafe", "11:00"), mk(3, "temple", "09:00"),
+          mk(6, "food", "13:00"), mk(7, "food", "19:30"), mk(5, "museum", "15:00")]);
+    const a = autoPlan({ start: M("08:00"), end: M("20:00"), pace: "steady" });
+    eq(a.notes, []);
+    const s = schedule(a.picks, M("08:00"));
+    ok(s.rows.some(r => !r.journey && ["food", "street"].includes(r.p.cat) &&
+                        r.arrive >= M("11:30") && r.arrive <= M("15:00")),
+       "no meal landed at lunchtime");
+  });
+
+  it("a place with an invented pin is offered as a search, not as directions", () => {
+    /* Wikivoyage listings with no coordinates are pinned at the town centre. A
+       "walk there" link to a pin we made up sends somebody confidently to the
+       wrong doorway. */
+    const fs = require("fs"), path = require("path");
+    const app = fs.readFileSync(path.join(DOCS_DIR, "app.js"), "utf8");
+    ok(/p\.loose\s*\n?\s*\?\s*`https:\/\/www\.google\.com\/maps\/search/.test(app) ||
+       /p\.loose[\s\S]{0,120}maps\/search/.test(app),
+       "the card still offers directions to a pin that was never recorded");
+    ok(/p\.loose \? \[\] : \[`GEO:/.test(app),
+       "the calendar still exports GEO coordinates it invented");
+  });
+
+  it("the calendar is anchored to the trip's date, not to the day you pressed export", () => {
+    const fs = require("fs"), path = require("path");
+    const app = fs.readFileSync(path.join(DOCS_DIR, "app.js"), "utf8");
+    ok(/GUIDE && GUIDE\.startDate/.test(app),
+       "icsTime still starts from today rather than from the trip date");
+    ok(/id="planDate"/.test(app), "there is no way to set the trip date");
+  });
+
+  it("calendar lines fold on octets, not characters", () => {
+    const fs = require("fs"), path = require("path");
+    const app = fs.readFileSync(path.join(DOCS_DIR, "app.js"), "utf8");
+    ok(/TextEncoder/.test(app),
+       "folding still counts characters, so a Devanagari name overruns the spec by 2x");
+  });
+
+  it("the active trip is protected before the cache is", () => {
+    /* The disposable cache had stronger quota handling than the trip somebody is
+       actually on, which is exactly backwards. */
+    const fs = require("fs"), path = require("path");
+    const app = fs.readFileSync(path.join(DOCS_DIR, "app.js"), "utf8");
+    const save = app.slice(app.indexOf("function save(trip)"), app.indexOf("function load()"));
+    ok(/removeItem\(CACHE\)/.test(save),
+       "a full device should sacrifice the cache to keep the current trip");
+    ok(/truncated: true/.test(save),
+       "there is no last resort that keeps the plan when nothing else fits");
+  });
+
+  it("one photograph is never pinned to several different places", () => {
+    const fs = require("fs"), path = require("path");
+    const src = fs.readFileSync(path.join(DOCS_DIR, "sources.js"), "utf8");
+    const fn = src.slice(src.indexOf("async function attachPhotos"));
+    ok(/taken\.has\(/.test(fn) && /taken\.add\(/.test(fn),
+       "a street of cafes would all show the same picture, each implying it was theirs");
+    ok(/p\.loose && !\(p\.wikidata/.test(fn),
+       "a place pinned at the town centre would take a photo of the town centre");
   });
 });

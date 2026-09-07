@@ -42,7 +42,30 @@ function safeUrl(u) {
 }
 
 function save(trip) {
-  try { localStorage.setItem(STORE, JSON.stringify(trip)); } catch (e) { /* quota */ }
+  try {
+    localStorage.setItem(STORE, JSON.stringify(trip));
+  } catch (e) {
+    // The active trip is the one thing that must survive. It had weaker quota
+    // handling than the disposable cache, which is backwards: on a full device it
+    // would silently stop saving while the cache carried on. Drop the cache and
+    // try again, and if it still will not fit, drop the heavy optional parts.
+    try { localStorage.removeItem(CACHE); } catch (e2) {}
+    try { localStorage.setItem(STORE, JSON.stringify(trip)); return; } catch (e3) {}
+    try {
+      const lean = Object.assign({}, trip, { photos: [], transit: [] });
+      localStorage.setItem(STORE, JSON.stringify(lean));
+      return;                                  // plan and places kept, extras dropped
+    } catch (e4) {}
+    // Last resort: the plan itself, which is the only thing a person authored.
+    try {
+      localStorage.setItem(STORE, JSON.stringify({
+        v: 1, built: trip.built, place: trip.place, config: trip.config,
+        conditions: trip.conditions, days: trip.days, day: trip.day,
+        places: (trip.places || []).filter(p => (trip.days || [])
+          .some(d => (d.plan || []).includes(p.id))),
+        photos: [], transit: [], truncated: true }));
+    } catch (e5) { /* nothing more can be done, and the session still works */ }
+  }
   cachePut(trip);
 }
 function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return null; } }
@@ -64,6 +87,11 @@ function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null")
 const CACHE = "tripkit.cache";
 const CACHE_KEEP = 8;                       // towns, newest first
 const CACHE_MAX_AGE = 21 * 24 * 3600 * 1000;
+/* localStorage is about 5 MB in most browsers and the CURRENT trip is saved
+   separately from this cache. Filling the cache to the ceiling therefore breaks the
+   thing it exists to help: the active trip silently stops saving. Budget the cache
+   at roughly 3 MB and leave the rest alone. */
+const CACHE_BUDGET = 3 * 1024 * 1024;
 
 const cacheKey = p => `${p.name.toLowerCase()}|${p.lat.toFixed(3)},${p.lng.toFixed(3)}`;
 
@@ -83,12 +111,21 @@ function cachePut(trip) {
       .filter(k => Date.now() - all[k].at < CACHE_MAX_AGE)
       .sort((a, b) => all[b].at - all[a].at)
       .slice(0, CACHE_KEEP);
+    // Drop the oldest until the whole cache fits the budget, so the active trip
+    // always has room. Count alone is not enough: one large city is bigger than
+    // six small towns.
     const kept = {};
-    keys.forEach(k => kept[k] = all[k]);
+    let budget = CACHE_BUDGET;
+    for (const k of keys) {
+      const size = JSON.stringify(all[k]).length;
+      if (size > budget) continue;
+      kept[k] = all[k];
+      budget -= size;
+    }
     try { localStorage.setItem(CACHE, JSON.stringify(kept)); }
     catch (e) {
       // over quota: drop the oldest until it fits, rather than losing the lot
-      const shrink = keys.slice();
+      const shrink = Object.keys(kept);
       while (shrink.length > 1) {
         shrink.pop();
         const smaller = {};
@@ -545,7 +582,12 @@ function card(r, i) {
   const price = p.priceNote ? esc(p.priceNote) : ((p.lo === 0 && p.hi === 0) ? "free" : "");
   // No spaces inside a coordinate pair. A cosmetic sweep once put one here and every
   // "walk there" link silently pointed nowhere.
-  const g = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
+  // A place whose coordinates were never recorded sits on the town centre. Offering
+  // "walk there" to a pin we invented sends people to the wrong doorway with full
+  // confidence, so those get a search instead.
+  const g = p.loose
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
   const o = `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`;
   const tint = CAT_TINT[p.cat] || "#a99fc4";
   const icon = CAT_ICON[p.cat] || "\u{1F4CD}";
@@ -570,7 +612,7 @@ function card(r, i) {
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
       <div class="btns">
         <button class="btn ${inPlan(p.id) ? "picked" : "o"}" data-pick="${esc(p.id)}">${inPlan(p.id) ? "\u2713 in your day" : "+ add to day"}</button>
-        <a class="btn g" target="_blank" rel="noopener" href="${g}">Walk there</a>
+        <a class="btn g" target="_blank" rel="noopener" href="${g}">${p.loose ? "Find it" : "Walk there"}</a>
         <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
         ${safeUrl(p.website) ? `<a class="btn b" target="_blank" rel="noopener noreferrer" href="${esc(safeUrl(p.website))}">Website</a>` : ""}
       </div>
@@ -970,6 +1012,12 @@ function drawPlan() {
     </div>
     <div class="card flat" style="margin:10px 0">
       <div class="rangerow">
+        <label class="tiny" for="planDate" style="flex:0 0 auto">Date</label>
+        <input id="planDate" type="date" value="${esc(GUIDE.startDate || todayISO())}"
+               style="background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+                      border-radius:9px;padding:8px;font-family:inherit;font-size:15px">
+      </div>
+      <div class="rangerow">
         <label class="tiny" for="planStart" style="flex:0 0 auto">Start the day at</label>
         <input id="planStart" type="time" value="${HM(s.start)}"
                style="background:var(--bg2);border:1px solid var(--line);color:var(--ink);
@@ -1007,13 +1055,48 @@ function drawPlan() {
   $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
   $$("#vPlan [data-up]").forEach(b => b.onclick = () => movePick(b.dataset.up, -1));
   $$("#vPlan [data-down]").forEach(b => b.onclick = () => movePick(b.dataset.down, 1));
+  const pd = $("#planDate");
+  if (pd) pd.onchange = () => { GUIDE.startDate = pd.value || null; save(GUIDE); drawPlan(); };
   const ps = $("#planStart");
   if (ps) ps.onchange = () => { GUIDE.planStart = M(ps.value); syncDay(); save(GUIDE); drawPlan(); };
   const sn = $("#startNow");
   if (sn) sn.onclick = () => { GUIDE.planStart = null; syncDay(); save(GUIDE); drawPlan(); };
   const ro = $("#reorder");
   if (ro) ro.onclick = () => { GUIDE.manualOrder = false; syncDay(); save(GUIDE); drawPlan(); };
-  $("#printPlan").onclick = () => { track("/plan/printed"); window.print(); };
+  $("#printPlan").onclick = () => {
+    track("/plan/printed");
+    // Printing rendered only the day on screen, so a three day trip printed one day
+    // and looked complete. Render them all, print, then put the view back.
+    if (GUIDE.days && GUIDE.days.length > 1) {
+      const keep = GUIDE.day;
+      const holder = $("#printAll");
+      holder.innerHTML = GUIDE.days.map((d, i) => {
+        const byId = {}; (GUIDE.places || []).forEach(x => byId[x.id] = x);
+        const picks = (d.plan || []).map(id => byId[id]).filter(Boolean);
+        if (!picks.length) return "";
+        const sc = schedule(picks, d.start != null ? d.start : null,
+                            { keepOrder: !!d.manualOrder });
+        return `<h2 class="printday">${esc(d.label)}</h2>` + sc.rows.map(r => r.journey
+          ? `<div class="prow journey"><div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+             <div class="pbody"><div class="pname">${esc(r.from.town || "")} to ${esc(r.to.town || "")}</div></div></div>`
+          : `<div class="prow"><div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+             <div class="pbody"><div class="pname">${esc(r.p.name)}</div>
+             <div class="tiny">${r.walk ? r.walk + " min walk. " : ""}${dur(r.stay)} here.</div>
+             ${(r.issues || []).map(x => `<div class="pissue">${esc(x)}</div>`).join("")}</div></div>`
+        ).join("");
+      }).join("");
+      holder.hidden = false;
+      document.body.classList.add("printing-all");
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove("printing-all");
+        holder.hidden = true; holder.innerHTML = "";
+        GUIDE.day = keep; ensureDays();
+      }, 500);
+    } else {
+      window.print();
+    }
+  };
   $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(); };
   $("#clearPlan").onclick = () => { GUIDE.plan = []; syncDay(); save(GUIDE); render(); paintPlanCount(); drawPlan(); };
   $("#sharePlan").onclick = async () => {
@@ -1036,11 +1119,19 @@ function drawPlan() {
    Times are written as local wall clock with no timezone, which is deliberate.
    A stop at 13:00 in Pushkar should read 13:00 in your calendar whatever your
    phone thinks the timezone is, and floating times are how the format says that. */
+function todayISO() {
+  const d = new Date(), off = CFG.tzOffsetMinutes || 0;
+  const l = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
+  return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
+}
+
 function icsTime(mins, dayOffset) {
-  const d = new Date();
-  const off = CFG.tzOffsetMinutes || 0;
-  const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
-  const y = local.getFullYear(), m = local.getMonth() + 1, day = local.getDate();
+  // Anchored to the trip's own date, not to whatever day the export button was
+  // pressed. Without that, exporting a trip for next week put every event on this
+  // week, and re-exporting later quietly moved them all again.
+  const iso = (GUIDE && GUIDE.startDate) || todayISO();
+  const [Y, Mo, D] = iso.split("-").map(Number);
+  const y = Y, m = Mo, day = D;
   const roll = Math.floor(mins / 1440) + (dayOffset || 0);
   const base = new Date(y, m - 1, day + roll);
   const hh = Math.floor((mins % 1440) / 60), mm = mins % 60;
@@ -1076,8 +1167,15 @@ function downloadIcs() {
     const p = r.p;
     const where = [p.name, p.town ? p.town.charAt(0).toUpperCase() + p.town.slice(1) : null,
                    GUIDE.place.country].filter(Boolean).join(", ");
+    // Wikivoyage listings without coordinates are pinned at the town centre. Sending
+    // someone driving directions to the middle of town, labelled as a specific place,
+    // is worse than sending them a search.
+    const mapLink = p.loose
+      ? `Search: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
+      : `Map: https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
     const desc = [p.why || "", p.warn ? "Note: " + p.warn : "",
-                  `Map: https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`,
+                  p.loose ? "The exact location of this one is not recorded, so this is a search rather than directions." : "",
+                  mapLink,
                   ...(r.issues || []).map(x => "Watch out: " + x)].filter(Boolean).join("\n");
     lines.push("BEGIN:VEVENT",
       `UID:tripkit-${Date.now()}-${i}@atishyy27.github.io`,
@@ -1086,21 +1184,31 @@ function downloadIcs() {
       `DTEND:${icsTime(r.leave, dayIndex)}`,
       `SUMMARY:${icsEscape(p.name)}`,
       `LOCATION:${icsEscape(where)}`,
-      `GEO:${p.lat};${p.lng}`,
+      ...(p.loose ? [] : [`GEO:${p.lat};${p.lng}`]),
       `DESCRIPTION:${icsEscape(desc)}`,
       "END:VEVENT");
   });
   lines.push("END:VCALENDAR");
 
   // fold at 75 octets, which the spec requires and most parsers quietly rely on
-  const folded = lines.map(l => {
-    if (l.length <= 74) return l;
-    const out = [l.slice(0, 74)];
-    let rest = l.slice(74);
-    while (rest.length > 73) { out.push(" " + rest.slice(0, 73)); rest = rest.slice(73); }
-    if (rest) out.push(" " + rest);
+  // The spec folds at 75 OCTETS, not characters. Counting characters meant a
+  // Devanagari or Chinese name produced lines two to three times over the limit,
+  // which some parsers reject outright. Split on octets and never mid character.
+  const enc = new TextEncoder();
+  const foldLine = (l) => {
+    if (enc.encode(l).length <= 74) return l;
+    const out = [];
+    let cur = "", curBytes = 0, limit = 74;
+    for (const ch of l) {                       // iterates code points, not units
+      const n = enc.encode(ch).length;
+      if (curBytes + n > limit) {
+        out.push(cur); cur = " " + ch; curBytes = 1 + n; limit = 73;
+      } else { cur += ch; curBytes += n; }
+    }
+    if (cur) out.push(cur);
     return out.join("\r\n");
-  }).join("\r\n") + "\r\n";
+  };
+  const folded = lines.map(foldLine).join("\r\n") + "\r\n";
 
   const blob = new Blob([folded], { type: "text/calendar;charset=utf-8" });
   const a = document.createElement("a");
