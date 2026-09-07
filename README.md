@@ -53,6 +53,10 @@ trip is saved on your phone.
 hour: a viewpoint at sunset, a shaded restaurant at the hottest part of the day, a market
 in the evening when it wakes up.
 
+**Builds the day for you.** One tap puts a day together: the right things at the right
+hours, a meal when it is a meal time, and enough variety that it is not four temples in a
+row. Then you move, drop or add whatever you like, and it re-checks the whole thing.
+
 **Refuses to waste your time.** If something takes 90 minutes and you have 40, it isn't
 shown. When nothing fits, it says so plainly instead of padding the screen.
 

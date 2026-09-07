@@ -659,12 +659,27 @@ function drawPlan() {
   const el = $("#vPlan");
   const picks = planPlaces();
   if (!picks.length) {
-    el.innerHTML = `<div class="card"><h3>Nothing picked yet</h3>
-      <p class="sub">Add places from the list and this builds an order for them: when to
-      be where, how long the walk is, and whether any of it collides with opening hours
-      or with the time you have to leave.</p>
-      <p class="tiny">It will tell you when a plan does not fit rather than quietly
-      dropping something.</p></div>`;
+    el.innerHTML = `<div class="card hi">
+        <h3>Build me a day</h3>
+        <p class="sub">One tap and it puts a day together: the right things at the right
+        hours, a meal when it is a meal time, and enough variety that it is not four
+        temples in a row. You can change any of it afterwards.</p>
+        <div class="btns" style="margin-top:10px">
+          <button class="btn o" data-auto="easy">Take it easy</button>
+          <button class="btn o" data-auto="steady">A normal day</button>
+          <button class="btn o" data-auto="packed">See everything</button>
+        </div>
+        <p class="tiny" style="margin:9px 0 0">Nothing is fetched. It is working from the
+        places already loaded, which is why it is instant.</p>
+      </div>
+      <div class="card">
+        <h3>Or pick your own</h3>
+        <p class="sub">Add places from the list and this builds an order for them: when to
+        be where, how long the walk is, and whether any of it collides with opening hours
+        or with the time you have to leave. It says when a plan does not fit rather than
+        quietly dropping something.</p>
+      </div>`;
+    $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
     return;
   }
   // A day being planned for tomorrow should not be laid out from this minute.
@@ -734,6 +749,16 @@ function drawPlan() {
         hand, so it is left alone. <button class="btn" id="reorder"
         style="padding:3px 8px">let it re-sort by time</button></p>` : ""}
     </div>
+    ${GUIDE.autoNotes && GUIDE.autoNotes.length ? `<div class="card warn">
+      <h3>While building this</h3>
+      ${GUIDE.autoNotes.map(n => `<p class="sub" style="margin:4px 0">${esc(n)}</p>`).join("")}
+    </div>` : ""}
+    <div class="chips" style="margin:10px 0 2px">
+      <span class="tiny" style="align-self:center;padding-right:4px">Rebuild</span>
+      <button class="chip" data-auto="easy" aria-pressed="${GUIDE.autoPace === "easy"}">Easy</button>
+      <button class="chip" data-auto="steady" aria-pressed="${GUIDE.autoPace === "steady"}">Normal</button>
+      <button class="chip" data-auto="packed" aria-pressed="${GUIDE.autoPace === "packed"}">Packed</button>
+    </div>
     <div class="btns" style="margin:10px 0 14px">
       <button class="btn o" id="printPlan">Print or save as PDF</button>
       <button class="btn b" id="icsPlan">Add to calendar</button>
@@ -745,6 +770,7 @@ function drawPlan() {
     third added for real streets, which is a realistic pace in a place you do not know.</p>`;
 
   $$("#vPlan [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+  $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
   $$("#vPlan [data-up]").forEach(b => b.onclick = () => movePick(b.dataset.up, -1));
   $$("#vPlan [data-down]").forEach(b => b.onclick = () => movePick(b.dataset.down, 1));
   const ps = $("#planStart");
@@ -834,6 +860,25 @@ function downloadIcs(s) {
   a.download = `${GUIDE.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-day.ics`;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function buildDayFor(pace, btn) {
+  const label = btn ? btn.textContent : "";
+  if (btn) { btn.textContent = "Working\u2026"; btn.disabled = true; }
+  // Deliberately deferred a frame so the button actually repaints before a
+  // synchronous pass over a few thousand places.
+  setTimeout(() => {
+    track("/plan/auto/" + pace);
+    const start = GUIDE.planStart != null ? GUIDE.planStart : null;
+    const res = autoPlan({ pace, start: start == null ? undefined : start });
+    GUIDE.plan = res.picks.map(p => p.id);
+    GUIDE.manualOrder = false;
+    GUIDE.autoNotes = res.notes;
+    GUIDE.autoPace = pace;
+    save(GUIDE);
+    render(); paintPlanCount(); drawPlan();
+    if (btn) { btn.textContent = label; btn.disabled = false; }
+  }, 20);
 }
 
 /* ---------- the destination header ---------- */

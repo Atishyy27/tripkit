@@ -159,6 +159,40 @@ const ok = (cond, what) => {
     ok(map.pins > 0, `pins were drawn (${map.pins})`);
     ok(map.note.includes("real pin"), "the map explains what it is showing");
 
+    console.log("\n  it can build a day for you");
+    await page.click('#views .chip[data-v="plan"]');
+    await page.waitForTimeout(500);
+    const hasAuto = await page.evaluate(() => !!document.querySelector('#vPlan [data-auto]'));
+    ok(hasAuto, "an empty plan offers to build one");
+    await page.evaluate(() => {
+      const b = document.querySelector('#vPlan [data-auto="steady"]');
+      if (b) b.click();
+    });
+    await page.waitForTimeout(1200);
+    const auto = await page.evaluate(() => {
+      const el = document.getElementById("vPlan");
+      return { picked: (GUIDE.plan || []).length,
+               rows: el.querySelectorAll(".prow").length,
+               cats: [...new Set((GUIDE.plan || []).map(id =>
+                 (GUIDE.places.find(p => p.id === id) || {}).cat))],
+               times: [...el.querySelectorAll(".ptime")].map(t => t.textContent.slice(0, 5)),
+               summary: (el.querySelector(".card h3") || {}).textContent || "" };
+    });
+    ok(auto.picked >= 3, `it built a day of ${auto.picked} stops`);
+    ok(auto.rows === auto.picked, "every stop it chose has a row");
+    ok(auto.cats.length >= 2, `it mixed ${auto.cats.length} kinds of thing: ${auto.cats.join(", ")}`);
+    const autoOrdered = auto.times.every((t, i, a) => i === 0 || t >= a[i - 1]);
+    ok(autoOrdered, `the built day is in order: ${auto.times.join(" ")}`);
+    ok(!/does not fit/i.test(auto.summary),
+       `the day it built should fit inside the time available, summary said: ${auto.summary}`);
+
+    console.log("\n  and it can be cleared and done by hand");
+    await page.evaluate(() => { const b = document.getElementById("clearPlan"); if (b) b.click(); });
+    await page.waitForTimeout(400);
+    ok((await page.evaluate(() => (GUIDE.plan || []).length)) === 0, "clearing empties the day");
+    await page.click('#views .chip[data-v="list"]');
+    await page.waitForTimeout(300);
+
     console.log("\n  you can actually plan a day");
     const nAdd = await page.locator('#list [data-pick]').count();
     ok(nAdd > 0, `${nAdd} places can be added to a day`);

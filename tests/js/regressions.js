@@ -222,3 +222,112 @@ describe("regression: timezone guessing has no unreachable entries", () => {
     }
   });
 });
+
+describe("building a day automatically", () => {
+  /* The auto planner is the difference between a list you curate and an itinerary
+     creator. It is greedy on purpose: an optimal day is a hard problem and an
+     unexplainable answer, and a person has to trust this enough to follow it. */
+
+  function world(n) {
+    const cats = [["view", ["17:30"]], ["temple", ["09:00"]], ["food", ["13:00"]],
+                  ["cafe", ["10:00"]], ["shop", ["17:00"]], ["museum", ["11:00"]],
+                  ["street", ["08:00"]], ["do", ["15:00"]], ["food", ["19:30"]],
+                  ["view", ["06:30"]], ["temple", ["10:30"]], ["cafe", ["16:00"]]];
+    const P = [];
+    for (let i = 0; i < n; i++) {
+      const [c, b] = cats[i % cats.length];
+      P.push({ id: "p" + i, name: c + " " + i, cat: c, town: "t",
+               lat: 26.487 + (i % 5) * 0.002, lng: 74.551 + (i % 4) * 0.002,
+               dur: c === "food" ? 60 : c === "view" ? 45 : 30,
+               best: b, open: "07:00", close: "22:00", why: "a real place", lo: i * 10 });
+    }
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), hopMinutes: 0,
+                     exitBufferMinutes: 45, tzOffsetMinutes: 330 },
+           conditions: { sunrise: M("06:12"), sunset: M("18:48") }, places: P });
+    return P;
+  }
+
+  it("produces a day with no scheduling problems in it", () => {
+    world(24);
+    for (const pace of ["easy", "steady", "packed"]) {
+      const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace });
+      ok(a.picks.length > 0, `${pace} produced nothing`);
+      const s = schedule(a.picks, M("09:00"));
+      eq(s.problems, 0, `${pace} produced ${s.problems} problems`);
+    }
+  });
+
+  it("does not give you four temples in a row", () => {
+    world(24);
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    const counts = {};
+    a.picks.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
+    const worst = Math.max(...Object.values(counts));
+    ok(worst <= Math.ceil(a.picks.length / 2),
+       `one category took ${worst} of ${a.picks.length} stops: ${JSON.stringify(counts)}`);
+    ok(Object.keys(counts).length >= 3, `only ${Object.keys(counts).length} kinds of thing`);
+  });
+
+  it("puts a meal at a meal time, not at four in the afternoon", () => {
+    world(24);
+    const a = autoPlan({ start: M("09:00"), end: M("21:00"), pace: "steady" });
+    const s = schedule(a.picks, M("09:00"));
+    const meals = s.rows.filter(r => !r.journey &&
+      ["food", "cafe", "street", "sweet"].includes(r.p.cat));
+    ok(meals.length > 0, "a twelve hour day with no meal in it");
+    const lunch = meals.some(r => r.arrive >= M("11:30") && r.arrive <= M("15:00"));
+    ok(lunch, `nothing to eat at lunchtime: ${meals.map(r => HM(r.arrive)).join(", ")}`);
+  });
+
+  it("packed gives you more than easy", () => {
+    world(24);
+    const easy = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "easy" }).picks.length;
+    const packed = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "packed" }).picks.length;
+    ok(packed >= easy, `packed ${packed} should not be fewer than easy ${easy}`);
+  });
+
+  it("never picks the same place twice", () => {
+    world(24);
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "packed" });
+    eq(a.picks.length, new Set(a.picks.map(p => p.id)).size);
+  });
+
+  it("never offers somewhere to sleep or a bus stop as a thing to do", () => {
+    const P = world(12);
+    P.push({ id: "h1", name: "A hotel", cat: "stay", town: "t", lat: 26.487, lng: 74.551,
+             dur: 30, open: "00:00", close: "23:59" });
+    P.push({ id: "b1", name: "A bus stop", cat: "move", town: "t", lat: 26.487, lng: 74.551,
+             dur: 5, open: "00:00", close: "23:59" });
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), tzOffsetMinutes: 330 },
+           conditions: { sunrise: M("06:12"), sunset: M("18:48") }, places: P });
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "packed" });
+    eq(a.picks.filter(p => ["stay", "move", "practical", "hub"].includes(p.cat)), []);
+  });
+
+  it("returns empty and says why, rather than inventing a day", () => {
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), tzOffsetMinutes: 330 },
+           conditions: { sunrise: M("06:12"), sunset: M("18:48") },
+           places: [{ id: "x", name: "shut all day", cat: "view", town: "t",
+                      lat: 26.487, lng: 74.551, dur: 30, open: "23:00", close: "23:30" }] });
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    eq(a.picks.length, 0);
+    ok(a.notes.length > 0, "an empty day must explain itself");
+  });
+
+  it("terminates on a large dataset rather than looping", () => {
+    world(600);
+    const t0 = Date.now();
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "packed" });
+    const ms = Date.now() - t0;
+    ok(ms < 4000, `took ${ms}ms, which a phone would feel`);
+    ok(a.picks.length > 0 && a.picks.length < 40, `returned ${a.picks.length} stops`);
+  });
+
+  it("leaves no scratch fields on the places it hands back", () => {
+    /* The picker stamps a temporary arrival time on each candidate. Leaving that
+       behind would put a stale field into saved trips and into shared links. */
+    world(24);
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    for (const p of a.picks) eq(p._at, undefined, `${p.name} still carries a scratch field`);
+  });
+});

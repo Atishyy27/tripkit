@@ -5,6 +5,30 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-09-07
+
+### Added
+- **It builds the day for you.** One tap and it puts a day together: the right
+  things at the right hours, a meal when it is a meal time, and enough variety
+  that it is not four temples in a row. Three paces, from take-it-easy to
+  see-everything. Everything it chooses can then be moved, dropped or added to.
+
+  Deliberately greedy rather than optimal. An optimal day is a hard problem and an
+  unexplainable answer, and a person has to trust this enough to actually follow
+  it, so it can be read straight down and argued with.
+
+  Nothing is fetched to do it. It works from the places already loaded, which is
+  why it is instant and why it works with no signal.
+
+  On real Pushkar data it produces nine stops across six kinds of place, in order,
+  with lunch in the middle and no scheduling problems.
+
+### Tests
+- Nine tests on the day builder alone, including that it never serves four of one
+  thing, always finds a meal at a meal time in a long day, never offers a hotel or
+  a bus stop as something to do, terminates on 600 places rather than looping, and
+  leaves no scratch fields on the places it hands back.
+
 ## [0.5.0] - 2026-09-07
 
 An adversarial review, and everything it found.
@@ -215,6 +239,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.6.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.1

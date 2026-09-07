@@ -323,3 +323,93 @@ function fillGap(afterPlace, gapStart, gapMins, exclude) {
   }
   return out.sort((a, b) => b.score - a.score).slice(0, 4);
 }
+
+/* ============================================================
+   Building a day for someone.
+
+   Picking stops by hand works, and most people will not do it. This walks the
+   available window in time order and, at each point, takes the best thing that is
+   open, reachable, fits, and does not make the day monotonous.
+
+   Deliberately greedy rather than optimal. An optimal day is a hard problem and
+   an unexplainable answer; a greedy one can be read straight down and argued with,
+   which matters more when a person has to trust it enough to follow it.
+   ============================================================ */
+
+const MEAL_WINDOWS = [
+  [M("07:00"), M("10:00"), "breakfast"],
+  [M("12:00"), M("15:00"), "lunch"],
+  [M("18:30"), M("21:30"), "dinner"],
+];
+const EATING = ["food", "cafe", "street", "sweet"];
+
+function autoPlan(opts) {
+  opts = opts || {};
+  const pool = (DATA.places || []).filter(p =>
+    !["practical", "move", "stay", "hub"].includes(p.cat));
+  if (!pool.length) return { picks: [], notes: ["nothing to work with"] };
+
+  const start = opts.start != null ? opts.start
+    : Math.max(localMins(), TRIP.arrive != null ? TRIP.arrive : 0);
+  const end = opts.end != null ? opts.end
+    : (TRIP.multiDay ? M("21:00") : TRIP.hardExit);
+  const pace = opts.pace || "steady";                 // easy | steady | packed
+  const slack = { easy: 55, steady: 30, packed: 12 }[pace];
+
+  const picks = [];
+  const used = new Set();
+  const catCount = {};
+  const notes = [];
+  let t = start;
+  let here = null;
+  let guard = 0;
+
+  while (t < end && guard++ < 40) {
+    const mealNow = MEAL_WINDOWS.find(([a, b]) => t >= a && t <= b);
+    const eatenThisWindow = mealNow && picks.some(p =>
+      EATING.includes(p.cat) && p._at >= mealNow[0] && p._at <= mealNow[1]);
+    const wantFood = !!mealNow && !eatenThisWindow;
+
+    let best = null, bestScore = -Infinity;
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const walk = here ? walkMinutes(here, p) : 0;
+      if (walk > 35) continue;                        // do not send anyone across town
+      const arrive = t + walk;
+      if (arrive >= end) continue;
+      const st = openState(p, arrive);
+      if (st.state === "shut" || st.state === "soon") continue;
+      const leave = arrive + (p.dur || 30);
+      if (leave > end) continue;
+
+      const phase = phaseAt(arrive);
+      const s = score(p, arrive, p.town, phase);
+      if (!s) continue;
+      let v = s.s - walk * 1.4;
+
+      // a day of nothing but temples, or nothing but cafes, is a bad day
+      const seen = catCount[p.cat] || 0;
+      v -= seen * seen * 9;
+
+      // eat at meal times, and do not eat at other times
+      if (wantFood) v += EATING.includes(p.cat) ? 55 : -25;
+      else if (EATING.includes(p.cat)) v -= 30;
+
+      if (v > bestScore) { bestScore = v; best = { p, walk, arrive, leave }; }
+    }
+
+    if (!best) break;
+    best.p._at = best.arrive;
+    picks.push(best.p);
+    used.add(best.p.id);
+    catCount[best.p.cat] = (catCount[best.p.cat] || 0) + 1;
+    here = best.p;
+    t = best.leave + slack;
+  }
+
+  if (!picks.length) notes.push("nothing was open and close enough to build a day from");
+  const meals = picks.filter(p => EATING.includes(p.cat)).length;
+  if (!meals && (end - start) > 300) notes.push("no meal fitted; nothing was open at the right hours");
+  picks.forEach(p => { delete p._at; });
+  return { picks, notes, pace, from: start, to: end };
+}
