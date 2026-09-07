@@ -379,3 +379,67 @@ describe("regression: a missing opening time is not a broken plan", () => {
     ok(a.picks.length > 0);
   });
 });
+
+describe("more than one day", () => {
+  /* A trip is rarely one day. The risk with adding days is losing somebody's
+     existing plan to the refactor, so migration is tested first. */
+
+  function stub(nDays) {
+    const P = [];
+    for (let i = 0; i < 40; i++) {
+      const c = ["view", "temple", "food", "cafe", "shop", "museum"][i % 6];
+      P.push({ id: "p" + i, name: c + i, cat: c, town: "t",
+               lat: 26.487 + (i % 5) * 0.002, lng: 74.551 + (i % 4) * 0.002,
+               dur: 30, why: "x", open: "08:00", close: "21:00",
+               best: [HM(480 + (i * 41) % 700)] });
+    }
+    init({ config: { arrive: M("09:00"), depart: M("21:00"), exitBufferMinutes: 45,
+                     tzOffsetMinutes: 0 },
+           conditions: { sunrise: M("06:00"), sunset: M("18:00") }, places: P });
+    return P;
+  }
+
+  it("a second day does not repeat the first", () => {
+    stub();
+    const one = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    const two = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady",
+                           exclude: new Set(one.picks.map(p => p.id)) });
+    ok(two.picks.length > 0, "the second day came out empty");
+    const overlap = two.picks.filter(p => one.picks.some(q => q.id === p.id));
+    eq(overlap.map(p => p.name), [], "the second day repeats the first");
+  });
+
+  it("accepts an array as well as a set, since callers differ", () => {
+    stub();
+    const one = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady" });
+    const two = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady",
+                           exclude: one.picks.map(p => p.id) });
+    eq(two.picks.filter(p => one.picks.some(q => q.id === p.id)).length, 0);
+  });
+
+  it("excluding everything gives an empty day that explains itself", () => {
+    const P = stub();
+    const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady",
+                         exclude: new Set(P.map(p => p.id)) });
+    eq(a.picks.length, 0);
+    ok(a.notes.length > 0);
+  });
+
+  it("each day schedules independently and none of them collide", () => {
+    stub();
+    const days = [];
+    const used = new Set();
+    for (let d = 0; d < 3; d++) {
+      const a = autoPlan({ start: M("09:00"), end: M("20:00"), pace: "steady", exclude: used });
+      a.picks.forEach(p => used.add(p.id));
+      days.push(a.picks);
+    }
+    ok(days.every(d => d.length > 0), "one of the three days came out empty");
+    days.forEach((picks, i) => {
+      const s = schedule(picks, M("09:00"));
+      eq(s.problems, 0, `day ${i + 1} has ${s.problems} problems`);
+    });
+    const all = days.flat().map(p => p.id);
+    eq(all.length, new Set(all).size, "a place appears on more than one day");
+  });
+});

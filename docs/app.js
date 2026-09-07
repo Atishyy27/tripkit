@@ -41,8 +41,89 @@ function safeUrl(u) {
   }
 }
 
-function save(trip) { try { localStorage.setItem(STORE, JSON.stringify(trip)); } catch (e) {} }
+function save(trip) {
+  try { localStorage.setItem(STORE, JSON.stringify(trip)); } catch (e) { /* quota */ }
+  cachePut(trip);
+}
 function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return null; } }
+
+/* ---------- remembering places you have already looked up ----------
+
+   Rebuilding a guide means several slow calls to volunteer run servers. Doing that
+   again for a town you looked at this morning is rude to them and slow for you.
+
+   The reason a cache is safe here is worth stating, because normally caching a
+   travel guide would be a way to show people stale information. Nothing
+   time-dependent is stored. Opening hours do not change between breakfast and
+   lunch, and "open now" is computed from them against your clock every time the
+   screen redraws. So a guide from this morning is still exactly right this evening.
+
+   Two things genuinely age: the weather, and the map itself as people edit it. The
+   weather is refetched on reopening, which is one fast call. The places are shown
+   with their age and a one tap refresh, rather than silently pretending to be new. */
+const CACHE = "tripkit.cache";
+const CACHE_KEEP = 8;                       // towns, newest first
+const CACHE_MAX_AGE = 21 * 24 * 3600 * 1000;
+
+const cacheKey = p => `${p.name.toLowerCase()}|${p.lat.toFixed(3)},${p.lng.toFixed(3)}`;
+
+function cacheRead() {
+  try { return JSON.parse(localStorage.getItem(CACHE) || "{}") || {}; }
+  catch (e) { return {}; }
+}
+
+function cachePut(trip) {
+  if (!trip || !trip.place) return;
+  try {
+    const all = cacheRead();
+    all[cacheKey(trip.place)] = { at: Date.now(), trip };
+    // Newest few only. A large city is over a megabyte, and localStorage is small,
+    // so an unbounded cache would start silently failing to save anything at all.
+    const keys = Object.keys(all)
+      .filter(k => Date.now() - all[k].at < CACHE_MAX_AGE)
+      .sort((a, b) => all[b].at - all[a].at)
+      .slice(0, CACHE_KEEP);
+    const kept = {};
+    keys.forEach(k => kept[k] = all[k]);
+    try { localStorage.setItem(CACHE, JSON.stringify(kept)); }
+    catch (e) {
+      // over quota: drop the oldest until it fits, rather than losing the lot
+      const shrink = keys.slice();
+      while (shrink.length > 1) {
+        shrink.pop();
+        const smaller = {};
+        shrink.forEach(k => smaller[k] = all[k]);
+        try { localStorage.setItem(CACHE, JSON.stringify(smaller)); return; }
+        catch (e2) { /* keep shrinking */ }
+      }
+      try { localStorage.removeItem(CACHE); } catch (e3) {}
+    }
+  } catch (e) { /* caching must never break the thing it is caching */ }
+}
+
+function cacheGet(place) {
+  const hit = cacheRead()[cacheKey(place)];
+  if (!hit || !hit.trip || Date.now() - hit.at > CACHE_MAX_AGE) return null;
+  return hit;
+}
+
+function cacheList() {
+  const all = cacheRead();
+  return Object.keys(all)
+    .map(k => ({ key: k, at: all[k].at, trip: all[k].trip }))
+    .filter(x => x.trip && x.trip.place && Date.now() - x.at < CACHE_MAX_AGE)
+    .sort((a, b) => b.at - a.at);
+}
+
+function ago(ms) {
+  const m = Math.round((Date.now() - ms) / 60000);
+  if (m < 2) return "just now";
+  if (m < 60) return m + " minutes ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return h === 1 ? "an hour ago" : h + " hours ago";
+  const d = Math.round(h / 24);
+  return d === 1 ? "yesterday" : d + " days ago";
+}
 
 /* A timezone offset without shipping a timezone database.
    Longitude gives the solar offset; most of the world rounds that to a whole
@@ -133,6 +214,29 @@ function pick(p) {
   const suggested = radiusFor(p);
   $("#radius").value = suggested;
   updateRadius();
+
+  const hit = cacheGet(p);
+  const box = $("#cached");
+  if (hit) {
+    const t = hit.trip;
+    const hrs = (t.places || []).filter(x => x.open).length;
+    box.innerHTML = `<div class="card cool">
+      <h3>You looked at ${esc(p.name)} ${esc(ago(hit.at))}</h3>
+      <p class="sub" style="margin:6px 0 0">${(t.places || []).length} places are still saved
+      on this device, ${hrs} of them with opening hours. Opening times do not change during a
+      day, and what is open <i>now</i> is worked out fresh every time, so this is not stale
+      in the way it sounds.</p>
+      <p class="tiny" style="margin:6px 0 0">The weather will be refetched. Only the map data
+      itself is from ${esc(ago(hit.at))}.</p>
+      <button class="big" id="useCached" style="margin-top:10px">Open it, instantly</button>
+      <button class="big ghost" id="freshBuild" style="margin-top:6px">Fetch it again</button>
+    </div>`;
+    box.hidden = false;
+    $("#useCached").onclick = () => openCached(hit);
+    $("#freshBuild").onclick = () => build();
+  } else {
+    box.innerHTML = ""; box.hidden = true;
+  }
   show("s2");
 }
 
@@ -159,6 +263,38 @@ function wireTimes() {
   };
   $("#goBtn").onclick = () => build();
   $("#backBtn").onclick = () => show("s1");
+}
+
+async function openCached(hit) {
+  track("/cache/reused");
+  const t = hit.trip;
+  // The hours the user just chose win over the ones saved with the cached trip.
+  const tz = +$("#tz").value;
+  t.config.tzOffsetMinutes = tz;
+  t.config.arrive = M($("#arrive").value || "09:00");
+  t.config.depart = M($("#depart").value || "21:00");
+
+  // The sun is cheap and exact, so recompute rather than trusting a saved value.
+  const sun = sunTimes(new Date(), t.place.lat, t.place.lng, tz);
+  t.conditions = Object.assign({}, t.conditions, {
+    sunrise: sun.sunrise, sunset: sun.sunset,
+    firstLight: sun.firstLight, lastLight: sun.lastLight });
+
+  t.cachedAt = hit.at;
+  open(t);
+
+  // and the one thing that genuinely goes stale, refreshed in the background so
+  // the guide is usable immediately rather than after another wait
+  try {
+    const wx = await getWeather(t.place.lat, t.place.lng, () => {});
+    if (wx.value) {
+      t.weather = wx.value; t.weatherSource = wx.source;
+      const heat = heatWindowFrom(wx.value.hours, new Date().toISOString().slice(0, 10));
+      if (heat) t.conditions.heatWindow = [M(heat[0]), M(heat[1])];
+      init({ config: t.config, conditions: t.conditions, places: t.places });
+      save(t); drawHero(); render();
+    }
+  } catch (e) { /* an old forecast is better than no guide */ }
 }
 
 /* ---------- screen 3: build ---------- */
@@ -355,6 +491,7 @@ function mergePlaces(osm, wv) {
 function open(trip) {
   GUIDE = trip;
   init({ config: trip.config, conditions: trip.conditions, places: trip.places });
+  ensureDays();
   show("s4");
   drawHero();
   drawTowns();
@@ -535,6 +672,88 @@ function drawDay() {
     even with no signal.</p>`;
 }
 
+/* ---------- more than one day ----------
+
+   A trip is rarely one day. Rather than a second kind of plan, a trip simply holds
+   a list of days and every existing plan operation acts on whichever is current.
+   Trips saved before this existed are migrated on load rather than discarded,
+   because losing somebody's plan to a refactor is unforgivable. */
+function ensureDays() {
+  if (!GUIDE) return;
+  if (!Array.isArray(GUIDE.days) || !GUIDE.days.length) {
+    GUIDE.days = [{
+      label: "Day 1",
+      plan: Array.isArray(GUIDE.plan) ? GUIDE.plan : [],
+      start: GUIDE.planStart != null ? GUIDE.planStart : null,
+      manualOrder: !!GUIDE.manualOrder,
+      autoPace: GUIDE.autoPace || null,
+      autoNotes: GUIDE.autoNotes || [],
+    }];
+    GUIDE.day = 0;
+  }
+  if (GUIDE.day == null || GUIDE.day < 0 || GUIDE.day >= GUIDE.days.length) GUIDE.day = 0;
+  // the flat fields stay as a view onto the current day, so nothing else changes
+  const d = GUIDE.days[GUIDE.day];
+  GUIDE.plan = d.plan;
+  GUIDE.planStart = d.start;
+  GUIDE.manualOrder = d.manualOrder;
+  GUIDE.autoPace = d.autoPace;
+  GUIDE.autoNotes = d.autoNotes;
+}
+
+function syncDay() {
+  if (!GUIDE || !GUIDE.days) return;
+  const d = GUIDE.days[GUIDE.day];
+  if (!d) return;
+  d.plan = GUIDE.plan || [];
+  d.start = GUIDE.planStart != null ? GUIDE.planStart : null;
+  d.manualOrder = !!GUIDE.manualOrder;
+  d.autoPace = GUIDE.autoPace || null;
+  d.autoNotes = GUIDE.autoNotes || [];
+}
+
+function addDay() {
+  ensureDays(); syncDay();
+  GUIDE.days.push({ label: `Day ${GUIDE.days.length + 1}`, plan: [], start: null,
+                    manualOrder: false, autoPace: null, autoNotes: [] });
+  GUIDE.day = GUIDE.days.length - 1;
+  ensureDays(); save(GUIDE); drawPlan(); render();
+}
+
+function removeDay(i) {
+  ensureDays(); syncDay();
+  if (GUIDE.days.length <= 1) { GUIDE.days[0].plan = []; }
+  else GUIDE.days.splice(i, 1);
+  GUIDE.days.forEach((d, n) => { if (/^Day \d+$/.test(d.label)) d.label = `Day ${n + 1}`; });
+  GUIDE.day = Math.min(GUIDE.day, GUIDE.days.length - 1);
+  ensureDays(); save(GUIDE); drawPlan(); render();
+}
+
+function switchDay(i) {
+  ensureDays(); syncDay();
+  GUIDE.day = i;
+  ensureDays(); save(GUIDE); drawPlan(); render();
+}
+
+/* everything already chosen on another day, so a second day does not repeat the first */
+function pickedOnOtherDays() {
+  ensureDays();
+  const out = new Set();
+  GUIDE.days.forEach((d, i) => { if (i !== GUIDE.day) (d.plan || []).forEach(id => out.add(id)); });
+  return out;
+}
+
+function dayTabs() {
+  ensureDays();
+  return `<div class="chips daytabs">` +
+    GUIDE.days.map((d, i) =>
+      `<button class="chip" data-day="${i}" aria-pressed="${i === GUIDE.day}">${esc(d.label)}${
+        (d.plan || []).length ? ` <span class="tiny">${d.plan.length}</span>` : ""}</button>`).join("") +
+    `<button class="chip" data-addday="1">+ day</button>` +
+    (GUIDE.days.length > 1 ? `<button class="chip" data-rmday="${GUIDE.day}">remove this day</button>` : "") +
+    `</div>`;
+}
+
 /* ---------- more than one town ----------
 
    A trip is often several places: a night here, two nights there. Rather than
@@ -627,6 +846,7 @@ function togglePick(id) {
   const i = GUIDE.plan.indexOf(id);
   track(i >= 0 ? "/plan/removed" : "/plan/added");
   if (i >= 0) GUIDE.plan.splice(i, 1); else GUIDE.plan.push(id);
+  syncDay();
   save(GUIDE);
   render();
   paintPlanCount();
@@ -640,7 +860,7 @@ function movePick(id, dir) {
   if (i < 0 || j < 0 || j >= a.length) return;
   a.splice(j, 0, a.splice(i, 1)[0]);
   GUIDE.manualOrder = true;       // stop reordering it underneath them
-  save(GUIDE); drawPlan();
+  syncDay(); save(GUIDE); drawPlan();
 }
 
 function planPlaces() {
@@ -650,16 +870,20 @@ function planPlaces() {
 }
 
 function paintPlanCount() {
-  const n = (GUIDE.plan || []).length;
+  ensureDays();
+  const total = GUIDE.days.reduce((a, d) => a + (d.plan || []).length, 0);
   const chip = $('#views .chip[data-v="plan"]');
-  if (chip) chip.textContent = n ? `Your day (${n})` : "Your day";
+  if (!chip) return;
+  chip.textContent = !total ? "Your trip"
+    : GUIDE.days.length > 1 ? `Your trip (${total} over ${GUIDE.days.length})`
+    : `Your day (${total})`;
 }
 
 function drawPlan() {
   const el = $("#vPlan");
   const picks = planPlaces();
   if (!picks.length) {
-    el.innerHTML = `<div class="card hi">
+    el.innerHTML = dayTabs() + `<div class="card hi">
         <h3>Build me a day</h3>
         <p class="sub">One tap and it puts a day together: the right things at the right
         hours, a meal when it is a meal time, and enough variety that it is not four
@@ -679,7 +903,10 @@ function drawPlan() {
         or with the time you have to leave. It says when a plan does not fit rather than
         quietly dropping something.</p>
       </div>`;
-    $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
+    $$("#vPlan [data-day]").forEach(b => b.onclick = () => switchDay(+b.dataset.day));
+  $$("#vPlan [data-addday]").forEach(b => b.onclick = () => addDay());
+  $$("#vPlan [data-rmday]").forEach(b => b.onclick = () => removeDay(+b.dataset.rmday));
+  $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
     return;
   }
   // A day being planned for tomorrow should not be laid out from this minute.
@@ -723,7 +950,7 @@ function drawPlan() {
     </div>`;
   }).join("");
 
-  el.innerHTML = `
+  el.innerHTML = dayTabs() + `
     <div class="card ${s.overruns ? "warn" : "ok"}">
       <h3>${s.overruns ? "This does not fit" : "Your day"}</h3>
       <div class="sumrow">
@@ -774,18 +1001,21 @@ function drawPlan() {
     third added for real streets, which is a realistic pace in a place you do not know.</p>`;
 
   $$("#vPlan [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+  $$("#vPlan [data-day]").forEach(b => b.onclick = () => switchDay(+b.dataset.day));
+  $$("#vPlan [data-addday]").forEach(b => b.onclick = () => addDay());
+  $$("#vPlan [data-rmday]").forEach(b => b.onclick = () => removeDay(+b.dataset.rmday));
   $$("#vPlan [data-auto]").forEach(b => b.onclick = () => buildDayFor(b.dataset.auto, b));
   $$("#vPlan [data-up]").forEach(b => b.onclick = () => movePick(b.dataset.up, -1));
   $$("#vPlan [data-down]").forEach(b => b.onclick = () => movePick(b.dataset.down, 1));
   const ps = $("#planStart");
-  if (ps) ps.onchange = () => { GUIDE.planStart = M(ps.value); save(GUIDE); drawPlan(); };
+  if (ps) ps.onchange = () => { GUIDE.planStart = M(ps.value); syncDay(); save(GUIDE); drawPlan(); };
   const sn = $("#startNow");
-  if (sn) sn.onclick = () => { GUIDE.planStart = null; save(GUIDE); drawPlan(); };
+  if (sn) sn.onclick = () => { GUIDE.planStart = null; syncDay(); save(GUIDE); drawPlan(); };
   const ro = $("#reorder");
-  if (ro) ro.onclick = () => { GUIDE.manualOrder = false; save(GUIDE); drawPlan(); };
+  if (ro) ro.onclick = () => { GUIDE.manualOrder = false; syncDay(); save(GUIDE); drawPlan(); };
   $("#printPlan").onclick = () => { track("/plan/printed"); window.print(); };
-  $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(s); };
-  $("#clearPlan").onclick = () => { GUIDE.plan = []; save(GUIDE); render(); paintPlanCount(); drawPlan(); };
+  $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(); };
+  $("#clearPlan").onclick = () => { GUIDE.plan = []; syncDay(); save(GUIDE); render(); paintPlanCount(); drawPlan(); };
   $("#sharePlan").onclick = async () => {
     const u = location.origin + location.pathname + "?" + new URLSearchParams({
       q: GUIDE.place.name, lat: GUIDE.place.lat.toFixed(5), lng: GUIDE.place.lng.toFixed(5),
@@ -806,12 +1036,12 @@ function drawPlan() {
    Times are written as local wall clock with no timezone, which is deliberate.
    A stop at 13:00 in Pushkar should read 13:00 in your calendar whatever your
    phone thinks the timezone is, and floating times are how the format says that. */
-function icsTime(mins) {
+function icsTime(mins, dayOffset) {
   const d = new Date();
   const off = CFG.tzOffsetMinutes || 0;
   const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
   const y = local.getFullYear(), m = local.getMonth() + 1, day = local.getDate();
-  const roll = Math.floor(mins / 1440);
+  const roll = Math.floor(mins / 1440) + (dayOffset || 0);
   const base = new Date(y, m - 1, day + roll);
   const hh = Math.floor((mins % 1440) / 60), mm = mins % 60;
   const p = n => String(n).padStart(2, "0");
@@ -823,12 +1053,26 @@ function icsEscape(t) {
     .replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 }
 
-function downloadIcs(s) {
+function downloadIcs() {
+  ensureDays(); syncDay();
+  const byId = {};
+  (GUIDE.places || []).forEach(p => byId[p.id] = p);
   const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//tripkit//EN",
                  "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-                 `X-WR-CALNAME:${icsEscape("A day in " + GUIDE.place.name)}`];
-  s.rows.filter(r => !r.journey).forEach((r, i) => {
+                 `X-WR-CALNAME:${icsEscape(GUIDE.place.name)}`];
+
+  // Every day of the trip, each one a day later on the calendar.
+  const rows = [];
+  GUIDE.days.forEach((d, dayIndex) => {
+    const picks = (d.plan || []).map(id => byId[id]).filter(Boolean);
+    if (!picks.length) return;
+    const sched = schedule(picks, d.start != null ? d.start : null,
+                           { keepOrder: !!d.manualOrder });
+    sched.rows.filter(r => !r.journey).forEach(r => rows.push({ r, dayIndex }));
+  });
+
+  rows.forEach(({ r, dayIndex }, i) => {
     const p = r.p;
     const where = [p.name, p.town ? p.town.charAt(0).toUpperCase() + p.town.slice(1) : null,
                    GUIDE.place.country].filter(Boolean).join(", ");
@@ -838,8 +1082,8 @@ function downloadIcs(s) {
     lines.push("BEGIN:VEVENT",
       `UID:tripkit-${Date.now()}-${i}@atishyy27.github.io`,
       `DTSTAMP:${stamp}`,
-      `DTSTART:${icsTime(r.arrive)}`,
-      `DTEND:${icsTime(r.leave)}`,
+      `DTSTART:${icsTime(r.arrive, dayIndex)}`,
+      `DTEND:${icsTime(r.leave, dayIndex)}`,
       `SUMMARY:${icsEscape(p.name)}`,
       `LOCATION:${icsEscape(where)}`,
       `GEO:${p.lat};${p.lng}`,
@@ -861,7 +1105,7 @@ function downloadIcs(s) {
   const blob = new Blob([folded], { type: "text/calendar;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${GUIDE.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-day.ics`;
+  a.download = `${GUIDE.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-trip.ics`;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
@@ -874,12 +1118,13 @@ function buildDayFor(pace, btn) {
   setTimeout(() => {
     track("/plan/auto/" + pace);
     const start = GUIDE.planStart != null ? GUIDE.planStart : null;
-    const res = autoPlan({ pace, start: start == null ? undefined : start });
+    const res = autoPlan({ pace, start: start == null ? undefined : start,
+                           exclude: pickedOnOtherDays() });
     GUIDE.plan = res.picks.map(p => p.id);
     GUIDE.manualOrder = false;
     GUIDE.autoNotes = res.notes;
     GUIDE.autoPace = pace;
-    save(GUIDE);
+    syncDay(); save(GUIDE);
     render(); paintPlanCount(); drawPlan();
     if (btn) { btn.textContent = label; btn.disabled = false; }
   }, 20);
@@ -906,10 +1151,26 @@ function drawHero() {
         </div>
       </div>
     </div>
+    ${g.cachedAt ? `<p class="dcredit">Places loaded ${esc(ago(g.cachedAt))}.
+      <a href="#" id="refreshData">fetch them again</a></p>` : ""}
     ${shot ? `<p class="dcredit">photo: ${esc(shot.title).slice(0, 54)}${shot.licence ? ", " + esc(shot.licence) : ""}, via Wikimedia Commons</p>` : ""}`;
+  wireHeroRefresh();
 }
 
 /* ---------- weather ---------- */
+function wireHeroRefresh() {
+  const a = $("#refreshData");
+  if (a) a.onclick = (e) => {
+    e.preventDefault();
+    PLACE = GUIDE.place;
+    $("#tz").value = GUIDE.config.tzOffsetMinutes;
+    $("#arrive").value = HM(GUIDE.config.arrive);
+    $("#depart").value = HM(GUIDE.config.depart);
+    $("#radius").value = GUIDE.radius || 2500;
+    build();
+  };
+}
+
 function drawWeather() {
   const el = $("#vWeather");
   const w = GUIDE.weather, air = GUIDE.air, c = GUIDE.conditions;
@@ -1174,6 +1435,26 @@ window.addEventListener("DOMContentLoaded", () => {
     SHARED_PLAN = (u.get("plan") || "").split(",").filter(Boolean);
     build();
     return;
+  }
+
+  const recent = cacheList();
+  if (recent.length) {
+    const box = $("#recent");
+    if (box) {
+      box.innerHTML = `<p class="tiny" style="margin:14px 0 6px">Already on this device,
+        opens with no signal</p><div class="chips">` +
+        recent.slice(0, 6).map((r, i) =>
+          `<button class="chip" data-recent="${i}">${esc(r.trip.place.name)}
+            <span class="tiny">${esc(ago(r.at))}</span></button>`).join("") + `</div>`;
+      $$("#recent [data-recent]").forEach(b => b.onclick = () => {
+        const r = recent[+b.dataset.recent];
+        PLACE = r.trip.place;
+        $("#tz").value = r.trip.config.tzOffsetMinutes;
+        $("#arrive").value = HM(r.trip.config.arrive);
+        $("#depart").value = HM(r.trip.config.depart);
+        openCached(r);
+      });
+    }
   }
 
   const saved = load();

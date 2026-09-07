@@ -342,6 +342,43 @@ const ok = (cond, what) => {
     await page.waitForTimeout(400);
     ok(await page.locator("#tl .tlrow").count() > 0, "the day timeline rendered");
 
+    console.log("\n  a place looked at before comes back instantly");
+    // Go back to the search and pick the same town again. The second time it must
+    // offer what is already on the device rather than refetching everything.
+    await page.evaluate(() => { const b = document.getElementById("newBtn"); if (b) b.click(); });
+    await page.waitForTimeout(400);
+    await page.fill("#q", "Pushkar");
+    await page.waitForSelector("#hits .hit", { timeout: 45000 });
+    await page.locator("#hits .hit").first().click();
+    await page.waitForSelector("#s2.on", { timeout: 15000 });
+    await page.waitForTimeout(400);
+    const cached = await page.evaluate(() => {
+      const box = document.getElementById("cached");
+      return { shown: box && !box.hidden,
+               text: (box && box.textContent || "").slice(0, 160),
+               hasUse: !!document.getElementById("useCached"),
+               hasFresh: !!document.getElementById("freshBuild") };
+    });
+    ok(cached.shown, "a second visit offers the copy already on the device");
+    ok(cached.hasUse && cached.hasFresh, "both reuse and a fresh fetch are offered");
+    ok(/looked at/i.test(cached.text), `it should say when: ${cached.text.slice(0, 70)}`);
+
+    const t0 = Date.now();
+    await page.evaluate(() => { const b = document.getElementById("useCached"); if (b) b.click(); });
+    await page.waitForSelector("#s4.on", { timeout: 30000 });
+    const reopen = Date.now() - t0;
+    ok(reopen < 12000, `reopening from cache took ${reopen}ms, it should be near instant`);
+    const reopened = await page.evaluate(() => ({
+      places: (GUIDE.places || []).length,
+      cachedAt: !!GUIDE.cachedAt,
+      sunrise: GUIDE.conditions.sunrise,
+      note: [...document.querySelectorAll(".dcredit")].map(e => e.textContent).join(" "),
+    }));
+    ok(reopened.places > 0, "the cached guide has its places");
+    ok(reopened.cachedAt, "it knows it came from the cache");
+    ok(reopened.sunrise > 0, "the sun is recomputed rather than trusted from storage");
+    ok(/loaded/i.test(reopened.note), `the age should be visible: ${reopened.note.slice(0, 60)}`);
+
     console.log("\n  it survives a reload from storage");
     await page.reload({ waitUntil: "networkidle" });
     ok(await page.locator("#resume").isVisible(), "the saved trip is offered on return");

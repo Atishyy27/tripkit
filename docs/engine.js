@@ -350,8 +350,11 @@ const EATING = ["food", "cafe", "street", "sweet"];
 
 function autoPlan(opts) {
   opts = opts || {};
+  // Anything already chosen on another day of the same trip, so a second day is a
+  // second day rather than a repeat of the first.
+  const skip = opts.exclude instanceof Set ? opts.exclude : new Set(opts.exclude || []);
   const pool = (DATA.places || []).filter(p =>
-    !["practical", "move", "stay", "hub"].includes(p.cat));
+    !["practical", "move", "stay", "hub"].includes(p.cat) && !skip.has(p.id));
   if (!pool.length) return { picks: [], notes: ["nothing to work with"] };
 
   const start = opts.start != null ? opts.start

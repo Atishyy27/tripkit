@@ -5,6 +5,35 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-09-07
+
+### Added
+- **Somewhere you have already looked at opens instantly.** Measured: 19 ms,
+  against roughly a minute for a fresh build. The landing page lists the towns
+  already on the device, and picking one you have seen before offers the saved copy
+  alongside a fresh fetch rather than choosing for you.
+
+  Why a cache is safe here, which is worth stating because caching a travel guide
+  is normally a way to show people stale information: nothing time-dependent is
+  stored. Opening hours do not change between breakfast and lunch, and what is open
+  *now* is computed from them against your clock on every redraw. A guide built this
+  morning is exactly right this evening.
+
+  The two things that genuinely age are handled rather than ignored. The weather is
+  refetched in the background so the guide is usable immediately. The map data
+  itself is shown with its age and a one tap refresh, rather than quietly passing
+  as new. Sunrise is recomputed from scratch, since that costs nothing.
+
+  The cache keeps the eight most recent towns and shrinks itself when the browser
+  runs out of room, because a large city is over a megabyte and an unbounded cache
+  would silently stop saving anything at all.
+
+- **More than one day.** A trip holds days, each with its own plan, start time and
+  order. Building day two automatically skips everything already on day one, so a
+  second day is a second day rather than a repeat. The calendar export covers the
+  whole trip, each day on its own date. Trips saved before this existed are migrated
+  rather than discarded.
+
 ## [0.6.0] - 2026-09-07
 
 ### Added
@@ -239,6 +268,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.7.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.7.0
 [0.6.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.4.0
