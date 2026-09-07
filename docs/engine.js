@@ -63,6 +63,11 @@ function buildPhases() {
 const phaseAt = t => PHASES.find(p => t >= p.from && t < p.to) || PHASES[PHASES.length - 1];
 
 function openState(p, t) {
+  // A plan running past midnight hands this a minute above 1439. Left unwrapped
+  // the "opens in" arithmetic goes negative, which reads as nonsense in the
+  // interface and, worse, gets added to the scheduler's clock and runs time
+  // backwards. Wrap once here rather than at every call site.
+  t = ((Math.round(t) % 1440) + 1440) % 1440;
   if (!p.open) return { state: "unknown", label: "hours unknown" };
   const o = M(p.open), c = M(p.close) || 1440, overnight = c <= o;
   if (p.shut && p.shut.length === 2) {
@@ -132,6 +137,9 @@ function rankNow(t, opts) {
   opts = opts || {};
   const phase = phaseAt(t);
   let out = (DATA.places || []).map(p => score(p, t, phase)).filter(Boolean);
+  // This was a no-op. The interface offered a town filter and the engine ignored
+  // it, so on a multi town trip the chip changed nothing and looked broken.
+  if (opts.town) out = out.filter(r => r.p.town === opts.town);
   if (opts.cat && opts.cat !== "all") out = out.filter(r => r.p.cat === opts.cat);
   if (opts.q) {
     const q = opts.q.toLowerCase();
@@ -230,9 +238,12 @@ function schedule(picks, startMins, opts) {
     // A plan spanning two towns must not pretend you can walk between them. Anything
     // over an hour on foot is a journey, and it gets its own row rather than being
     // buried inside a walking time nobody would believe.
+    // Two places can sit in different towns and still be a short walk apart, at a
+    // boundary or where a village adjoins a city. Announcing a taxi for a five
+    // minute stroll is a fabricated journey, so distance decides, not the label.
     const sameTown = !prev || !prev.town || !p.town || prev.town === p.town;
     const raw = prev ? walkMinutes(prev, p) : 0;
-    const travel = sameTown && raw <= 60;
+    const travel = raw <= 25 || (sameTown && raw <= 60);
     const walk = travel ? raw : 0;
     if (prev && !travel) {
       const est = Math.max(30, Math.round(raw / 4));   // a vehicle, roughly
@@ -251,11 +262,11 @@ function schedule(picks, startMins, opts) {
       const target = p.best.reduce((a, b) => Math.abs(M(b) - t) < Math.abs(M(a) - t) ? b : a);
       const wait = M(target) - t;
       const remaining = order.slice(i).reduce((a, x) => a + (x.dur || 30) + 8, 0);
-      if (wait > 20 && t + wait + remaining <= hardEnd) { gap = wait; t += wait; }
+      if (wait > 20 && wait < 1440 && t + wait + remaining <= hardEnd) { gap = wait; t += wait; }
     }
     // and never arrive while the place is shut for the middle of the day
     const shutNow = openState(p, t);
-    if (shutNow.state === "shut" && shutNow.opensIn && shutNow.opensIn <= 180) {
+    if (shutNow.state === "shut" && shutNow.opensIn > 0 && shutNow.opensIn <= 180) {
       const remaining = order.slice(i).reduce((a, x) => a + (x.dur || 30) + 8, 0);
       if (t + shutNow.opensIn + remaining <= hardEnd) { gap += shutNow.opensIn; t += shutNow.opensIn; }
     }

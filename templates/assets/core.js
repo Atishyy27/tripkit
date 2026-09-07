@@ -176,6 +176,29 @@ const openingSoon = t => _pool().map(p=>({p, st:openState(p, t)}))
 const closingSoon = t => _pool().map(p=>({p, st:openState(p, t)}))
   .filter(r=>r.st.state==="closing").sort((a, b)=>a.st.closesIn-b.st.closesIn);
 
+/* ---------- making untrusted text safe ----------
+
+   Everything rendered below came from OpenStreetMap, Wikivoyage or a language
+   model, and all three are things this program does not control. Interpolating any
+   of it into innerHTML unescaped is a script injection, and this file did exactly
+   that for every place name, description and warning it displayed.
+
+   esc() handles it as text. safeUrl() handles it as a link, which is a separate
+   problem: escaping does nothing about a "javascript:" scheme. */
+const esc = s => String(s === null || s === undefined ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+function safeUrl(u) {
+  if (!u) return null;
+  const t = String(u).trim().replace(/[\u0000-\u001F\u007F]/g, "");
+  if (!t) return null;
+  try {
+    const parsed = new URL(t, (typeof location !== "undefined" && location.href) || "https://example.invalid/");
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") ? parsed.href : null;
+  } catch (e) { return null; }
+}
+
 /* ---------- outbound links ---------- */
 const enc = encodeURIComponent;
 const townLabel = p => {
@@ -202,11 +225,13 @@ function price(p){
 /* ---------- a place card ---------- */
 function placeCard(r, i){
   const p=r.p||r, st=r.st||openState(p, localMins());
+  // Everything below came from OpenStreetMap, Wikivoyage or a language model. All
+  // three are outside this program's control, so all three are escaped.
   const badge={
     open:'<span class="tag t-open">open now</span>',
-    closing:'<span class="tag t-soon">'+st.label+'</span>',
-    soon:'<span class="tag t-soon">'+st.label+'</span>',
-    shut:'<span class="tag t-shut">'+st.label+'</span>',
+    closing:'<span class="tag t-soon">'+esc(st.label)+'</span>',
+    soon:'<span class="tag t-soon">'+esc(st.label)+'</span>',
+    shut:'<span class="tag t-shut">'+esc(st.label)+'</span>',
     unknown:'<span class="tag t-unv">hours unknown</span>'
   }[st.state]||"";
   const cls=i===0?"rank":i===1?"rank r2":i===2?"rank r3":"rank rn";
@@ -214,20 +239,20 @@ function placeCard(r, i){
   const isFood=EATS.indexOf(p.cat)>=0;
   return '<div class="card'+(i===0?' hi':'')+'"><div class="'+cls+'">'+num+
    '<div style="flex:1;min-width:0">'+
-   '<h3>'+p.name+'<span class="money">'+price(p)+'</span></h3><div>'+badge+
-   (p.dur?'<span class="tag t-info">'+dur(p.dur)+'</span>':'')+
-   ((p.town&&p.town!==TRIP.dest)?'<span class="tag t-info">'+townLabel(p)+'</span>':'')+
+   '<h3>'+esc(p.name)+'<span class="money">'+esc(price(p))+'</span></h3><div>'+badge+
+   (p.dur?'<span class="tag t-info">'+esc(dur(p.dur))+'</span>':'')+
+   ((p.town&&p.town!==TRIP.dest)?'<span class="tag t-info">'+esc(townLabel(p))+'</span>':'')+
    (p.loose?'<span class="tag t-unv">pin approx</span>':'')+'</div>'+
-   (p.why?'<p class="sub" style="margin:6px 0 0">'+p.why+'</p>':'')+
-   (p.warn?'<p class="tiny" style="color:#ff9aa2;margin:5px 0 0">⚠ '+p.warn+'</p>':'')+
-   ((r.why&&r.why.length)?'<div class="why">→ '+r.why[0]+'</div>':'')+
+   (p.why?'<p class="sub" style="margin:6px 0 0">'+esc(p.why)+'</p>':'')+
+   (p.warn?'<p class="tiny" style="color:#ff9aa2;margin:5px 0 0">\u26A0 '+esc(p.warn)+'</p>':'')+
+   ((r.why&&r.why.length)?'<div class="why">\u2192 '+esc(r.why[0])+'</div>':'')+
    '<div class="btns">'+
-     '<a class="btn g" target="_blank" rel="noopener" href="'+LINK.map(p)+'">Maps</a>'+
-     '<a class="btn" target="_blank" rel="noopener" href="'+LINK.walk(p)+'">Walk</a>'+
-     '<a class="btn o" target="_blank" rel="noopener" href="'+LINK.uber(p)+'">Ride</a>'+
-     (isFood&&CFG.foodLink?'<a class="btn b" target="_blank" rel="noopener" href="'+LINK.food(p)+'">Reviews</a>':'')+
+     '<a class="btn g" target="_blank" rel="noopener noreferrer" href="'+esc(LINK.map(p))+'">Maps</a>'+
+     '<a class="btn" target="_blank" rel="noopener noreferrer" href="'+esc(LINK.walk(p))+'">Walk</a>'+
+     '<a class="btn o" target="_blank" rel="noopener noreferrer" href="'+esc(LINK.uber(p))+'">Ride</a>'+
+     (isFood&&CFG.foodLink?'<a class="btn b" target="_blank" rel="noopener noreferrer" href="'+esc(LINK.food(p))+'">Reviews</a>':'')+
    '</div>'+
-   (p.src?'<p class="src" style="margin:7px 0 0"><a href="'+p.src+'" target="_blank" rel="noopener">source</a></p>':'')+
+   (safeUrl(p.src)?'<p class="src" style="margin:7px 0 0"><a href="'+esc(safeUrl(p.src))+'" target="_blank" rel="noopener noreferrer">source</a></p>':'')+
    '</div></div></div>';
 }
 

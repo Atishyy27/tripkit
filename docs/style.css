@@ -251,8 +251,9 @@ ul.tight li{margin-bottom:6px}
 
 /* ============ the plan ============ */
 .btn.picked{border-color:var(--green);color:var(--green);background:#152119}
-.btn.drop{padding:2px 8px;font-size:15px;line-height:1;border-color:transparent;color:var(--dimmer)}
+.btn.drop,.btn.nudge{padding:2px 8px;font-size:15px;line-height:1;border-color:transparent;color:var(--dimmer)}
 .btn.drop:hover{color:var(--red);border-color:#5c2b2b}
+.btn.nudge:hover{color:var(--hot);border-color:#5d3f2f}
 
 .plan{position:relative;padding-left:2px}
 .prow{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);

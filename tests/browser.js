@@ -209,6 +209,34 @@ const ok = (cond, what) => {
     const after = await page.evaluate(() => (GUIDE.plan || []).length);
     ok(after === plan.picked - 1, `dropping a stop removed it (${plan.picked} to ${after})`);
 
+    console.log("\n  stops can be reordered by hand");
+    const before = await page.evaluate(() => (GUIDE.plan || []).slice());
+    await page.evaluate(() => {
+      const rows = document.querySelectorAll("#vPlan .prow");
+      const b = rows[1] && rows[1].querySelector("[data-up]");
+      if (b) b.click();
+    });
+    await page.waitForTimeout(300);
+    const after2 = await page.evaluate(() => ({ plan: (GUIDE.plan || []).slice(), manual: !!GUIDE.manualOrder }));
+    ok(after2.plan.length === before.length, "reordering does not lose a stop");
+    ok(JSON.stringify(after2.plan) !== JSON.stringify(before) || before.length < 2,
+       "moving a stop up actually changed the order");
+    ok(after2.manual, "a hand made order is remembered, so the scheduler stops re-sorting it");
+
+    console.log("\n  the day can start at a chosen time");
+    const started = await page.evaluate(() => {
+      const el = document.getElementById("planStart");
+      if (!el) return null;
+      el.value = "07:30"; el.dispatchEvent(new Event("change"));
+      return true;
+    });
+    ok(started, "there is a start time control");
+    await page.waitForTimeout(300);
+    const firstTime = await page.evaluate(() =>
+      (document.querySelector("#vPlan .ptime") || {}).textContent || "");
+    ok(firstTime.startsWith("07:3") || firstTime.startsWith("07:"),
+       `the day now starts around 07:30 (${firstTime.slice(0, 5)})`);
+
     console.log("\n  it looks like a product");
     const look = await page.evaluate(() => ({
       hero: !!document.querySelector(".dhero"),

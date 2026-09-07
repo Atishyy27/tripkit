@@ -5,6 +5,45 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-09-07
+
+An adversarial review, and everything it found.
+
+### Security
+- **An editable data source could inject script through a link.** esc() makes a
+  string safe as text and does nothing about a URL scheme, so a place whose
+  OpenStreetMap website tag read "javascript:..." produced a working href and ran
+  the editor's script on every visitor who tapped it. safeUrl() now refuses
+  anything that is not http or https, in both the web app and the CLI engine.
+- **The CLI engine escaped nothing at all.** Place names, descriptions and warnings
+  from OpenStreetMap, Wikivoyage and the research layer went straight into
+  innerHTML. All of it is escaped now, and a test builds a site from a place named
+  with a script tag and checks the payload never reaches the markup.
+
+### Fixed
+- **The scheduler ran time backwards past midnight.** It keeps an absolute clock,
+  so a late plan passes minute 1439, and openState() then did its arithmetic
+  outside a day and returned a negative wait. "Opens in -30 minutes" in the
+  interface, and a negative added to the clock in the scheduler.
+- **The town filter did nothing.** A multi town trip showed town chips and the
+  engine never read the filter, so tapping one changed the label and nothing else.
+- **A five minute walk was announced as a taxi.** Journeys were inserted whenever
+  two stops carried different town labels, so places either side of a boundary got
+  an invented vehicle. Distance decides now.
+- The timezone table listed two countries and then excluded them again below, so
+  those entries could never be reached.
+- A message still quoted the old 120 m photo radius after it became 40 m.
+
+### Added
+- Choose when the day starts, rather than always laying it out from this minute.
+- Move a stop earlier or later. Once a day is arranged by hand the scheduler stops
+  re-sorting it, while still reporting every collision the new order creates.
+- 41 regression tests, one per defect above, plus a property sweep that generates
+  120 random days and asserts none of them overlap, run backwards or go negative.
+- 28 security tests covering every dangerous URL scheme, including ones hidden
+  behind whitespace, and a static check that no href in the app is built without a
+  scheme check.
+
 ## [0.4.0] - 2026-09-07
 
 It plans a day now, rather than only describing one.
@@ -176,6 +215,7 @@ The release where the useful thing stopped requiring a terminal.
 - Pluggable search across Brave, Tavily, Serper and Exa.
 - GitHub Pages deployment.
 
+[0.5.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Atishyy27/tripkit/releases/tag/v0.3.0

@@ -11,6 +11,12 @@
 
 No install. No account. No API key. No AI.
 
+<sub>To be exact about that last one: **the web app has no AI in it at all**, and every
+sentence it shows you was written by a person. This repository also contains a separate
+Python CLI, described further down, which does optionally use Claude to research a
+destination. They are different programs and only the first one is what the link above
+opens.</sub>
+
 Type a town. You get a guide that answers one question a normal guide never does:
 
 > It's 3pm and I leave at 7. What's open, what's worth it, and what no longer fits?

@@ -50,8 +50,13 @@ function load() { try { return JSON.parse(localStorage.getItem(STORE) || "null")
    UI says so, because a guide that is silently an hour out is worse than one
    that admits it does not know. */
 function guessTz(lat, lng, cc) {
-  const HALF = { IN: 330, LK: 330, NP: 345, IR: 210, AF: 270, MM: 390, AU: 570, CA: -210 };
-  if (HALF[cc] !== undefined && ["IN", "LK", "NP", "IR", "AF", "MM"].includes(cc)) return HALF[cc];
+  // Whole country offsets, for the places where a longitude guess is simply wrong.
+  // An earlier version listed AU and CA here and then excluded them again in the
+  // condition below, so those two entries could never be reached: dead code that
+  // looked like coverage. Both are dropped, because neither has one offset anyway,
+  // and a longitude guess is at least honest about being a guess.
+  const HALF = { IN: 330, LK: 330, NP: 345, IR: 210, AF: 270, MM: 390 };
+  if (HALF[cc] !== undefined) return HALF[cc];
   return Math.round(lng / 15) * 60;
 }
 
@@ -692,8 +697,8 @@ function drawPlan() {
       <div class="pbody">
         <div class="pname">${esc(r.p.name)}
           <span style="display:flex;gap:2px;flex:0 0 auto">
-            <button class="btn drop" data-up="${esc(r.p.id)}" title="earlier">\u2191</button>
-            <button class="btn drop" data-down="${esc(r.p.id)}" title="later">\u2193</button>
+            <button class="btn nudge" data-up="${esc(r.p.id)}" title="earlier">\u2191</button>
+            <button class="btn nudge" data-down="${esc(r.p.id)}" title="later">\u2193</button>
             <button class="btn drop" data-pick="${esc(r.p.id)}" title="remove">\u00D7</button>
           </span></div>
         <div class="tiny">${r.walk ? `${r.walk} min walk. ` : ""}${dur(r.stay)} here.${r.p.lo ? ` About ${inr(r.p.lo)}.` : ""}</div>

@@ -264,3 +264,75 @@ class TestPackaging:
         text = open(os.path.join(ROOT, "CHANGELOG.md"), encoding="utf-8").read()
         assert f"[{tripkit.__version__}]" in text, (
             f"CHANGELOG.md has no entry for {tripkit.__version__}")
+
+
+class TestGeneratedSiteEscaping:
+    """
+    The CLI writes place data into a JSON file and a JavaScript engine renders it
+    into innerHTML. That data came from OpenStreetMap, Wikivoyage or a language
+    model, none of which this program controls, and for a while the engine escaped
+    none of it. A place named with a script tag would have run.
+    """
+
+    ENGINE = os.path.join(ROOT, "templates", "assets", "core.js")
+
+    def _engine(self):
+        return open(self.ENGINE, encoding="utf-8").read()
+
+    def test_the_engine_has_an_escaper(self):
+        src = self._engine()
+        assert "const esc =" in src, "no escaping function at all"
+        for entity in ("&amp;", "&lt;", "&gt;", "&quot;"):
+            assert entity in src, f"the escaper does not produce {entity}"
+
+    def test_every_untrusted_field_is_escaped_where_it_is_rendered(self):
+        src = self._engine()
+        i = src.index("function placeCard")
+        depth, j = 0, i
+        while j < len(src):
+            if src[j] == "{":
+                depth += 1
+            elif src[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        card = src[i:j + 1]
+        for field in ("p.name", "p.why", "p.warn", "st.label"):
+            assert f"esc({field})" in card, f"{field} reaches innerHTML unescaped"
+
+    def test_a_source_link_cannot_carry_a_javascript_scheme(self):
+        src = self._engine()
+        assert "function safeUrl" in src, "no url scheme check"
+        assert "safeUrl(p.src)" in src, "the source link bypasses the scheme check"
+        assert 'protocol === "http:"' in src and 'protocol === "https:"' in src
+
+    def test_a_hostile_place_name_reaches_the_data_but_not_the_markup(self, tmp_path):
+        """End to end: build a site from a place named with a script tag."""
+        import json, shutil
+        work = tmp_path / "hostile"
+        (work / "research").mkdir(parents=True)
+        json.dump([{
+            "name": "<img src=x onerror=alert(1)>", "cat": "view", "town": "pushkar",
+            "lat": 26.48, "lng": 74.55, "dur": 30,
+            "why": "</script><script>alert(2)</script>",
+            "warn": '" onmouseover="alert(3)',
+            "src": "javascript:alert(4)",
+        }], open(work / "research" / "sights.json", "w"))
+        spec = open(SPEC, encoding="utf-8").read().replace(
+            "slices: [sights, food, transport, safety, shopping, experiences, offbeat, phrases, conditions, help]",
+            "slices: [sights]")
+        (work / "t.yaml").write_text(spec, encoding="utf-8")
+        run("build", str(work / "t.yaml"))
+
+        out = work / "site"
+        data = (out / "assets" / "data.js").read_text(encoding="utf-8")
+        assert "onerror" in data, "the payload should be present as data"
+
+        # every page is a template; none of them may contain the payload inline
+        for f in out.glob("*.html"):
+            html = f.read_text(encoding="utf-8")
+            assert "onerror=alert" not in html, f"{f.name} contains the payload inline"
+
+        engine = (out / "assets" / "core.js").read_text(encoding="utf-8")
+        assert "esc(p.name)" in engine and "safeUrl(p.src)" in engine

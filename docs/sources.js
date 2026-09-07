@@ -757,6 +757,6 @@ async function attachPhotos(places, commons, onNote) {
     }
   }
   if (onNote && (named || near))
-    onNote(`Photos: ${named} matched exactly through Wikidata, ${near} from a picture taken within 120 m`);
+    onNote(`Photos: ${named} matched exactly through Wikidata, ${near} from a picture taken within 40 m`);
   return { named, near };
 }
