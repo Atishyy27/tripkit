@@ -315,7 +315,8 @@ async function openCached(hit) {
   const sun = sunTimes(new Date(), t.place.lat, t.place.lng, tz);
   t.conditions = Object.assign({}, t.conditions, {
     sunrise: sun.sunrise, sunset: sun.sunset,
-    firstLight: sun.firstLight, lastLight: sun.lastLight });
+    firstLight: sun.firstLight, lastLight: sun.lastLight,
+    polar: sun.polar });
 
   t.cachedAt = hit.at;
   open(t);
@@ -456,8 +457,13 @@ async function runBuild() {
   const s = sunTimes(new Date(), PLACE.lat, PLACE.lng, tz);
   // The heat window used to be a guess. With a real hourly forecast it is measured.
   const heat = wx.value ? heatWindowFrom(wx.value.hours, new Date().toISOString().slice(0, 10)) : null;
-  step("stSun", "done",
-       `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}` +
+  // HM wraps its input, so HM(null) is "00:00": a polar day used to report
+  // "sunrise 00:00, sunset 00:00" and look like an ordinary answer.
+  const sunLine = s.polar === "day" ? "the sun does not set here today"
+    : s.polar === "night" ? "the sun does not rise here today"
+    : (s.sunrise == null || s.sunset == null) ? "sunrise and sunset unavailable here"
+    : `sunrise ${HM(s.sunrise)}, sunset ${HM(s.sunset)}`;
+  step("stSun", "done", sunLine +
        (heat ? `, hottest ${heat[0]} to ${heat[1]} from today's forecast` : "") +
        ", calculated on this device");
   progress(95);
@@ -476,6 +482,7 @@ async function runBuild() {
     conditions: {
       sunrise: s.sunrise, sunset: s.sunset,
       firstLight: s.firstLight, lastLight: s.lastLight,
+      polar: s.polar,
       heatWindow: heat ? [M(heat[0]), M(heat[1])] : null
     },
     weather: wx.value, weatherSource: wx.source,
@@ -588,7 +595,13 @@ function card(r, i) {
   const g = p.loose
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
     : `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
-  const o = `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`;
+  // OpenStreetMap can route on foot, not just drop a pin, so this is a real
+  // alternative to the Google link rather than a lesser one. It leads in the card
+  // for that reason; the Google link stays because some people want it and it is
+  // only ever followed deliberately.
+  const o = p.loose
+    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
+    : `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B${p.lat}%2C${p.lng}`;
   const tint = CAT_TINT[p.cat] || "#a99fc4";
   const icon = CAT_ICON[p.cat] || "\u{1F4CD}";
   const dim = st.state === "shut";
@@ -612,12 +625,33 @@ function card(r, i) {
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
       <div class="btns">
         <button class="btn ${inPlan(p.id) ? "picked" : "o"}" data-pick="${esc(p.id)}">${inPlan(p.id) ? "\u2713 in your day" : "+ add to day"}</button>
-        <a class="btn g" target="_blank" rel="noopener" href="${g}">${p.loose ? "Find it" : "Walk there"}</a>
-        <a class="btn" target="_blank" rel="noopener" href="${o}">Map</a>
+        <a class="btn g" target="_blank" rel="noopener" href="${o}">${p.loose ? "Find it" : "Walk there"}</a>
+        <a class="btn" target="_blank" rel="noopener" href="${g}">Google</a>
         ${safeUrl(p.website) ? `<a class="btn b" target="_blank" rel="noopener noreferrer" href="${esc(safeUrl(p.website))}">Website</a>` : ""}
       </div>
     </div>
   </article>`;
+}
+
+/* Sunrise and sunset are both null at high latitude, and HM wraps null to "00:00",
+   so the old single expression fell through to "sun set at 00:00" under the midnight
+   sun. Each abnormal day gets said out loud instead of dressed up as an ordinary one. */
+function sunHeadline(cd, sr, ss, t) {
+  if (cd.polar === "day") return "☀️ the sun does not set here today";
+  if (cd.polar === "night") {
+    return (cd.firstLight != null && cd.lastLight != null)
+      ? `🌑 no sunrise today; twilight ${HM(cd.firstLight)} to ${HM(cd.lastLight)}`
+      : "🌑 the sun does not rise here today";
+  }
+  if (sr == null || ss == null) return "🌫 sunrise and sunset unavailable here";
+  if (ss < sr) {   // sets after midnight: a very long northern day
+    if (t < ss) return `☀️ sunset ${HM(ss)}, the sun is still setting from yesterday`;
+    if (t < sr) return `🌑 sunrise ${HM(sr)}, ${sr - t} min away`;
+    return `☀️ sunset ${HM(ss)}, after midnight. Light for hours yet`;
+  }
+  if (t < sr) return `🌑 sunrise ${HM(sr)}, ${sr - t} min away`;
+  if (t < ss) return `☀️ sunset ${HM(ss)}, ${Math.floor((ss - t) / 60)}h ${(ss - t) % 60}m of light left`;
+  return `🌙 sun set at ${HM(ss)}`;
 }
 
 function render() {
@@ -631,10 +665,8 @@ function render() {
   $("#phase").textContent = r.phase.name;
   $("#phaseLine").textContent = r.phase.line;
 
-  const sr = GUIDE.conditions.sunrise, ss = GUIDE.conditions.sunset;
-  $("#sun").textContent = t < sr ? `🌑 sunrise ${HM(sr)}, ${sr - t} min away`
-    : t < ss ? `☀️ sunset ${HM(ss)}, ${Math.floor((ss - t) / 60)}h ${(ss - t) % 60}m of light left`
-    : `🌙 sun set at ${HM(ss)}`;
+  const cd = GUIDE.conditions, sr = cd.sunrise, ss = cd.sunset;
+  $("#sun").textContent = sunHeadline(cd, sr, ss, t);
 
   let alerts = "";
   if (ex.msg) alerts += `<div class="card ${ex.level === "soon" ? "cool" : "warn"}"><h3>${ex.level === "soon" ? "Start heading back" : "Time to go"}</h3><p class="sub" style="margin:6px 0 0">${esc(ex.msg)}</p></div>`;
@@ -677,7 +709,8 @@ function drawMap() {
     }).bindPopup(
       `<b>${esc(p.name)}</b><br><span style="color:#a99fc4">${esc(st.label)}${p.priceNote ? " · " + esc(p.priceNote) : ""}</span>` +
       (p.why ? `<br><span style="color:#a99fc4">${esc(p.why).slice(0, 140)}</span>` : "") +
-      `<br><a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking" target="_blank" rel="noopener">Walk there</a>`));
+      `<br><a href="https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B${p.lat}%2C${p.lng}" target="_blank" rel="noopener">Walk there</a>` +
+      ` &middot; <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking" target="_blank" rel="noopener">Google</a>`));
   }
   LAYER = L.layerGroup(markers).addTo(MAP);
   const openNow = pts.filter(p => ["open", "closing"].includes(openState(p, t).state)).length;

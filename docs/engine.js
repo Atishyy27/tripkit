@@ -36,10 +36,114 @@ function init(data) {
   return DATA;
 }
 
+/* Fold segments built in a space that may run past midnight back into [0,1440).
+   phaseAt does a plain from/to comparison, so it can never match a negative or a
+   past-1440 bound; a phase crossing midnight has to become two. */
+function foldPhases(list) {
+  const out = [];
+  for (const s of list) {
+    let from = Math.round(s.from), to = Math.round(s.to);
+    if (!(to > from)) continue;
+    if (to - from > 1440) to = from + 1440;
+    const len = to - from;
+    const a = ((from % 1440) + 1440) % 1440, b = a + len;
+    if (b <= 1440) out.push(Object.assign({}, s, { from: a, to: b }));
+    else {
+      out.push(Object.assign({}, s, { from: a, to: 1440 }));
+      out.push(Object.assign({}, s, { from: 0, to: b - 1440 }));
+    }
+  }
+  return out;
+}
+
+/* The sun never sets. There is no golden hour, no dusk and no dark, so anchoring
+   phases to a sunrise that did not happen produces a table that is wrong all day.
+   Rank by crowds and opening hours instead, and say why. */
+function polarDayPhases() {
+  const why = "The sun does not set here today.";
+  return foldPhases([
+    { id: "smallhours", from: 0, to: 300, name: "Daylight, and nobody about",
+      tags: ["quiet", "photo", "outdoor", "walk"],
+      line: why + " Full light in the small hours, with almost nothing open. That is the appeal." },
+    { id: "morning", from: 300, to: 690, name: "Morning",
+      tags: ["outdoor", "quiet", "photo", "walk"],
+      line: "Things start opening. " + why + " Pick by opening hours, not by light." },
+    { id: "heat", from: 690, to: 960, name: "Middle of the day",
+      tags: ["indoor", "shade", "food", "rest"],
+      line: "The busiest and warmest stretch, such as warmth goes this far north." },
+    { id: "afternoon", from: 960, to: 1200, name: "Afternoon",
+      tags: ["outdoor", "shop", "walk", "view"],
+      line: "Still broad daylight. Markets and shops are at their best now." },
+    { id: "evening", from: 1200, to: 1440, name: "Evening, still bright",
+      tags: ["food", "evening", "bar", "view"],
+      line: "Kitchens open and the sun stays up. " + why },
+  ]);
+}
+
+/* The sun never rises. Civil twilight may still happen, and when it does that band
+   is the entire day's usable light, which is the one thing worth ranking around. */
+function polarNightPhases() {
+  const why = "The sun does not rise here today.";
+  const fl = COND.firstLight, ll = COND.lastLight;
+  const dark = { tags: ["indoor", "food", "bar", "transit"] };
+  if (fl == null || ll == null || !(ll > fl)) {
+    return [{ id: "night", from: 0, to: 1440, name: "Dark all day", tags: dark.tags,
+      line: why + " There is no usable daylight at all, so treat it as an indoors day." }];
+  }
+  return foldPhases([
+    { id: "night", from: 0, to: fl, name: "Dark", tags: dark.tags, line: why },
+    { id: "twilight", from: fl, to: ll, name: "Twilight, all the light there is",
+      tags: ["outdoor", "photo", "walk", "view"],
+      line: why + " This blue band is the whole of today's light, so spend it outside." },
+    { id: "late", from: ll, to: 1440, name: "Dark", tags: dark.tags, line: why },
+  ]);
+}
+
+/* Sunset falls after midnight, so it sorts BEFORE sunrise on the clock and every
+   sunset-anchored bound in the ordinary table goes negative. Unwrap the sunset into
+   the next day, build there, and fold back. Left unfixed this put Reykjavik in June
+   into a single "Dusk, kitchens open" phase from 00:14 to 21:00. */
+function longDayPhases() {
+  const R = SUNRISE, S2 = SUNSET + 1440;
+  const hw = (COND.heatWindow && COND.heatWindow.length === 2) ? COND.heatWindow : null;
+  const h0 = hw ? hw[0] : Math.max(R + 300, 690);
+  const h1 = hw ? hw[1] : Math.min(S2 - 150, 960);
+  const raw = [
+    { id: "sunrise", from: R, to: R + 40, name: "Sunrise",
+      tags: ["sunrise", "quiet", "photo", "outdoor"],
+      line: "It is barely dark before it returns. Soft, empty and cool." },
+    { id: "morning", from: R + 40, to: h0, name: "Golden morning",
+      tags: ["outdoor", "quiet", "photo", "walk"],
+      line: "Cool, well lit, not yet crowded. Spend these hours outside." },
+    { id: "heat", from: h0, to: h1, name: "The warm hours",
+      tags: ["indoor", "shade", "food", "rest"],
+      line: "The brightest and busiest stretch of a very long day." },
+    { id: "afternoon", from: h1, to: S2 - 80, name: "Cooling off",
+      tags: ["outdoor", "shop", "walk", "view"],
+      line: "Hours of light still to come. Markets are better now than at midday." },
+    { id: "golden", from: S2 - 80, to: S2 + 10, name: "Golden evening",
+      tags: ["view", "sunset", "photo", "outdoor"],
+      line: "Second best light of the day, and up here it lasts. Get somewhere with a view." },
+    { id: "night", from: S2 + 10, to: R + 1440, name: "The short dark",
+      tags: ["indoor", "food", "bar", "transit"],
+      line: "A short northern night. Dark late, and light again quickly." },
+  ];
+  return foldPhases(raw.filter(x => x.to > x.from));
+}
+
 function buildPhases() {
+  if (COND.polar === "day")   return polarDayPhases();
+  if (COND.polar === "night") return polarNightPhases();
+  // Both real, but sunset sorts before sunrise: the sun set after midnight.
+  if (COND.sunrise != null && COND.sunset != null && SUNSET <= SUNRISE) return longDayPhases();
+
   const heat = (COND.heatWindow && COND.heatWindow.length === 2)
     ? COND.heatWindow : [Math.max(SUNRISE + 300, 690), Math.min(SUNSET - 150, 960)];
-  const p = [], add = (from, to, id, name, tags, line) => { if (to > from) p.push({ id, from, to, name, tags, line }); };
+  // from >= 0 is a guard, not decoration: a negative bound is unreachable by
+  // phaseAt and silently drops that stretch of the day into whatever matches next.
+  const p = [], add = (from, to, id, name, tags, line) => {
+    if (to > from && from >= 0 && to <= 1440) p.push({ id, from, to, name, tags, line });
+  };
   add(0, Math.max(0, SUNRISE - 70), "night", "Before dawn", ["indoor", "transit"],
       "Dark. A get-somewhere hour, not a look-at-things hour.");
   add(Math.max(0, SUNRISE - 70), SUNRISE - 20, "predawn", "First light", ["quiet", "sunrise", "transit"],

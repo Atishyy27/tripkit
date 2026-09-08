@@ -602,3 +602,177 @@ describe("regression: findings from the second review", () => {
        "a place pinned at the town centre would take a photo of the town centre");
   });
 });
+
+describe("regression: days where the sun does not behave", () => {
+  /* The phase table is anchored to sunrise and sunset. Three kinds of real day
+     break that anchoring, and all three shipped:
+
+     1. Sunset falls after midnight (Reykjavik, June: rises 02:54, sets 00:04). The
+        sunset then sorts BEFORE the sunrise on the clock, so every sunset-anchored
+        bound went negative. phaseAt does a plain from/to compare and can never match
+        a negative bound, so the whole afternoon fell through to the next phase that
+        did match: the app said "Dusk. Evening proper, streets light up, kitchens
+        open" continuously from 00:14 to 21:00, in daylight.
+
+     2. The sun never sets (Tromso, June). sunrise and sunset are both null, init()
+        substituted 06:30 and 18:30 without telling anyone, and the app announced
+        "The hot hours, sit somewhere shaded and wait it out" under the midnight sun.
+
+     3. The sun never rises (Tromso, December). Same null substitution, so sunrise
+        06:30 was reported as arriving BEFORE first light at 08:31.
+
+     sun.js could not tell 2 from 3 apart either: both returned null, which is why the
+     engine had nothing to branch on. */
+
+  const build = cond => {
+    init({ config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439 },
+           conditions: cond, places: [] });
+    return PHASES;
+  };
+  const coverEveryMinute = label => {
+    for (let t = 0; t < 1440; t++) {
+      const p = phaseAt(t);
+      ok(p, `${label}: minute ${t} matched no phase at all`);
+      ok(t >= p.from && t < p.to,
+         `${label}: minute ${t} was handed phase ${p.id}[${p.from},${p.to}), which does not contain it`);
+    }
+  };
+  const noImpossibleBounds = (ph, label) => {
+    for (const p of ph) {
+      ok(p.from >= 0, `${label}: phase ${p.id} starts at ${p.from}, before the day began`);
+      ok(p.to <= 1440, `${label}: phase ${p.id} ends at ${p.to}, after the day ended`);
+      ok(p.to > p.from, `${label}: phase ${p.id} is empty or inverted`);
+    }
+  };
+
+  it("an ordinary day is completely unchanged", () => {
+    /* The normal path is the well tested one. The fix must not touch it. */
+    const ph = build({ sunrise: 44, sunset: 795 });
+    const shape = ph.map(p => `${p.id}[${p.from},${p.to})`).join(" ");
+    eq(shape,
+       "predawn[0,24) sunrise[24,84) morning[84,690) afternoon[645,715) golden[715,805) dusk[805,1260) late[1260,1440)",
+       "the ordinary phase table drifted while fixing the polar ones");
+  });
+
+  it("a sunset after midnight does not blank out the afternoon", () => {
+    const ph = build({ sunrise: 174, sunset: 4 });   // Reykjavik, 21 June
+    noImpossibleBounds(ph, "sunset after midnight");
+    coverEveryMinute("sunset after midnight");
+    eq(phaseAt(700).id, "heat",
+       "11:40 in a Reykjavik June is the middle of the day, not the evening");
+    ok(phaseAt(700).name !== "Dusk", "the original bug: dusk announced in daylight");
+    eq(phaseAt(2).id, "golden", "00:02 is still the sunset, which happens at 00:04");
+    eq(phaseAt(60).id, "night", "01:00 is the short dark between sunset and sunrise");
+  });
+
+  it("the midnight sun is not dressed up as an ordinary day", () => {
+    const ph = build({ sunrise: null, sunset: null, polar: "day" });
+    noImpossibleBounds(ph, "midnight sun");
+    coverEveryMinute("midnight sun");
+    ok(!ph.some(p => /golden|dusk|predawn/.test(p.id)),
+       "there is no golden hour or dusk on a day the sun never sets");
+    ok(ph.every(p => !/\bdark\b/i.test(p.line)),
+       "nothing may describe darkness on a day that has none");
+    ok(/does not set/.test(phaseAt(0).line),
+       "the guide must say why midnight is bright, not just rank around it");
+  });
+
+  it("polar night spends its one band of twilight rather than ignoring it", () => {
+    const ph = build({ sunrise: null, sunset: null,
+                       firstLight: 511, lastLight: 773, polar: "night" });
+    noImpossibleBounds(ph, "polar night");
+    coverEveryMinute("polar night");
+    eq(phaseAt(700).id, "twilight", "12:53 is inside the only light the day has");
+    ok(phaseAt(700).tags.includes("outdoor"),
+       "the twilight band is the whole point of that day and must favour outdoors");
+    eq(phaseAt(60).id, "night", "01:00 is dark");
+    ok(/does not rise/.test(phaseAt(60).line), "say why it is dark all morning");
+  });
+
+  it("a day with no light at all still produces a usable guide", () => {
+    const ph = build({ sunrise: null, sunset: null,
+                       firstLight: null, lastLight: null, polar: "night" });
+    noImpossibleBounds(ph, "no light at all");
+    coverEveryMinute("no light at all");
+    ok(phaseAt(720).tags.includes("indoor"),
+       "with no daylight the ranking should push indoors rather than to viewpoints");
+  });
+
+  it("sun.js tells a midnight sun apart from a polar night", () => {
+    /* Both used to return all-null, which is why the engine could not branch. */
+    const { sunTimes } = require(require("path").join(DOCS_DIR, "sun.js"));
+    const at = (lat, lng, iso) => sunTimes(new Date(iso + "T12:00:00Z"), lat, lng, 0);
+    eq(at(69.6492, 18.9553, "2026-06-21").polar, "day",  "Tromso in June has a midnight sun");
+    eq(at(69.6492, 18.9553, "2026-12-21").polar, "night", "Tromso in December has a polar night");
+    eq(at(26.4899, 74.5511, "2026-09-08").polar, null,   "Pushkar has ordinary days");
+    ok(at(64.1466, -21.9426, "2026-06-21").sunset < at(64.1466, -21.9426, "2026-06-21").sunrise,
+       "Reykjavik in June is the sunset-after-midnight case this suite depends on");
+  });
+});
+
+describe("regression: the privacy disclosure must list every host actually contacted", () => {
+  /* The front page said the town you type "is never sent anywhere else", naming only
+     OpenStreetMap and Wikivoyage. The browser was in fact also contacting Photon,
+     Open-Meteo, MET Norway, Wikidata and Wikimedia Commons. A false claim anywhere is
+     bad; a false claim inside the privacy disclosure of a product whose whole pitch is
+     privacy is the one that ends the argument for you.
+
+     Enforced rather than corrected, because the failure mode is adding a data source
+     later and forgetting the paragraph. */
+
+  const fs = require("fs"), path = require("path");
+  const read = f => fs.readFileSync(path.join(DOCS_DIR, f), "utf8");
+
+  // Hosts the page contacts on the user's behalf. Excluded: the repo link, the test
+  // sentinel, the OSM copyright link, and Google, which is only ever reached by the
+  // user deliberately clicking a directions link.
+  const EXEMPT = /example\.invalid|^github\.com$|^www\.openstreetmap\.org$|^www\.google\.com$/;
+  const LABEL = {
+    "nominatim.openstreetmap.org": "Nominatim",
+    "overpass-api.de": "Overpass",
+    "overpass.kumi.systems": "Overpass",
+    "en.wikivoyage.org": "Wikivoyage",
+    "commons.wikimedia.org": "Commons",
+    "www.wikidata.org": "Wikidata",
+    "api.open-meteo.com": "Open-Meteo",
+    "geocoding-api.open-meteo.com": "Open-Meteo",
+    "air-quality-api.open-meteo.com": "Open-Meteo",
+    "api.met.no": "MET Norway",
+    "photon.komoot.io": "Photon",
+  };
+
+  it("names every third party the browser talks to", () => {
+    const code = read("sources.js") + read("app.js");
+    const html = read("index.html");
+    const disclosure = html.slice(html.indexOf("What this knows about you"),
+                                  html.indexOf("</details>", html.indexOf("What this knows about you")));
+    ok(disclosure.length > 200, "the disclosure section could not be located in the markup");
+
+    const hosts = [...new Set((code.match(/https:\/\/[a-zA-Z0-9.-]+/g) || [])
+      .map(u => u.replace("https://", "")))].filter(h => !EXEMPT.test(h));
+
+    const missing = [];
+    for (const h of hosts) {
+      const label = LABEL[h];
+      if (!label) { missing.push(`${h} (no label: add it to LABEL and to the disclosure)`); continue; }
+      if (!disclosure.includes(label)) missing.push(`${h} -> "${label}"`);
+    }
+    ok(missing.length === 0,
+       "these hosts are contacted but not named in the privacy disclosure: " + missing.join(", "));
+  });
+
+  it("does not claim the search goes nowhere else", () => {
+    const html = read("index.html");
+    ok(!/never sent anywhere else/.test(html),
+       "the old absolute claim is back, and it is not true");
+  });
+
+  it("never asks for the device location, so nothing may imply that it does", () => {
+    /* The app is town-scoped: you type a place. It has never called the geolocation
+       API, and saying "nearby" in a listing implied a permission prompt that does not
+       exist, which reads as less private than the thing actually is. */
+    const code = read("sources.js") + read("app.js") + read("engine.js");
+    ok(!/getCurrentPosition|navigator\.geolocation|watchPosition/.test(code),
+       "the app now reads device location, so every 'no location' claim needs revisiting");
+  });
+});

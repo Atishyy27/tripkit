@@ -32,7 +32,7 @@
  "applicationCategory": "TravelApplication",
  "operatingSystem": "Any (runs in a web browser; installable as a Progressive Web App)",
  "browserRequirements": "Requires JavaScript. A town you have already opened works with no signal; searching a new town needs a connection.",
- "softwareVersion": "0.8.1",
+ "softwareVersion": "0.9.0",
  "isAccessibleForFree": true,
  "offers": {
   "@type": "Offer",
@@ -159,9 +159,17 @@
       <p class="sub">Your trip is saved in this browser and nowhere else. It is not sent to
       us, because there is no us: this is a static page with no server behind it. Clearing
       your browser data deletes it and we could not recover it if you asked.</p>
-      <p class="sub">The town you type goes to OpenStreetMap and Wikivoyage in order to
-      answer, the same way any search does. It is never sent anywhere else and never stored
+      <p class="sub">The town you type is sent, as a search, to the public services that
+      answer the question: OpenStreetMap (Nominatim and Overpass) for places and their
+      opening hours, Wikivoyage for descriptions, Wikidata and Wikimedia Commons for
+      photographs, Open-Meteo and MET Norway for the forecast, and Photon if Nominatim is
+      down. Each of those sees a request from your browser, as it would from any site that
+      asked them. Nothing is sent to us, because there is no us, and none of it is stored
       outside your device.</p>
+      <p class="sub">This paragraph used to name only OpenStreetMap and Wikivoyage, and
+      claimed the town went to nobody else. That was wrong, and on this page of all pages.
+      The list above is the whole of it, and you can check it by opening your browser's
+      network tab.</p>
       <p class="sub">Counting is currently <b>off entirely</b>. If it is ever switched on it
       will be a cookieless counter recording which screens get opened, never what you typed
       or where you are. You can check that claim in

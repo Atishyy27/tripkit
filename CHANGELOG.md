@@ -5,6 +5,41 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-09-09
+
+Two reviews, one of the app and one of a listing submitted to a privacy list. Both
+found things that were wrong rather than merely improvable.
+
+### Fixed
+- **The whole phase table broke wherever the sun misbehaves.** Everything is anchored
+  to sunrise and sunset, and three real kinds of day break that anchor. Where the sun
+  sets after midnight (Reykjavik in June, up at 02:54 and down at 00:04) the sunset
+  sorts before the sunrise, so every sunset-anchored bound went negative; phaseAt does
+  a plain comparison and can never match a negative bound, so the afternoon fell
+  through and the app said "Dusk. Evening proper, streets light up, kitchens open"
+  continuously from 00:14 to 21:00, in daylight. Where the sun never sets, sunrise and
+  sunset were both null and quietly replaced with 06:30 and 18:30, so Tromso under the
+  midnight sun was told "The hot hours, sit somewhere shaded and wait it out". Where
+  the sun never rises, the same substitution reported sunrise at 06:30 arriving before
+  first light at 08:31. There are now three separate phase tables and each says which
+  kind of day it is.
+- **sun.js could not tell a midnight sun from a polar night.** Both returned null, so
+  nothing downstream had anything to branch on. It now reports which way the sun missed
+  the horizon.
+- **The privacy disclosure was false.** The front page said the town you type went to
+  OpenStreetMap and Wikivoyage and nowhere else. The browser also contacts Photon,
+  Open-Meteo, MET Norway, Wikidata and Wikimedia Commons. Every one is now named, and a
+  test fails if an endpoint is ever added without adding it to that paragraph. A wrong
+  claim is bad anywhere; inside the privacy disclosure of a product sold on privacy it
+  is the one that ends the argument for you.
+
+### Changed
+- **OpenStreetMap now leads for directions, and actually routes.** The OSM link only
+  dropped a pin while Google got the "Walk there" button, which is an odd default for
+  something with no backend and no tracking. OSM foot routing leads in both the card
+  and the map popup; the Google link stays, second, because it is only ever followed
+  deliberately.
+
 ## [0.8.1] - 2026-09-08
 
 An audit of the project's own claims, prompted by opening the first outside pull

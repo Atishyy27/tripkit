@@ -13,25 +13,43 @@ function solar(date, lat, lng) {
   return { eqtime, decl };
 }
 
-/* zenith: 90.833 = sunrise/sunset (incl. refraction), 96 = civil twilight */
+/* zenith: 90.833 = sunrise/sunset (incl. refraction), 96 = civil twilight.
+
+   Returns minutes UTC, or a string saying WHICH way the event failed. The sun can
+   miss a zenith two opposite ways: by staying below it all day (polar winter) or
+   above it all day (polar summer). This used to collapse both to null, which made a
+   midnight-sun day indistinguishable from a polar night and left every caller to
+   guess. They are not the same day and must not produce the same guide. */
 function eventUTC(date, lat, lng, zenith, rising) {
   const { eqtime, decl } = solar(date, lat, lng);
   const cosH = (Math.cos(zenith * RAD) / (Math.cos(lat * RAD) * Math.cos(decl)))
              - Math.tan(lat * RAD) * Math.tan(decl);
-  if (cosH > 1)  return null;   // sun never rises that day
-  if (cosH < -1) return null;   // sun never sets
+  if (cosH > 1)  return "below";   // sun never climbs to this zenith today
+  if (cosH < -1) return "above";   // sun never drops to it today
   const ha = Math.acos(cosH) / RAD;
   return 720 + (rising ? -4 * (lng + ha) : -4 * (lng - ha)) - eqtime;   // minutes UTC
 }
 
-/* returns local clock minutes past midnight, given a tz offset in minutes */
+/* returns local clock minutes past midnight, given a tz offset in minutes.
+
+   `polar` is "day" when the sun never sets, "night" when it never rises, and null
+   on an ordinary day. Callers need it because sunrise and sunset are both null in
+   either case, and a guide that quietly substitutes 06:30 and 18:30 for them will
+   announce golden hour during the midnight sun. */
 function sunTimes(date, lat, lng, tzOffsetMin) {
-  const wrap = m => m === null ? null : ((Math.round(m + tzOffsetMin) % 1440) + 1440) % 1440;
+  const wrap = m => typeof m !== "number"
+    ? null : ((Math.round(m + tzOffsetMin) % 1440) + 1440) % 1440;
+  const sr = eventUTC(date, lat, lng, 90.833, true);
+  const ss = eventUTC(date, lat, lng, 90.833, false);
+  let polar = null;
+  if (sr === "above" || ss === "above") polar = "day";
+  else if (sr === "below" || ss === "below") polar = "night";
   return {
-    firstLight: wrap(eventUTC(date, lat, lng, 96,     true)),
-    sunrise:    wrap(eventUTC(date, lat, lng, 90.833, true)),
-    sunset:     wrap(eventUTC(date, lat, lng, 90.833, false)),
-    lastLight:  wrap(eventUTC(date, lat, lng, 96,     false)),
+    firstLight: wrap(eventUTC(date, lat, lng, 96, true)),
+    sunrise:    wrap(sr),
+    sunset:     wrap(ss),
+    lastLight:  wrap(eventUTC(date, lat, lng, 96, false)),
+    polar,
   };
 }
 if (typeof module !== "undefined") module.exports = { sunTimes };
