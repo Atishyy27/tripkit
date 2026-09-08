@@ -1,4 +1,21 @@
 name: Snapshot GitHub traffic stats
+
+# GitHub discards traffic data after 14 days, so without a snapshot the history is
+# simply gone. This runs weekly, well inside that window.
+#
+# It needs a personal access token, and there is no way around that. The traffic API
+# requires the Administration permission, and `administration` is not one of the scopes
+# GITHUB_TOKEN can be granted in a workflow (the grantable list is actions, checks,
+# contents, deployments, discussions, id-token, issues, packages, pages, pull-requests,
+# security-events, statuses and a few others; administration is absent). With the default
+# token every run returns 403 Resource not accessible by integration.
+#
+# To turn it on: create a fine-grained PAT with read access to this repository's
+# "Administration", save it as the repository secret TRAFFIC_TOKEN, and this starts
+# collecting on the next Monday. Until then it skips and reports success, because a
+# workflow that fails every week for a known and documented reason trains you to ignore
+# a red mark, which is worse than not running it at all.
+
 on:
   schedule:
     - cron: "0 6 * * 1"   # every Monday 06:00 UTC, well inside the 14-day window
@@ -11,20 +28,44 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Fetch traffic views
+      - name: Check whether a traffic token is configured
+        id: gate
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRAFFIC_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
         run: |
+          if [ -z "$TRAFFIC_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "No TRAFFIC_TOKEN secret set, so there is nothing to collect with."
+            echo "See the comment at the top of this workflow for the one-time setup."
+            {
+              echo "### Traffic snapshot skipped"
+              echo ""
+              echo "No \`TRAFFIC_TOKEN\` repository secret is set. The traffic API needs the"
+              echo "Administration permission, which \`GITHUB_TOKEN\` cannot be granted, so"
+              echo "this job cannot collect anything until a PAT is configured."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch traffic stats
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+        run: |
+          set -euo pipefail
           mkdir -p gtm/traffic-history
           DATE=$(date -u +%Y-%m-%d)
-          gh api repos/${{ github.repository }}/traffic/views > "gtm/traffic-history/views-$DATE.json"
-          gh api repos/${{ github.repository }}/traffic/clones > "gtm/traffic-history/clones-$DATE.json"
-          gh api repos/${{ github.repository }}/traffic/popular/referrers > "gtm/traffic-history/referrers-$DATE.json"
-          gh api repos/${{ github.repository }}/traffic/popular/paths > "gtm/traffic-history/paths-$DATE.json"
+          for ep in views clones popular/referrers popular/paths; do
+            name="${ep##*/}"
+            gh api "repos/${{ github.repository }}/traffic/$ep" \
+              > "gtm/traffic-history/$name-$DATE.json"
+          done
 
       - name: Commit snapshot
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

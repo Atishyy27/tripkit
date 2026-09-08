@@ -80,11 +80,29 @@ many widen the radius, how many share, how many install to a home screen.
 typed. If you later want the towns, that is a decision to make openly and to write on
 the page, not to slip in.
 
-### Already running, no setup needed
+### The traffic snapshot, which I got wrong
 
 `.github/workflows/traffic-snapshot.yml` runs every Monday and commits GitHub's own
-traffic figures into `gtm/traffic-history/`. GitHub throws that data away after 14
-days, so without this the history is simply lost. It needs nothing from you.
+traffic figures into `gtm/traffic-history/`. GitHub throws that data away after 14 days,
+so without this the history is simply lost.
+
+I wrote here that it needed nothing from you. That was wrong, and it had been failing
+every run with `403 Resource not accessible by integration`. The traffic API requires the
+Administration permission, and `administration` is not one of the scopes a workflow can
+grant `GITHUB_TOKEN`; GitHub's own list of grantable scopes does not contain it. So the
+default token can never read those endpoints, and no amount of `permissions:` tuning
+fixes it.
+
+It now skips cleanly instead of failing, so you are not trained to ignore a red mark. To
+actually collect the data, once:
+
+1. Create a fine-grained personal access token with **read** access to this repository's
+   **Administration** permission.
+2. Save it as the repository secret `TRAFFIC_TOKEN`.
+
+It starts collecting the following Monday. If you would rather not mint a token for this,
+the alternative is to accept that traffic history is lost after 14 days, which is a
+defensible choice; just delete the workflow rather than leaving it skipping forever.
 
 ---
 
