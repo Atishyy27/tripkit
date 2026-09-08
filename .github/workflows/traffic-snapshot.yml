@@ -1,7 +1,7 @@
 name: Snapshot GitHub traffic stats
 on:
   schedule:
-    - cron: "0 6 * * 1"   # every Monday 06:00 UTC — well inside the 14-day window
+    - cron: "0 6 * * 1"   # every Monday 06:00 UTC, well inside the 14-day window
   workflow_dispatch: {}
 
 permissions:

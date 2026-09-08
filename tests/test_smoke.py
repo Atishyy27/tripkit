@@ -181,7 +181,9 @@ class TestHouseStyle:
                        {".git", "__pycache__", "demo", "examples", "node_modules",
                         ".pytest_cache", "vendor"}]
             for f in files:
-                if not f.endswith((".py", ".js", ".md", ".html", ".css")):
+                if not f.endswith((".py", ".js", ".md", ".html", ".css",
+                                  ".txt", ".json", ".yml", ".yaml", ".toml",
+                                  ".webmanifest")):
                     continue
                 p = os.path.join(root, f)
                 if EM in open(p, encoding="utf-8", errors="ignore").read():

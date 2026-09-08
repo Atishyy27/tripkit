@@ -5,6 +5,29 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-09-08
+
+An audit of the project's own claims, prompted by opening the first outside pull
+request. Nothing in the app changed; several things it said about itself did.
+
+### Fixed
+- **"Works fully offline once loaded" was not true, and it was in the machine
+  readable metadata.** The service worker never caches cross origin requests
+  (docs/sw.js), so searching a town you have not opened before is impossible with no
+  signal, and the map's background tiles never cache either, leaving pins on a blank
+  field. What genuinely works offline is the app shell plus any town already opened,
+  which is served from localStorage. The schema.org block in docs/index.html, the
+  feature list, the front page card, docs/llms.txt, the README and every unposted
+  launch draft now say that instead. llms.txt matters most here: it is what AI
+  crawlers read, so an overclaim there propagates into answers nobody can correct.
+- **The site advertised softwareVersion 0.3.1 while the project was at 0.8.0.** Five
+  releases stale, in the structured data search engines read.
+- **The em dash gate could not see the files that had em dashes.** It walked only
+  .py, .js, .md, .html and .css, so docs/llms.txt and a workflow comment kept theirs
+  through the whole sweep. The gate now covers .txt, .json, .yml, .yaml, .toml and
+  .webmanifest, and was mutation tested by injecting an em dash into a .txt and
+  confirming it fails.
+
 ## [0.8.0] - 2026-09-07
 
 A second adversarial review, and the worst bug of the project so far.

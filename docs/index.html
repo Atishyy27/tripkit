@@ -31,8 +31,8 @@
  "description": "A travel guide that reads the clock. Type a town and see what is open right now, ranked by whether this is genuinely that place's hour, with anything that will not fit before you have to leave hidden. Built from OpenStreetMap and Wikivoyage; sunrise and sunset are computed on-device. No account, no API key, no backend, no AI in the data path.",
  "applicationCategory": "TravelApplication",
  "operatingSystem": "Any (runs in a web browser; installable as a Progressive Web App)",
- "browserRequirements": "Requires JavaScript. Works fully offline once loaded.",
- "softwareVersion": "0.3.1",
+ "browserRequirements": "Requires JavaScript. A town you have already opened works with no signal; searching a new town needs a connection.",
+ "softwareVersion": "0.8.1",
  "isAccessibleForFree": true,
  "offers": {
   "@type": "Offer",
@@ -54,7 +54,7 @@
   "Ranks nearby places by whether the current moment is genuinely their hour",
   "Hides anything that will not fit in the time left before you must leave",
   "Computes sunrise, sunset and twilight on-device from NOAA solar equations",
-  "Works fully offline once loaded; installable to a home screen",
+  "Towns you have already opened work with no signal; installable to a home screen",
   "No account, no API key, no backend, no tracking, no AI-generated text"
  ]
 }
@@ -135,9 +135,10 @@
         was generated.</p>
       </div>
       <div class="f">
-        <i>&#128244;</i><h3>It works with no signal</h3>
-        <p>Add it to your home screen and it behaves like an app. Your trip is saved on
-        your phone, not on a server, because there is no server.</p>
+        <i>&#128244;</i><h3>Your saved trips work with no signal</h3>
+        <p>Add it to your home screen and it behaves like an app. A town you have opened
+        stays on your phone, not on a server, because there is no server. Searching a new
+        town, and the map's background tiles, still need a connection.</p>
       </div>
     </div>
 

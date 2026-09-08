@@ -43,7 +43,7 @@ OSM Apps Catalog within about a day. Zero risk and it compounds.
 
 Entry, matching the surrounding format:
 
-> **tripkit** ([site](https://atishyy27.github.io/tripkit/), [source](https://github.com/Atishyy27/tripkit)) - browser-based travel guide that ranks nearby places by whether they are open now and whether the current hour suits them; builds a printable day plan. Uses Overpass and Nominatim, plus Wikivoyage listings. No account, works offline. MIT.
+> **tripkit** ([site](https://atishyy27.github.io/tripkit/), [source](https://github.com/Atishyy27/tripkit)) - browser-based travel guide that ranks nearby places by whether they are open now and whether the current hour suits them; builds a printable day plan. Uses Overpass and Nominatim, plus Wikivoyage listings. No account; a town you have already opened works with no signal. MIT.
 
 Add the `openstreetmap` topic to the GitHub repo at the same time.
 
@@ -66,14 +66,21 @@ No key, no account, no backend.
 
 https://atishyy27.github.io/tripkit/
 
-Building it turned into an accidental coverage survey. Same query, same day:
+Building it turned into an accidental coverage survey. Same query, same 700 m radius in
+every row, 8 September 2026:
 
 | | places | with opening_hours |
 |---|---|---|
-| Lisbon centre | 811 | 270 (33%) |
-| Munich restaurants | 2,249 | 1,924 (86%) |
-| Pushkar, Rajasthan | 129 | 9 (7%) |
-| Ajmer, Rajasthan | 104 | 3 (3%) |
+| Munich centre | 1,229 | 768 (62%) |
+| Lisbon centre | 1,020 | 249 (24%) |
+| Pushkar | 179 | 8 (4%) |
+| Ajmer | 6 | 0 (0%) |
+
+Ajmer's centre is mapped thinly enough that 700 m returns only 6 places at all, too small a
+sample to carry a percentage; widening to 2 km gives 47 places and 2 with hours, still 4%.
+Restaurants are tagged far better than everything else, so a restaurants-only cut flatters the
+good end: `amenity=restaurant` across the whole Munich administrative area is 1,820 of 2,116
+(86%).
 
 So it is genuinely useful in Munich and thin in Rajasthan, and it says which one you
 are in rather than hiding it. Places with no recorded hours show as *hours unknown*,
@@ -150,7 +157,7 @@ MIT: https://github.com/Atishyy27/tripkit
 ## 5. r/SideProject, r/opensource
 
 Shorter, builder-focused. Lead with the constraint rather than the feature: no backend,
-no account, no key, works offline, and what that cost.
+no account, no key, opened towns work with no signal, and what that cost.
 
 ---
 
@@ -169,7 +176,7 @@ meal time and enough variety that it is not four temples in a row. Print it or s
 to your calendar.
 
 No install, no account, no API key, no AI. Built from OpenStreetMap and Wikivoyage. It
-installs to a home screen and works with no signal.
+installs to a home screen, and a town you have opened stays available with no signal.
 
 ---
 
@@ -186,7 +193,7 @@ https://atishyy27.github.io/tripkit/
 
 Type where you are. It shows what is open this minute, hides anything that will not fit
 before you leave, and one tap builds a whole day you can print. Add it to your home
-screen and it works with no signal.
+screen and a town you have opened stays available with no signal.
 
 Free, no account, no ads, nothing collected. Built on OpenStreetMap and Wikivoyage, so
 the descriptions are written by travellers rather than generated.

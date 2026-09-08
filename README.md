@@ -21,7 +21,8 @@ Type a town. You get a guide that answers one question a normal guide never does
 
 > It's 3pm and I leave at 7. What's open, what's worth it, and what no longer fits?
 
-Add it to your home screen and it behaves like an app. It keeps working with no signal.
+Add it to your home screen and it behaves like an app. A town you have already opened keeps
+working with no signal; searching a new one needs a connection.
 
 <p>
 <img src="docs/shots/03-now.png" width="200" alt="What is open right now in Pushkar">
@@ -84,14 +85,28 @@ source so you can check.
 ## The honest limitation
 
 Opening-hours coverage in OpenStreetMap varies enormously, and the guide is only as good as
-what's been mapped. Measured with the same query on the same day:
+what's been mapped. Measured with this app's own query, the same 700 m radius in every
+row, on 8 September 2026:
 
 | | places found | with opening hours |
 |---|---|---|
-| Lisbon | 811 | 270 (33%) |
-| Munich restaurants | 2,249 | 1,924 (86%) |
-| Pushkar | 129 | 9 (7%) |
-| Ajmer | 104 | 3 (3%) |
+| Munich centre | 1,229 | 768 (62%) |
+| Lisbon centre | 1,020 | 249 (24%) |
+| Pushkar | 179 | 8 (4%) |
+| Ajmer | 6 | 0 (0%) |
+
+Ajmer's centre is mapped thinly enough that 700 m returns only 6 places at all, too small a
+sample to carry a percentage; widening to 2 km gives 47 places and 2 with hours, still 4%.
+Restaurants are tagged far better than everything else, so a restaurants-only cut flatters the
+good end: `amenity=restaurant` across the whole Munich administrative area is 1,820 of 2,116
+(86%).
+
+You do not have to take those numbers on trust. This regenerates them against live
+OpenStreetMap, and the same test fails if the gap the section is built on ever closes:
+
+```
+TRIPKIT_LIVE=1 pytest tests/test_live.py -k regional -s
+```
 
 Dense European cities are well covered. Small Indian towns are not. Wikivoyage fills a
 different part of the gap, and where a place is thin the guide shows fewer confident answers
