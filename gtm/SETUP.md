@@ -3,6 +3,13 @@
 Four items. Everything else is done and shipped. Each of these needs an account or a
 browser login that a script cannot do on your behalf.
 
+**Already done since this was written**, so you do not need to: the first listing is
+live as a pull request to `osmlab/awesome-openstreetmap` (#224), and the claims it makes
+were audited before it went out. Two did not survive and are now corrected everywhere,
+including on the live site: the app does not "work fully offline", only the shell and
+towns you have already opened do, and the coverage table was comparing restaurants in
+Munich against everything in Pushkar. See CHANGELOG 0.8.1.
+
 ---
 
 ## 1. Delete the stray repo (2 minutes)
@@ -13,10 +20,20 @@ It still exists though, and deleting it needs a token scope only an interactive 
 can grant.
 
 ```bash
-gh auth refresh -h github.com -u atishyy278 -s delete_repo
+gh auth switch -u atishyy278
+gh auth refresh -h github.com -s delete_repo   # opens a browser, this is the bit only you can do
 gh repo delete atishyy278/deleted-placeholder --yes
-gh auth switch -u Atishyy27
+gh auth switch -u Atishyy27                    # not optional, do not skip this line
 ```
+
+I tested this on 8 September 2026 rather than guessing at it. Two things came out of
+that. The version written here before was wrong: `gh auth refresh` has no `-u` flag at
+all (gh 2.97.0 answers `unknown shorthand flag: 'u'`), and it only ever acts on the
+*active* account, which is why the switch has to come first. And the repository is
+genuinely still there, private and archived; deleting it returns
+`403 Must have admin rights to Repository`, which is what GitHub says when the token
+lacks `delete_repo`. Granting that scope needs an interactive browser sign-in, so this
+is not something I can do for you, only hand you.
 
 That last line matters. The active account flipped on its own four times during this
 work, which is why there is now a pre-push hook that blocks a push under the wrong
