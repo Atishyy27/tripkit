@@ -540,6 +540,7 @@ function open(trip) {
   drawHero();
   drawTowns();
   buildCats();
+  buildSort();
   render();
   setView("list");
   clearInterval(window._tick);
@@ -549,6 +550,20 @@ function open(trip) {
     if (!$("#vDay").hidden) drawDay();
     if (!$("#vWeather").hidden) drawWeather();
   }, 30000);
+}
+
+/* "Best now" (score order) stays the default: it is the whole point of the app,
+   an open museum belongs above a closed shop next door even when the shop is
+   nearer. "Nearest" is opt-in, for the moment someone genuinely just wants
+   whatever is closest, still filtered to what is realistically open and fits. */
+function buildSort() {
+  const mode = GUIDE.sortMode || "best";
+  $("#sortMode").innerHTML =
+    `<button class="chip" data-sort="best" aria-pressed="${mode === "best"}">Best now</button>` +
+    `<button class="chip" data-sort="near" aria-pressed="${mode === "near"}">Nearest</button>`;
+  $$("#sortMode .chip").forEach(b => b.onclick = () => {
+    GUIDE.sortMode = b.dataset.sort; save(GUIDE); buildSort(); render();
+  });
 }
 
 function buildCats() {
@@ -587,6 +602,10 @@ function card(r, i) {
     : p.from === "OpenStreetMap + Wikivoyage" ? '<span class="src-badge src-wv">OSM + Wikivoyage</span>'
     : '<span class="src-badge src-osm">OpenStreetMap</span>';
   const price = p.priceNote ? esc(p.priceNote) : ((p.lo === 0 && p.hi === 0) ? "free" : "");
+  // r.dist is only ever null for a loose pin (see withDistance in engine.js), which
+  // already carries its own "pin approx" tag below, so this never claims a false
+  // precise distance for a place we only guessed the location of.
+  const distTag = r.dist != null ? `<span class="tag t-info pc-dist">${fmtDist(r.dist)}</span>` : "";
   // No spaces inside a coordinate pair. A cosmetic sweep once put one here and every
   // "walk there" link silently pointed nowhere.
   // A place whose coordinates were never recorded sits on the town centre. Offering
@@ -619,7 +638,7 @@ function card(r, i) {
         <h3>${esc(p.name)}</h3>
         ${price ? `<span class="pc-price">${price}</span>` : ""}
       </div>
-      <div class="pc-tags">${badge}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
+      <div class="pc-tags">${badge}${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
       ${p.why ? `<p class="pc-why">${esc(p.why).slice(0, 260)}</p>` : ""}
       ${p.warn ? `<p class="pc-warn">\u26A0 ${esc(p.warn)}</p>` : ""}
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
@@ -674,10 +693,16 @@ function render() {
   if (cs.length) alerts += `<div class="card warn"><h3>Closing soon</h3>${cs.slice(0, 4).map(x => `<p class="sub" style="margin:4px 0"><b>${esc(x.p.name)}</b>, ${esc(x.st.label)}</p>`).join("")}</div>`;
   $("#alerts").innerHTML = alerts;
 
-  const top = r.list.slice(0, 40);
+  // Best now (score) stays the list order that ships by default; distance is
+  // annotated either way so it is always visible on the card, and only actually
+  // reorders the list when "Nearest" is the chosen mode.
+  let ranked = withDistance(r.list, GUIDE.place);
+  if ((GUIDE.sortMode || "best") === "near") ranked = sortByDistance(ranked);
+
+  const top = ranked.slice(0, 40);
   $("#list").innerHTML = top.length ? top.map(card).join("")
     : `<div class="empty">Nothing in this filter is open and still fits.</div>`;
-  $("#count").textContent = `${r.list.length} of ${GUIDE.places.length} places fit right now`;
+  $("#count").textContent = `${ranked.length} of ${GUIDE.places.length} places fit right now`;
   $$("#list [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
   paintPlanCount();
 }

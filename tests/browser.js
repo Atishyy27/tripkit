@@ -483,6 +483,64 @@ const ok = (cond, what) => {
        `every card has an image or a proper fallback (${look.cardsWithPhotos} photos, ${look.cardsWithGlyph} glyphs, ${look.totalCards} cards)`);
     ok(look.cardsWithPhotos > 0, `${look.cardsWithPhotos} cards carry a real photograph`);
 
+    console.log("\n  the near-me list has a sort control, and Best now leads");
+    await page.click('#views .chip[data-v="list"]');
+    await page.waitForTimeout(300);
+    const sortInit = await page.evaluate(() => {
+      const best = document.querySelector('#sortMode [data-sort="best"]');
+      const nr = document.querySelector('#sortMode [data-sort="near"]');
+      return {
+        hasControl: !!best && !!nr,
+        bestPressed: best && best.getAttribute("aria-pressed"),
+        nearPressed: nr && nr.getAttribute("aria-pressed"),
+      };
+    });
+    ok(sortInit.hasControl, "a Best now / Nearest sort control is on the list view");
+    ok(sortInit.bestPressed === "true", `Best now (score order) is the default (${sortInit.bestPressed})`);
+    ok(sortInit.nearPressed === "false", "Nearest starts unselected");
+
+    const beforeOrder = await page.evaluate(() =>
+      [...document.querySelectorAll("#list .pc h3")].map(h => h.textContent));
+
+    console.log("\n  toggling to Nearest reorders the list, and shows a distance");
+    await page.click('#sortMode [data-sort="near"]');
+    await page.waitForTimeout(300);
+    const afterSort = await page.evaluate(() => ({
+      nearPressed: document.querySelector('#sortMode [data-sort="near"]').getAttribute("aria-pressed"),
+      order: [...document.querySelectorAll("#list .pc h3")].map(h => h.textContent),
+      rows: [...document.querySelectorAll("#list .pc")].map(c => ({
+        dist: (c.querySelector(".pc-dist") || {}).textContent || null,
+        approx: !!c.querySelector('.tag.t-unv') && (c.querySelector('.tag.t-unv').textContent || "").includes("approx"),
+      })),
+    }));
+    ok(afterSort.nearPressed === "true", "the Nearest chip becomes pressed once chosen");
+    ok(JSON.stringify(afterSort.order) !== JSON.stringify(beforeOrder) || beforeOrder.length < 2,
+       "choosing Nearest actually changed the row order, not just the chip");
+    const labelled = afterSort.rows.filter(r => r.dist || r.approx);
+    ok(labelled.length === afterSort.rows.length,
+       `every row shows a distance or an approximate label (${labelled.length} of ${afterSort.rows.length})`);
+    // Guard on rows existing: when live OSM returns a thin town (evening, quiet
+    // place) there are no cards to carry a distance, which is a data condition,
+    // not a distance-logic defect. The 7 fixture-based unit tests prove the
+    // computation; this only asserts the real distance shows WHEN a row exists.
+    if (afterSort.rows.length) {
+      ok(afterSort.rows.some(r => r.dist && /\d/.test(r.dist)),
+         `at least one row shows a real distance (e.g. "${(afterSort.rows.find(r => r.dist) || {}).dist}")`);
+    } else {
+      ok(true, "no rows rendered from live data this run, distance shown only when a row exists");
+    }
+
+    console.log("\n  Best now still works after Nearest has been used");
+    await page.click('#sortMode [data-sort="best"]');
+    await page.waitForTimeout(300);
+    const backToBest = await page.evaluate(() => ({
+      bestPressed: document.querySelector('#sortMode [data-sort="best"]').getAttribute("aria-pressed"),
+      order: [...document.querySelectorAll("#list .pc h3")].map(h => h.textContent),
+    }));
+    ok(backToBest.bestPressed === "true", "Best now can be reselected");
+    ok(JSON.stringify(backToBest.order) === JSON.stringify(beforeOrder),
+       "switching back to Best now restores the original score order");
+
     console.log("\n  the search radius is adjustable");
     const rad = await page.evaluate(() => ({
       widen: !!document.getElementById("widerBtn"),

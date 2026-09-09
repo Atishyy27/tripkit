@@ -301,6 +301,47 @@ const closingSoon = t => (DATA.places || []).map(p => ({ p, st: openState(p, t) 
 const openingSoon = t => (DATA.places || []).map(p => ({ p, st: openState(p, t) }))
   .filter(r => r.st.state === "soon").sort((a, b) => a.st.opensIn - b.st.opensIn);
 
+/* Straight-line distance in metres between two {lat, lng} points. Pure and
+   shared: walkMinutes() below turns this into a walking time, and the near-me
+   sort turns it into a label. Returns null rather than a number for anything
+   that is not two real coordinates, so a caller can never mistake "unknown"
+   for "zero metres away". */
+function haversineMeters(a, b) {
+  if (!a || !b || a.lat == null || a.lng == null || b.lat == null || b.lng == null) return null;
+  const R = 6371000, p = Math.PI / 180;
+  const dx = (b.lat - a.lat) * p, dy = (b.lng - a.lng) * p;
+  const h = Math.sin(dx / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dy / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+const fmtDist = m => m == null ? null : (m < 950 ? Math.round(m) + " m" : (m / 1000).toFixed(1) + " km");
+
+/* Attach a `dist` (metres from ref, or null) to a rankNow-shaped list, without
+   touching score or order. A place pinned at the town centre because its real
+   coordinate was never recorded (p.loose) gets null here rather than a distance
+   that only measures how close it is to itself. */
+function withDistance(list, ref) {
+  return list.map(r => Object.assign({}, r, {
+    dist: r.p.loose ? null : haversineMeters(ref, r.p)
+  }));
+}
+
+/* Reorder a withDistance()-annotated list nearest first. Rank ("Best now") is
+   what decides relevance; this only decides the order within an already
+   relevant set, so an open museum still beats a closed shop next door unless
+   the caller explicitly asked for Nearest. A place with no distance (null,
+   always a loose pin) sinks to the end rather than sorting as "0 m away".
+   Array.prototype.sort is stable, so a genuine tie in distance keeps whatever
+   order the list arrived in, which is the score order rankNow already applied. */
+function sortByDistance(list) {
+  return list.slice().sort((a, b) => {
+    if (a.dist == null && b.dist == null) return 0;
+    if (a.dist == null) return 1;
+    if (b.dist == null) return -1;
+    return a.dist - b.dist;
+  });
+}
+
 /* ============================================================
    Planning.
 
@@ -315,11 +356,8 @@ const openingSoon = t => (DATA.places || []).map(p => ({ p, st: openState(p, t) 
 const WALK_METRES_PER_MIN = 75;      // a real walking pace in a strange town, with stops
 
 function walkMinutes(a, b) {
-  if (!a || !b || a.lat == null || b.lat == null) return 10;
-  const R = 6371000, p = Math.PI / 180;
-  const dx = (b.lat - a.lat) * p, dy = (b.lng - a.lng) * p;
-  const h = Math.sin(dx / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dy / 2) ** 2;
-  const m = 2 * R * Math.asin(Math.sqrt(h));
+  const m = haversineMeters(a, b);
+  if (m == null) return 10;
   // straight line underestimates real streets, so add a third
   return Math.max(3, Math.round((m * 1.35) / WALK_METRES_PER_MIN));
 }

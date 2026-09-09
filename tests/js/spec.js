@@ -364,6 +364,66 @@ describe("engine: ranking", () => {
   });
 });
 
+describe("engine: distance (haversine and the nearest sort)", () => {
+  // Two points measured independently off a map: roughly 1.00 km apart along a
+  // meridian near the equator, where 1 degree of latitude is close to 111 km.
+  const a = { lat: 26.4499, lng: 74.6399 };
+  const b = { lat: 26.4589, lng: 74.6399 };
+
+  it("returns a known distance within tolerance", () => {
+    const m = haversineMeters(a, b);
+    near(m, 1000, 60, `expected about 1000 m, got ${m}`);
+  });
+
+  it("is symmetric", () => {
+    near(haversineMeters(a, b), haversineMeters(b, a), 1, "a to b should equal b to a");
+  });
+
+  it("returns null when either point has no coordinate", () => {
+    eq(haversineMeters(null, b), null);
+    eq(haversineMeters({ lat: null, lng: null }, b), null);
+  });
+
+  const ref = { lat: 26.45, lng: 74.64 };
+  // three places, deliberately not scored in distance order: the far one has the
+  // best score, so a distance sort must actually reorder rather than pass through.
+  const near1  = { p: { name: "Near",  lat: 26.4501, lng: 74.6401 }, s: 10 };
+  const mid    = { p: { name: "Mid",   lat: 26.4530, lng: 74.6420 }, s: 90 };
+  const far    = { p: { name: "Far",   lat: 26.4700, lng: 74.6600 }, s: 50 };
+
+  it("orders three places by ascending distance from a reference point", () => {
+    const withD = withDistance([far, near1, mid], ref);
+    const sorted = sortByDistance(withD);
+    eq(sorted.map(r => r.p.name), ["Near", "Mid", "Far"]);
+  });
+
+  it("does not invent a distance for a loose (no real coordinate) place", () => {
+    const loose = { p: { name: "Loose", lat: ref.lat, lng: ref.lng, loose: true }, s: 99 };
+    const withD = withDistance([near1, loose, mid], ref);
+    const looseRow = withD.find(r => r.p.name === "Loose");
+    eq(looseRow.dist, null, "a loose place must never carry a computed distance");
+    const sorted = sortByDistance(withD);
+    eq(sorted[sorted.length - 1].p.name, "Loose", "a loose place sinks to the end under Nearest");
+  });
+
+  it("falls back to the incoming (score) order when distances tie", () => {
+    const sameSpot = ref;
+    const higher = { p: { name: "HigherScore", lat: sameSpot.lat, lng: sameSpot.lng }, s: 80 };
+    const lower  = { p: { name: "LowerScore",  lat: sameSpot.lat, lng: sameSpot.lng }, s: 20 };
+    // pre-sorted by score, the way rankNow hands it over
+    const withD = withDistance([higher, lower], ref);
+    const sorted = sortByDistance(withD);
+    eq(sorted.map(r => r.p.name), ["HigherScore", "LowerScore"],
+       "equal distance must preserve the order it arrived in, not reshuffle");
+  });
+
+  it("formats short distances in metres and long ones in kilometres", () => {
+    eq(fmtDist(320), "320 m");
+    eq(fmtDist(1200), "1.2 km");
+    eq(fmtDist(null), null);
+  });
+});
+
 describe("engine: robustness against thin data", () => {
   it("survives a build with no conditions at all", () => {
     init({ config: { arrive: 0, depart: 1439 }, places: [], conditions: undefined });

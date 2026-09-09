@@ -381,6 +381,7 @@ ul.tight li{margin-bottom:6px}
 .prow.journey .ptime{color:var(--blue)}
 .prow.journey .pname{color:var(--blue);font-size:13.5px}
 #towns{margin-bottom:2px}
+#sortMode{margin-bottom:2px}
 
 /* ============ landing ============
    Same fixed dark accent band as .hero above: --hero-ink/--hero-dim/--hero-line
