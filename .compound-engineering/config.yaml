@@ -1,0 +1,4 @@
+# tripkit's docs/ directory IS the deployed GitHub Pages site, so the default
+# artifact root would publish internal planning documents to the live website.
+# Point compound-engineering somewhere private to the repo instead.
+docs_root: planning
