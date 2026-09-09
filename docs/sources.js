@@ -107,23 +107,72 @@ async function overpass(lat, lng, r, onNote) {
   throw new Error("every OpenStreetMap mirror refused: " + (lastErr && lastErr.message));
 }
 
-/* opening_hours -> the fields the engine needs. Refuses to flatten what it cannot. */
+const OSM_DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+/* Expand a day selector ("Mo-Fr", "Mo,We,Fr", "Tu-Su") into day indices, Monday 0.
+
+   Returns null when the selector is not purely days, which is the important case:
+   a month range like "Apr-Oct" lands here, and null makes the caller refuse the
+   whole value rather than flatten it into year round hours. */
+function parseDays(sel) {
+  if (!sel) return OSM_DAYS.map((_, i) => i);
+  const cleaned = sel.replace(/\b(PH|SH)\b/gi, "").trim().replace(/^[,\s]+|[,\s]+$/g, "");
+  if (!cleaned) return OSM_DAYS.map((_, i) => i);
+  const out = new Set();
+  for (const tok of cleaned.split(",").map(x => x.trim()).filter(Boolean)) {
+    const range = tok.match(/^(Mo|Tu|We|Th|Fr|Sa|Su)\s*-\s*(Mo|Tu|We|Th|Fr|Sa|Su)$/);
+    if (range) {
+      let i = OSM_DAYS.indexOf(range[1]);
+      const end = OSM_DAYS.indexOf(range[2]);
+      for (;;) { out.add(i); if (i === end) break; i = (i + 1) % 7; }
+    } else if (OSM_DAYS.includes(tok)) {
+      out.add(OSM_DAYS.indexOf(tok));
+    } else {
+      return null;   // a month, a week number, a nesting we do not understand
+    }
+  }
+  return out.size ? [...out].sort((a, b) => a - b) : OSM_DAYS.map((_, i) => i);
+}
+
+/* opening_hours -> the fields the engine needs. Refuses to flatten what it cannot.
+
+   The day selector used to be matched and thrown away, so "Mo-Fr 09:00-17:00" was
+   reported as open at ten o'clock on a Sunday: the app's one job, said confidently
+   and wrong, sending somebody to a locked door. Measured on live OpenStreetMap data,
+   the great majority of values this parser flattens carry a day restriction. It is
+   kept now, and anything that is not purely a day selector is refused outright
+   rather than flattened, which is also what finally makes the seasonal case safe. */
 function parseHours(oh) {
-  if (!oh || typeof oh !== "string") return { open: null, close: null, shut: null, note: null };
+  if (!oh || typeof oh !== "string") return { open: null, close: null, shut: null, days: null, note: null };
   let s = oh.trim();
-  if (/^24\/7/.test(s)) return { open: "00:00", close: "23:59", shut: null, note: null };
+  if (/^24\/7/.test(s)) return { open: "00:00", close: "23:59", shut: null, days: null, note: null };
   let note = null;
   const parts = s.split(";").map(x => x.trim()).filter(Boolean);
   if (parts.length > 1) {
-    const main = parts.filter(x => !/^(PH|SH)\b/i.test(x));
-    const hol  = parts.filter(x =>  /^(PH|SH)\b/i.test(x));
+    // A clause only counts as a holiday aside if it is ONLY about holidays. The
+    // test used to be "starts with PH", which swallowed "PH,Sa,Su 11:30-23:30":
+    // that clause also opens the place at the weekend, so treating it as a footnote
+    // and keeping "Mo-Fr" as the truth would report a Saturday as shut when it is
+    // open. Anything carrying a weekday goes back to the main pile, where a second
+    // main clause makes the whole value refuse to flatten, which is the honest end.
+    // "SH Mo-Su 09:00-18:00" qualifies its days BY the holiday: an alternative
+    // schedule, and a fair footnote. "PH,Sa,Su 11:30-23:30" lists the holiday
+    // ALONGSIDE ordinary weekend days, so it opens the place on a real Saturday and
+    // is not a footnote at all. The comma is the tell.
+    const isHoliday = x => /^(PH|SH)\b/i.test(x) && !/^(PH|SH)\s*,/i.test(x);
+    const main = parts.filter(x => !isHoliday(x));
+    const hol  = parts.filter(isHoliday);
     if (main.length === 1 && hol.length) { s = main[0]; note = hol.join("; "); }
+    else if (main.length > 1) return { open: null, close: null, shut: null, days: null, note: oh };
   }
-  const m = s.match(/^(?:[A-Za-z,\-\s]+\s)?(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})(?:\s*,\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2}))?\s*$/);
-  if (!m) return { open: null, close: null, shut: null, note: oh };
+  const m = s.match(/^(?:([A-Za-z,\-\s]+)\s)?(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})(?:\s*,\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2}))?\s*$/);
+  if (!m) return { open: null, close: null, shut: null, days: null, note: oh };
+  const days = parseDays(m[1]);
+  if (days === null) return { open: null, close: null, shut: null, days: null, note: oh };
+  const all = days.length === 7 ? null : days;   // no restriction is cheaper to carry as null
   const pad = t => String(+t.split(":")[0]).padStart(2, "0") + ":" + t.split(":")[1];
-  if (m[3] && m[4]) return { open: pad(m[1]), close: pad(m[4]), shut: [pad(m[2]), pad(m[3])], note };
-  return { open: pad(m[1]), close: pad(m[2]), shut: null, note };
+  if (m[4] && m[5]) return { open: pad(m[2]), close: pad(m[5]), shut: [pad(m[3]), pad(m[4])], days: all, note };
+  return { open: pad(m[2]), close: pad(m[3]), shut: null, days: all, note };
 }
 
 /* A big city returns thousands of rows. A phone does not need every bank branch,
@@ -184,7 +233,7 @@ function osmToPlaces(elements, town) {
     out.push({
       id: "osm-" + e.type + e.id, name, cat, town,
       lat: +lat.toFixed(6), lng: +lng.toFixed(6), loose: false,
-      open: h.open, close: h.close, shut: h.shut, days: null,
+      open: h.open, close: h.close, shut: h.shut, openDays: h.days,
       lo: t.fee === "no" ? 0 : null, hi: t.fee === "no" ? 0 : null,
       priceNote: null, dur: 30,
       why: t.description ||
@@ -271,7 +320,7 @@ function parseListings(wikitext, town) {
       name, cat: LISTING_CAT[m[1].toLowerCase()] || "do", town,
       lat: f.lat ? +f.lat : null, lng: f.long ? +f.long : (f.lon ? +f.lon : null),
       loose: !(f.lat && (f.long || f.lon)),
-      open: h.open, close: h.close, shut: h.shut, days: null,
+      open: h.open, close: h.close, shut: h.shut, openDays: h.days,
       lo: null, hi: null, priceNote: clean(f.price || "") || null, dur: 30,
       why: clean(f.content || ""),
       warn: (!h.open && f.hours) ? "hours listed as “" + clean(f.hours) + "”" : null,

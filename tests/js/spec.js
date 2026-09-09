@@ -50,14 +50,16 @@ describe("opening_hours parsing", () => {
   const h = s => parseHours(s);
 
   it("a simple range", () => {
-    eq(h("Mo-Su 09:00-22:00"), { open: "09:00", close: "22:00", shut: null, note: null });
+    eq(h("Mo-Su 09:00-22:00"),
+       { open: "09:00", close: "22:00", shut: null, days: null, note: null });
   });
   it("24/7", () => {
     eq(h("24/7").open, "00:00"); eq(h("24/7").close, "23:59");
   });
-  it("a midday closure becomes a shut window", () => {
+  it("a midday closure becomes a shut window, and keeps which days it applies to", () => {
     eq(h("Mo-Fr 05:30-13:30,15:00-21:00"),
-       { open: "05:30", close: "21:00", shut: ["13:30", "15:00"], note: null });
+       { open: "05:30", close: "21:00", shut: ["13:30", "15:00"],
+         days: [0, 1, 2, 3, 4], note: null });
   });
   it("a public holiday clause is kept as a note, not thrown away", () => {
     const r = h("Mo-Sa 10:00-18:00; PH off");
@@ -66,10 +68,32 @@ describe("opening_hours parsing", () => {
   it("single digit hours are padded", () => {
     eq(h("Mo-Su 9:00-17:00").open, "09:00");
   });
-  it("refuses to flatten a seasonal rule", () => {
+  it("refuses to flatten a sunrise-relative rule", () => {
     const r = h("Apr-Sep: Mo-Su sunrise-sunset");
     eq(r.open, null, "must not invent clock times from a sunrise-relative rule");
     ok(r.note, "and must hand back the original string so a human can read it");
+  });
+
+  it("refuses a seasonal rule that DOES carry clock times", () => {
+    /* The old seasonal test used "Apr-Sep: Mo-Su sunrise-sunset", which was refused
+       for having no digits in it, not for being seasonal. It passed while the actual
+       seasonal shape sailed through and was reported as open all year. */
+    const r = h("Apr-Oct 09:00-18:00");
+    eq(r.open, null, "a summer-only rule must not be flattened into year round hours");
+    eq(r.note, "Apr-Oct 09:00-18:00", "hand the string back so a person can read it");
+  });
+
+  it("keeps the weekday restriction instead of discarding it", () => {
+    /* The day selector was matched and thrown away, so "Mo-Fr 09:00-17:00" was
+       reported as open at ten on a Sunday. Measured against live OpenStreetMap data,
+       the great majority of values this parser flattens carry such a restriction. */
+    eq(h("Mo-Fr 09:00-17:00").days, [0, 1, 2, 3, 4]);
+    eq(h("Sa-Su 10:00-18:00").days, [5, 6]);
+    eq(h("Mo,We,Fr 10:00-16:00").days, [0, 2, 4]);
+    eq(h("Tu-Su 12:00-14:30,18:00-23:30").days, [1, 2, 3, 4, 5, 6]);
+    eq(h("Mo-Su 10:00-24:00").days, null, "every day is no restriction, carried as null");
+    eq(h("Mo-Su,PH 10:00-17:30").days, null, "a holiday token must not narrow the week");
+    eq(h("09:00-17:00").days, null, "no selector at all means every day");
   });
   it("empty and rubbish input give null, never a guess", () => {
     eq(h("").open, null); eq(h(null).open, null); eq(h("whenever").open, null);

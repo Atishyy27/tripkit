@@ -5,6 +5,37 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-09-09
+
+The app's one job is telling you what is open right now, and most of the time it was
+guessing at that.
+
+### Fixed
+- **A place shut today was reported open.** `parseHours` matched the weekday part of an
+  `opening_hours` rule and threw it away, so `Mo-Fr 09:00-17:00` became 09:00 to 17:00
+  on every day of the week and a Sunday visitor was sent to a locked door, confidently.
+  Measured against 1,026 tagged values in Munich, Lisbon and Pushkar, **300 of the 513
+  the parser flattened were shut on at least one day it called them open, 58%**. The day
+  selector is kept now, `openState` checks it against the trip's weekday, and a
+  restricted place reads "shut on Sundays, open Mon to Fri". After the fix the same
+  measurement is **0 of 505**, costing 8 places their confident hours. Both parsers had
+  it, the browser one and the Python CLI's, and both are fixed.
+- **Seasonal rules were flattened into year-round hours.** `Apr-Oct 09:00-18:00` was
+  reported as open in January. The existing test for this passed while the bug was live,
+  because it used `Apr-Sep: Mo-Su sunrise-sunset`, which was refused for having no digits
+  in it rather than for being seasonal. Both parsers now refuse a season with clock times,
+  and both suites test the shape that actually broke.
+- **A holiday clause that also opens the weekend was treated as a footnote.**
+  `Mo-Fr 13:30-22:30; PH,Sa,Su 11:30-23:30` starts with `PH`, so the second clause was
+  filed as an aside and `Mo-Fr` kept as the truth, which would have reported an open
+  Saturday as shut once weekdays started being honoured. A clause counts as a footnote
+  only when the holiday qualifies its days (`SH Mo-Su 09:00-18:00`) rather than sitting
+  alongside them in a list (`PH,Sa,Su`); the comma is the tell. Anything left ambiguous
+  refuses to flatten.
+- **A plan running past midnight now rolls onto the next weekday.** The day offset is
+  read from the unwrapped minute, before the past-midnight wrap, because Friday 23:30
+  plus two hours is Saturday and that is exactly when a weekday restriction bites.
+
 ## [0.9.0] - 2026-09-09
 
 Two reviews, one of the app and one of a listing submitted to a privacy list. Both

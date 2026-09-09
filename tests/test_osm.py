@@ -30,37 +30,67 @@ class TestQuery:
 
 class TestHours:
     @pytest.mark.parametrize("raw,expected", [
-        ("24/7",                          ("00:00", "23:59", None, None)),
-        ("Mo-Su 09:00-22:00",             ("09:00", "22:00", None, None)),
-        ("Mo-Fr 05:30-13:30,15:00-21:00", ("05:30", "21:00", ["13:30", "15:00"], None)),
-        ("9:00-17:00",                    ("09:00", "17:00", None, None)),
+        ("24/7",                          ("00:00", "23:59", None, None, None)),
+        ("Mo-Su 09:00-22:00",             ("09:00", "22:00", None, None, None)),
+        ("Mo-Fr 05:30-13:30,15:00-21:00", ("05:30", "21:00", ["13:30", "15:00"],
+                                           [0, 1, 2, 3, 4], None)),
+        ("9:00-17:00",                    ("09:00", "17:00", None, None, None)),
     ])
     def test_flattens_the_shapes_it_understands(self, raw, expected):
         assert _hours(raw) == expected
 
     def test_keeps_a_holiday_clause_as_a_note_instead_of_failing(self):
-        o, c, shut, note = _hours("Mo-Sa 10:00-18:00; PH off")
+        o, c, shut, days, note = _hours("Mo-Sa 10:00-18:00; PH off")
         assert (o, c) == ("10:00", "18:00")
+        assert days == [0, 1, 2, 3, 4, 5], "Mo-Sa excludes Sunday and that must survive"
         assert note == "PH off"
 
     def test_keeps_several_holiday_clauses(self):
-        o, c, _, note = _hours("Tu-Su 10:00-17:00; PH off; SH Mo-Su 09:00-18:00")
+        o, c, _, days, note = _hours("Tu-Su 10:00-17:00; PH off; SH Mo-Su 09:00-18:00")
         assert (o, c) == ("10:00", "17:00")
         assert "SH" in note
+
+    def test_keeps_the_weekday_restriction_rather_than_discarding_it(self):
+        """
+        The day selector used to be matched and thrown away, so "Mo-Fr 09:00-17:00"
+        was reported as open at ten o'clock on a Sunday. Measured against 1,026 live
+        OpenStreetMap values, 300 of the 513 this parser flattened were shut on at
+        least one day it called them open.
+        """
+        assert _hours("Mo-Fr 09:00-17:00")[3] == [0, 1, 2, 3, 4]
+        assert _hours("Sa-Su 10:00-18:00")[3] == [5, 6]
+        assert _hours("Mo,We,Fr 10:00-16:00")[3] == [0, 2, 4]
+        assert _hours("Mo-Su 10:00-24:00")[3] is None, "every day is carried as no restriction"
+        assert _hours("Mo-Su,PH 10:00-17:30")[3] is None, "a holiday token must not narrow the week"
+        assert _hours("09:00-17:00")[3] is None, "no selector at all means every day"
+
+    def test_a_holiday_clause_that_also_opens_the_weekend_is_not_a_footnote(self):
+        """
+        "PH,Sa,Su 11:30-23:30" starts with PH but also opens the place on Saturday and
+        Sunday. Treating it as an aside and keeping "Mo-Fr" as the truth would report a
+        Saturday as shut when it is open, so the whole value refuses to flatten instead.
+        """
+        o, c, shut, days, note = _hours("Mo-Fr 13:30-22:30; PH,Sa,Su 11:30-23:30")
+        assert o is None and c is None
+        assert note == "Mo-Fr 13:30-22:30; PH,Sa,Su 11:30-23:30"
 
     @pytest.mark.parametrize("raw", [
         "Apr-Sep: Mo-Su sunrise-sunset",
         "Mo-Fr 08:00-12:00; Sa 09:00-13:00; Su 10:00-14:00",
         "sunrise-sunset",
+        # A seasonal rule that DOES carry clock times. The old suite only tested the
+        # sunrise-relative shape, which was refused for having no digits in it, so
+        # this case sailed through and summer-only hours were reported all year.
+        "Apr-Oct 09:00-18:00",
     ])
     def test_refuses_to_flatten_what_it_cannot_represent(self, raw):
-        o, c, shut, note = _hours(raw)
+        o, c, shut, days, note = _hours(raw)
         assert o is None and c is None
         assert note == raw, "the original string must survive so a human can read it"
 
     @pytest.mark.parametrize("raw", [None, "", 42, []])
     def test_junk_input_gives_nothing(self, raw):
-        assert _hours(raw) == (None, None, None, None)
+        assert _hours(raw) == (None, None, None, None, None)
 
 
 class TestToPlaces:

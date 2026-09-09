@@ -108,6 +108,16 @@ OpenStreetMap, and the same test fails if the gap the section is built on ever c
 TRIPKIT_LIVE=1 pytest tests/test_live.py -k regional -s
 ```
 
+Coverage is only half of it. The other half is whether the hours that *are* recorded get
+read correctly, and for a while they did not: the parser matched the weekday part of a
+rule and threw it away, so `Mo-Fr 09:00-17:00` was reported as open at ten o'clock on a
+Sunday. Across the same 1,026 tagged values, 300 of the 513 it flattened were shut on at
+least one day it called them open. It now keeps the days, and refuses anything it cannot
+represent exactly (seasonal rules, sunset-relative times, several competing clauses),
+showing the raw string instead. That is zero wrong answers at a cost of 8 places losing
+confident hours, which is the trade this whole app is built on: *hours unknown* is a
+worse answer than the truth and a far better one than a locked door.
+
 Dense European cities are well covered. Small Indian towns are not. Wikivoyage fills a
 different part of the gap, and where a place is thin the guide shows fewer confident answers
 rather than inventing them.

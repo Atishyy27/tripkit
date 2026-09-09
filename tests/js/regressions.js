@@ -776,3 +776,66 @@ describe("regression: the privacy disclosure must list every host actually conta
        "the app now reads device location, so every 'no location' claim needs revisiting");
   });
 });
+
+describe("regression: a place shut today was reported open", () => {
+  /* The single worst thing this app can do is send somebody to a locked door while
+     telling them it is open, and it did exactly that. parseHours matched the day
+     selector and threw it away, so "Mo-Fr 09:00-17:00" became 09:00 to 17:00 on
+     every day of the week, including Sunday. Measured against live OpenStreetMap
+     data, the great majority of values the parser flattens carry a day restriction,
+     so this was not a rare corner.
+
+     The day is read from the raw minute BEFORE the past-midnight wrap, because a
+     plan running into the small hours is a different weekday and that is precisely
+     when the restriction bites. */
+
+  const on = (isoDate, place, t) => {
+    init({ config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439, startDate: isoDate },
+           conditions: { sunrise: 400, sunset: 1100 }, places: [] });
+    return openState(place, t);
+  };
+  const OFFICE  = { open: "09:00", close: "17:00", openDays: [0, 1, 2, 3, 4] };  // Mo-Fr
+  const WEEKEND = { open: "10:00", close: "18:00", openDays: [5, 6] };           // Sa-Su
+  const ALWAYS  = { open: "10:00", close: "22:00", openDays: null };
+
+  const SUNDAY = "2026-09-13", WEDNESDAY = "2026-09-09", SATURDAY = "2026-09-12";
+
+  it("does not call a weekday-only place open on a Sunday", () => {
+    const st = on(SUNDAY, OFFICE, 600);
+    eq(st.state, "shut", "10:00 on a Sunday at a Mo-Fr place is shut, not open");
+    ok(/Sunday/.test(st.label), "say which day it is shut, not just that it is");
+    ok(/Mon to Fri/.test(st.label), "and say when it is actually open");
+  });
+
+  it("still calls it open on a weekday", () => {
+    eq(on(WEDNESDAY, OFFICE, 600).state, "open", "the fix must not shut everything");
+  });
+
+  it("does not call a weekend-only place open midweek", () => {
+    eq(on(WEDNESDAY, WEEKEND, 600).state, "shut");
+    eq(on(SATURDAY, WEEKEND, 600).state, "open");
+  });
+
+  it("a place with no day restriction is unaffected on every day of the week", () => {
+    for (const d of ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10",
+                     "2026-09-11", "2026-09-12", "2026-09-13"]) {
+      eq(on(d, ALWAYS, 600).state, "open", `${d} should be unaffected by the day check`);
+    }
+  });
+
+  it("a plan running past midnight rolls onto the next weekday", () => {
+    /* Friday 23:30 plus two hours is Saturday, when the Mo-Fr office is shut. The
+       day offset therefore has to come off the unwrapped minute. */
+    const FRIDAY = "2026-09-11";
+    eq(on(FRIDAY, OFFICE, 600).state, "open", "Friday daytime is open");
+    const sat = on(FRIDAY, WEEKEND, 1440 + 660);   // 11:00 the following day
+    eq(sat.state, "open", "past midnight on a Friday is Saturday, when the weekend place opens");
+    const satOffice = on(FRIDAY, OFFICE, 1440 + 600);
+    eq(satOffice.state, "shut", "and the weekday office is shut by then");
+  });
+
+  it("an empty or full day list is treated as no restriction, never as always shut", () => {
+    eq(on(SUNDAY, { open: "10:00", close: "20:00", openDays: [] }, 600).state, "open");
+    eq(on(SUNDAY, { open: "10:00", close: "20:00", openDays: [0,1,2,3,4,5,6] }, 600).state, "open");
+  });
+});

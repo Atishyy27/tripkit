@@ -4,6 +4,7 @@
    depends on it is recomputed by init().
    ============================================================ */
 let DATA = { places: [], config: {}, conditions: {} };
+let BASE_DOW = 0;
 let CFG = {}, COND = {}, TRIP = {}, PHASES = [], SUNRISE = 390, SUNSET = 1110;
 
 const M  = s => { if (!s) return null; const p = String(s).split(":"); return (+p[0]) * 60 + (+p[1] || 0); };
@@ -17,10 +18,24 @@ function localMins() {
   return t.getHours() * 60 + t.getMinutes();
 }
 
+/* Which weekday the trip's day zero falls on, Monday 0 to match OpenStreetMap's
+   selectors. JavaScript counts Sunday as 0, hence the shift. */
+function baseDow() {
+  if (CFG.startDate) {
+    const d = new Date(CFG.startDate + "T12:00:00Z");
+    if (!isNaN(d)) return (d.getUTCDay() + 6) % 7;
+  }
+  const now = new Date();
+  const local = new Date(now.getTime() + now.getTimezoneOffset() * 60000
+                         + (CFG.tzOffsetMinutes || 0) * 60000);
+  return (local.getDay() + 6) % 7;
+}
+
 function init(data) {
   DATA = data;
   CFG  = data.config || {};
   COND = data.conditions || {};
+  BASE_DOW = baseDow();
   SUNRISE = COND.sunrise != null ? COND.sunrise : 390;
   SUNSET  = COND.sunset  != null ? COND.sunset  : 1110;
   TRIP = {
@@ -166,13 +181,37 @@ function buildPhases() {
 }
 const phaseAt = t => PHASES.find(p => t >= p.from && t < p.to) || PHASES[PHASES.length - 1];
 
+const DOW_NAME = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DOW_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/* Turn a run of weekday indices into "Mon to Fri" rather than "Mon, Tue, Wed...". */
+function daysLabel(days) {
+  if (!days || !days.length) return "";
+  if (days.length === 1) return DOW_NAME[days[0]];
+  let run = true;
+  for (let i = 1; i < days.length; i++) if (days[i] !== days[i - 1] + 1) { run = false; break; }
+  return run ? DOW_NAME[days[0]] + " to " + DOW_NAME[days[days.length - 1]]
+             : days.map(d => DOW_NAME[d]).join(", ");
+}
+
 function openState(p, t) {
+  // The day offset has to be read BEFORE the wrap below, because a plan running
+  // past midnight is a different weekday and that is exactly when this matters.
+  const dayOffset = Math.floor(Math.round(t) / 1440);
   // A plan running past midnight hands this a minute above 1439. Left unwrapped
   // the "opens in" arithmetic goes negative, which reads as nonsense in the
   // interface and, worse, gets added to the scheduler's clock and runs time
   // backwards. Wrap once here rather than at every call site.
   t = ((Math.round(t) % 1440) + 1440) % 1440;
   if (!p.open) return { state: "unknown", label: "hours unknown" };
+  // "Mo-Fr 09:00-17:00" used to be flattened to 09:00-17:00 on every day of the
+  // week, so a place shut on Sunday was reported open, confidently, which is the
+  // single worst thing this app can do.
+  if (Array.isArray(p.openDays) && p.openDays.length && p.openDays.length < 7) {
+    const dow = (((BASE_DOW + dayOffset) % 7) + 7) % 7;
+    if (!p.openDays.includes(dow))
+      return { state: "shut", label: "shut on " + DOW_FULL[dow] + "s, open " + daysLabel(p.openDays) };
+  }
   const o = M(p.open), c = M(p.close) || 1440, overnight = c <= o;
   if (p.shut && p.shut.length === 2) {
     const s0 = M(p.shut[0]), s1 = M(p.shut[1]);

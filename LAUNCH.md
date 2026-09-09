@@ -88,9 +88,14 @@ never as a guess, and the app points at OSM if you want to fix your own town.
 
 Two things I would value your view on:
 
-1. My `opening_hours` parser only flattens the simple shapes and deliberately refuses
-   seasonal and sunset-relative rules, handing the raw string to the reader instead.
-   Right call, or should I lean on opening_hours.js?
+1. My `opening_hours` parser flattens the simple shapes, keeps the weekday selector,
+   and refuses anything else (seasonal, sunset-relative, several competing clauses),
+   handing the raw string to the reader instead. I got this wrong at first: the day
+   selector was matched and discarded, so `Mo-Fr 09:00-17:00` was reported open on a
+   Sunday. Across 1,026 tagged values in Munich, Lisbon and Pushkar, 300 of the 513 it
+   flattened were shut on at least one day it called them open. Keeping the days brings
+   that to zero and costs 8 places their confident hours. Is a hand-rolled subset still
+   the right call here, or should I just lean on opening_hours.js?
 2. Is there a better way to choose a search radius than the Nominatim bounding box?
    It is crude and it shows on sprawling cities.
 
