@@ -3,7 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d0b12">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f7f5fa">
+<script>
+/* Applies a stored theme choice before the stylesheet paints, so there is no flash
+   of the wrong theme on load. Vanilla, no dependency. localStorage throws in some
+   private-browsing modes, so this falls through to the system preference on any
+   failure or when nothing has been chosen yet. */
+try {
+  var storedTheme = localStorage.getItem("tripkit.theme");
+  if (storedTheme === "light" || storedTheme === "dark") {
+    document.documentElement.setAttribute("data-theme", storedTheme);
+  }
+} catch (e) {}
+</script>
 <title>tripkit, what's open right now</title>
 <meta name="description" content="A travel guide that reads the clock. Built from OpenStreetMap and Wikivoyage, in your browser. No account, no key, no AI.">
 <link rel="canonical" href="https://atishyy27.github.io/tripkit/">
@@ -63,6 +76,47 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<button id="themeToggle" class="theme-toggle" type="button">&#9789;</button>
+<script>
+/* Small, self-contained toggle: sets data-theme on the html element and persists
+   the choice. Kept out of app.js on purpose, it has nothing to do with the guide
+   engine. Every localStorage read and write is wrapped, mirroring the try/catch
+   discipline used for the trip itself in app.js. */
+(function () {
+  var KEY = "tripkit.theme";
+  var root = document.documentElement;
+  var btn = document.getElementById("themeToggle");
+
+  function effectiveTheme() {
+    var chosen = root.getAttribute("data-theme");
+    if (chosen === "light" || chosen === "dark") return chosen;
+    try {
+      if (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) return "dark";
+    } catch (e) {}
+    return "light";
+  }
+
+  function paint() {
+    if (!btn) return;
+    var dark = effectiveTheme() === "dark";
+    btn.textContent = dark ? "☀" : "☽";
+    btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    btn.title = btn.getAttribute("aria-label");
+  }
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      var next = effectiveTheme() === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+      paint();
+    });
+  }
+
+  paint();
+})();
+</script>
 
 <!-- ============ 1. where ============ -->
 <div class="screen on" id="s1">

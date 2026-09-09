@@ -78,6 +78,76 @@ const ok = (cond, what) => {
     ok(await page.locator("#q").isVisible(), "the search box is visible");
     ok((await page.title()).length > 0, "the page has a title");
 
+    console.log("\n  theming: light-first tokens, system preference, and the toggle");
+    // Token values, read straight from the light and dark blocks in style.css so
+    // this test breaks if those values drift, not just if theming breaks outright.
+    const cssPath = path.join(DOCS, "style.css");
+    const css = fs.readFileSync(cssPath, "utf8");
+    const rootBlock = css.match(/:root\{([^}]*)\}/);
+    const darkBlock = css.match(
+      /@media\(prefers-color-scheme:dark\)\{[\s\S]*?:root:not\(\[data-theme="light"\]\)\{([^}]*)\}/);
+    const propNames = block => (block ? block[1] : "").match(/--[a-z0-9-]+(?=:)/gi) || [];
+    const propValue = (block, name) => {
+      const m = new RegExp(name.replace(/[-]/g, "\\-") + ":\\s*(#[0-9a-fA-F]{3,8})").exec(block ? block[1] : "");
+      return m ? m[1] : null;
+    };
+    const hexToRgb = hex => {
+      const h = hex.replace("#", "");
+      const n = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
+      const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+    const lightBg = hexToRgb(propValue(rootBlock, "--bg"));
+    const darkBg = hexToRgb(propValue(darkBlock, "--bg"));
+
+    // 1. light OS scheme, nothing stored yet, should render the light token.
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.evaluate(() => { try { localStorage.removeItem("tripkit.theme"); } catch (e) {} });
+    await page.reload({ waitUntil: "networkidle" });
+    const bgLight = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    ok(bgLight === lightBg, `light OS scheme with no stored choice renders the light token (${bgLight})`);
+
+    // 2. dark OS scheme, nothing stored, should render the dark token.
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.evaluate(() => { try { localStorage.removeItem("tripkit.theme"); } catch (e) {} });
+    await page.reload({ waitUntil: "networkidle" });
+    const bgDark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    ok(bgDark === darkBg, `dark OS scheme with no stored choice renders the dark token (${bgDark})`);
+
+    // 3. clicking the toggle flips data-theme and overrides the OS preference,
+    // which is still emulated as dark here.
+    await page.click("#themeToggle");
+    const toggled = await page.evaluate(() => ({
+      theme: document.documentElement.getAttribute("data-theme"),
+      bg: getComputedStyle(document.body).backgroundColor,
+    }));
+    ok(toggled.theme === "light", `the toggle set data-theme to light over a dark OS scheme (${toggled.theme})`);
+    ok(toggled.bg === lightBg && toggled.bg !== bgDark,
+       `the body actually re-themed to the light token after the click (${bgDark} to ${toggled.bg})`);
+
+    // 4. the choice is written to storage and survives a reload, still against a
+    // dark OS scheme, proving the explicit choice keeps winning.
+    const stored = await page.evaluate(() => { try { return localStorage.getItem("tripkit.theme"); } catch (e) { return null; } });
+    ok(stored === "light", `the choice was persisted to localStorage (${stored})`);
+    await page.reload({ waitUntil: "networkidle" });
+    const afterReload = await page.evaluate(() => ({
+      theme: document.documentElement.getAttribute("data-theme"),
+      bg: getComputedStyle(document.body).backgroundColor,
+    }));
+    ok(afterReload.theme === "light", "the stored choice survived a reload");
+    ok(afterReload.bg === lightBg, `the light theme still renders after reload (${afterReload.bg})`);
+    await page.evaluate(() => { try { localStorage.removeItem("tripkit.theme"); } catch (e) {} });
+
+    // 5. nothing in the dark block may exist only there; every one of its custom
+    // properties must also have a bare :root (light) definition.
+    const darkProps = propNames(darkBlock);
+    const rootProps = new Set(propNames(rootBlock));
+    const orphaned = darkProps.filter(p => !rootProps.has(p));
+    ok(darkProps.length > 0, `found ${darkProps.length} custom properties in the dark media block`);
+    ok(orphaned.length === 0, orphaned.length === 0
+       ? "every dark-mode token also has a bare :root (light) definition"
+       : `these tokens exist only inside the dark media block: ${orphaned.join(", ")}`);
+
     console.log("\n  the engine is actually wired up");
     const wired = await page.evaluate(() => ({
       engine: typeof rankNow === "function" && typeof openState === "function",
