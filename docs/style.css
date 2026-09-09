@@ -9,6 +9,30 @@
   --hot:#d9631f; --gold:#a67300; --cool:#128f77; --pink:#c23d82;
   --red:#d1293a; --green:#1f8a52; --blue:#2563c9; --violet:#7a3fd1;
   --r:14px; --nav:62px;
+
+  /* Surface pairs for the tinted card/tag/button variants: a soft light tint
+     paired with a matching border, one pair per semantic family. Dark values
+     are the original hardcoded hex values these variants shipped with. */
+  --hi-a:#fdeee7; --hi-b:#fff8f4;
+  --warn-bg:#fceced; --warn-border:#e2939c; --soft-red:#b3303c;
+  --ok-bg:#e8f7ee; --ok-border:#8fcaa8;
+  --cool-bg:#e3f6f2; --cool-border:#9ad4c8;
+  --info-bg:#e7f0fb; --info-border:#9dc0e6;
+  --gold-bg:#fbeecb; --gold-border:#ddb679;
+  --violet-bg:#f0e6fa;
+  --muted-bg:#eae7f0; --badge3-bg:#d9d0ec;
+
+  /* The landing/hero band is a fixed dark accent moment by design, in both
+     themes, the way a brand color would be, so its own text/line tokens are
+     the SAME value in all three theme blocks below rather than flipping. */
+  --hero-ink:#f4eeff; --hero-dim:#a99fc4; --hero-line:#2c2438;
+
+  /* Type + spacing scale, so sizes are explicit and density is a token change,
+     not a hunt through the file. Visual weight is kept close to what these
+     replace; --fs-4/--sp-5 match the existing body font size and card padding. */
+  --fs-0:10.5px; --fs-1:11.5px; --fs-2:12.5px; --fs-3:13.5px;
+  --fs-4:15px; --fs-5:18px; --fs-6:25px;
+  --sp-1:3px; --sp-2:5px; --sp-3:7px; --sp-4:9px; --sp-5:12px; --sp-6:16px; --sp-7:22px;
 }
 /* System dark preference, only when the in-app toggle has not made an explicit
    choice. An explicit data-theme="light" from the toggle always beats this. */
@@ -18,6 +42,17 @@
     --ink:#f4eeff; --dim:#a99fc4; --dimmer:#776e91;
     --hot:#ff8a4c; --gold:#ffc857; --cool:#6ee7d0; --pink:#ff7ab8;
     --red:#ff5f6d; --green:#7ee0a8; --blue:#8ab8ff; --violet:#b98cff;
+
+    --hi-a:#2c1e21; --hi-b:#1a1622;
+    --warn-bg:#231a1c; --warn-border:#5c2b2b; --soft-red:#ff9aa2;
+    --ok-bg:#182219; --ok-border:#2c5c42;
+    --cool-bg:#161f22; --cool-border:#2a4d55;
+    --info-bg:#1a2635; --info-border:#2f4a66;
+    --gold-bg:#332612; --gold-border:#5d3f2f;
+    --violet-bg:#2a1c38;
+    --muted-bg:#2a2430; --badge3-bg:#5b4a7a;
+
+    --hero-ink:#f4eeff; --hero-dim:#a99fc4; --hero-line:#2c2438;
   }
 }
 /* The in-app toggle, explicit both ways: this wins even on a light-OS device. */
@@ -26,6 +61,17 @@
   --ink:#f4eeff; --dim:#a99fc4; --dimmer:#776e91;
   --hot:#ff8a4c; --gold:#ffc857; --cool:#6ee7d0; --pink:#ff7ab8;
   --red:#ff5f6d; --green:#7ee0a8; --blue:#8ab8ff; --violet:#b98cff;
+
+  --hi-a:#2c1e21; --hi-b:#1a1622;
+  --warn-bg:#231a1c; --warn-border:#5c2b2b; --soft-red:#ff9aa2;
+  --ok-bg:#182219; --ok-border:#2c5c42;
+  --cool-bg:#161f22; --cool-border:#2a4d55;
+  --info-bg:#1a2635; --info-border:#2f4a66;
+  --gold-bg:#332612; --gold-border:#5d3f2f;
+  --violet-bg:#2a1c38;
+  --muted-bg:#2a2430; --badge3-bg:#5b4a7a;
+
+  --hero-ink:#f4eeff; --hero-dim:#a99fc4; --hero-line:#2c2438;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 /* ---- theme toggle ---- */
@@ -43,18 +89,18 @@ a{color:var(--gold);text-decoration:none}
 img{max-width:100%}
 .wrap{max-width:780px;margin:0 auto;padding:0 14px}
 
-h1{font-size:25px;line-height:1.15;margin:0 0 6px;letter-spacing:-.6px}
-h2{font-size:18px;margin:28px 0 10px;letter-spacing:-.3px;display:flex;align-items:center;gap:9px}
-h2 .n{font-size:10.5px;color:var(--dimmer);border:1px solid var(--line);border-radius:99px;padding:2px 8px;font-weight:700;flex:0 0 auto}
-h3{font-size:15px;margin:0 0 3px;letter-spacing:-.2px}
-p{margin:0 0 10px}
-.sub{color:var(--dim);font-size:13.5px}
-.tiny{font-size:11.5px;color:var(--dimmer);line-height:1.45}
+h1{font-size:var(--fs-6);line-height:1.15;margin:0 0 6px;letter-spacing:-.6px}
+h2{font-size:var(--fs-5);margin:24px 0 var(--sp-5);letter-spacing:-.3px;display:flex;align-items:center;gap:9px}
+h2 .n{font-size:var(--fs-0);color:var(--dimmer);border:1px solid var(--line);border-radius:99px;padding:2px 8px;font-weight:700;flex:0 0 auto}
+h3{font-size:var(--fs-4);margin:0 0 3px;letter-spacing:-.2px}
+p{margin:0 0 var(--sp-5)}
+.sub{color:var(--dim);font-size:var(--fs-3)}
+.tiny{font-size:var(--fs-1);color:var(--dimmer);line-height:1.45}
 .lead{font-size:16px;color:var(--dim)}
 b,strong{color:var(--ink);font-weight:700}
 
 /* ---- top clock ---- */
-.top{position:sticky;top:0;z-index:900;background:rgba(13,11,18,.94);
+.top{position:sticky;top:0;z-index:900;background:color-mix(in srgb,var(--bg) 94%,transparent);
  backdrop-filter:saturate(140%) blur(14px);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:7px 14px}
 .tnow{font-variant-numeric:tabular-nums;font-weight:800;font-size:16px;letter-spacing:-.3px}
@@ -62,19 +108,25 @@ b,strong{color:var(--ink);font-weight:700}
 .tcd{font-size:11.5px;text-align:right;line-height:1.35;color:var(--dim)}
 .tcd b{color:var(--hot);font-variant-numeric:tabular-nums}
 
-/* ---- hero ---- */
+/* ---- hero ----
+   A fixed dark accent band, the way a brand color would be, on purpose, in both
+   themes. --hero-ink/--hero-dim carry text that must stay readable against it
+   regardless of which theme the rest of the page is in; see the .land block
+   for the same pattern applied to the landing page's version of this band. */
 .hero{background:linear-gradient(165deg,#2b1d3f 0%,#1a1224 55%,#0f0d14 100%);
  border-bottom:1px solid var(--line);padding:18px 0 16px;position:relative;overflow:hidden}
 .hero:after{content:"";position:absolute;right:-60px;top:-60px;width:210px;height:210px;
  background:radial-gradient(circle,rgba(255,138,76,.26),transparent 68%);pointer-events:none}
 .hero .wrap{position:relative;z-index:1}
+.hero h1{color:var(--hero-ink)}
+.hero .lead{color:var(--hero-dim)}
 
 /* ---- cards ---- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;margin:10px 0}
-.card.hi{border-color:var(--hot);background:linear-gradient(170deg,#2c1e21,#1a1622)}
-.card.warn{border-color:#5c2b2b;background:#231a1c}
-.card.ok{border-color:#2c5c42;background:#182219}
-.card.cool{border-color:#2a4d55;background:#161f22}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-5);margin:var(--sp-4) 0}
+.card.hi{border-color:var(--hot);background:linear-gradient(170deg,var(--hi-a),var(--hi-b))}
+.card.warn{border-color:var(--warn-border);background:var(--warn-bg)}
+.card.ok{border-color:var(--ok-border);background:var(--ok-bg)}
+.card.cool{border-color:var(--cool-border);background:var(--cool-bg)}
 .card.flat{background:var(--bg2)}
 .card>h3+.sub{margin-top:5px}
 
@@ -82,49 +134,52 @@ b,strong{color:var(--ink);font-weight:700}
 .rank .num{flex:0 0 26px;height:26px;border-radius:8px;background:var(--hot);color:#1a0e06;
  font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .rank.r2 .num{background:var(--gold)}
-.rank.r3 .num{background:#5b4a7a;color:var(--ink)}
+.rank.r3 .num{background:var(--badge3-bg);color:var(--ink)}
 .rank.rn .num{background:var(--bg2);color:var(--dimmer);border:1px solid var(--line)}
 
 /* ---- chips ---- */
-.chips{display:flex;gap:7px;overflow-x:auto;padding:5px 0 9px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:5px 0 var(--sp-4);-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;background:var(--bg2);border:1px solid var(--line);color:var(--dim);
- border-radius:99px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+ border-radius:99px;padding:7px 12px;font-size:var(--fs-2);font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 .chip[aria-pressed="true"]{background:var(--hot);border-color:var(--hot);color:#1a0e06}
 
-/* ---- badges ---- */
+/* ---- badges ----
+   Fixed dark text (#1a0e06) on the --hot/--gold accents is kept as-is: both
+   tokens stay orange/gold-family in light and dark, so dark text reads fine
+   on either. Reviewed against both theme blocks, not a leftover. */
 .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
  border-radius:5px;padding:2px 6px;margin:0 5px 3px 0;vertical-align:1px;white-space:nowrap}
-.t-open{background:#183025;color:var(--green)}
-.t-shut{background:#301a1c;color:#ff9aa2}
-.t-soon{background:#332612;color:var(--gold)}
-.t-free{background:#183025;color:var(--green)}
-.t-pay{background:#332612;color:var(--gold)}
-.t-warn{background:#301a1c;color:#ff9aa2}
-.t-info{background:#1a2635;color:var(--blue)}
-.t-best{background:#2a1c38;color:var(--violet)}
-.t-unv{background:#2a2430;color:var(--dimmer)}
+.t-open{background:var(--ok-bg);color:var(--green)}
+.t-shut{background:var(--warn-bg);color:var(--soft-red)}
+.t-soon{background:var(--gold-bg);color:var(--gold)}
+.t-free{background:var(--ok-bg);color:var(--green)}
+.t-pay{background:var(--gold-bg);color:var(--gold)}
+.t-warn{background:var(--warn-bg);color:var(--soft-red)}
+.t-info{background:var(--info-bg);color:var(--blue)}
+.t-best{background:var(--violet-bg);color:var(--violet)}
+.t-unv{background:var(--muted-bg);color:var(--dimmer)}
 
-.money{float:right;font-weight:800;font-size:12.5px;color:var(--cool);margin-left:9px;white-space:nowrap}
+.money{float:right;font-weight:800;font-size:var(--fs-2);color:var(--cool);margin-left:9px;white-space:nowrap}
 .why{font-size:12px;color:var(--hot);font-weight:700;margin-top:5px}
 
 /* ---- buttons ---- */
-.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp-4)}
 .btn{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--line);
  color:var(--ink);border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
-.btn.g{border-color:#2f5d47;color:var(--green)}
-.btn.o{border-color:#5d3f2f;color:#ffb184}
-.btn.b{border-color:#2f4a66;color:var(--blue)}
-.btn.r{border-color:#5c2b2b;color:#ff9aa2}
+.btn.g{border-color:var(--ok-border);color:var(--green)}
+.btn.o{border-color:var(--gold-border);color:var(--hot)}
+.btn.b{border-color:var(--info-border);color:var(--blue)}
+.btn.r{border-color:var(--warn-border);color:var(--soft-red)}
 .btn.wide{width:100%;justify-content:center;padding:11px}
 
 /* ---- map ---- */
-#map{height:340px;border-radius:var(--r);border:1px solid var(--line);margin:10px 0;background:#111;z-index:1}
-.leaflet-popup-content-wrapper{background:#1a1622;color:var(--ink);border-radius:11px;border:1px solid var(--line)}
-.leaflet-popup-tip{background:#1a1622}
+#map{height:340px;border-radius:var(--r);border:1px solid var(--line);margin:10px 0;background:var(--bg2);z-index:1}
+.leaflet-popup-content-wrapper{background:var(--card);color:var(--ink);border-radius:11px;border:1px solid var(--line)}
+.leaflet-popup-tip{background:var(--card)}
 .leaflet-popup-content{margin:11px 13px;font-size:13px;line-height:1.5}
 .leaflet-popup-content a{color:var(--gold)}
-.leaflet-container{background:#12101a}
+.leaflet-container{background:var(--bg2)}
 
 /* ---- table ---- */
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -134,7 +189,7 @@ th{color:var(--dimmer);font-size:10.5px;text-transform:uppercase;letter-spacing:
 tr:last-child td{border-bottom:0}
 
 /* ---- details ---- */
-details{border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin:8px 0;background:var(--bg2)}
+details{border:1px solid var(--line);border-radius:12px;padding:var(--sp-4) var(--sp-5);margin:var(--sp-3) 0;background:var(--bg2)}
 summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none;display:flex;gap:7px;align-items:flex-start}
 summary::-webkit-details-marker{display:none}
 summary:before{content:"▸";color:var(--hot);flex:0 0 auto}
@@ -158,7 +213,7 @@ details>*:not(summary){margin-top:9px}
 .rom{font-size:13px;color:var(--gold);font-style:italic}
 
 /* ---- nav ---- */
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:950;background:rgba(13,11,18,.97);
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:950;background:color-mix(in srgb,var(--bg) 97%,transparent);
  backdrop-filter:saturate(140%) blur(14px);border-top:1px solid var(--line);
  padding-bottom:env(safe-area-inset-bottom)}
 .nav .in{display:flex;max-width:780px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
@@ -169,10 +224,10 @@ details>*:not(summary){margin-top:9px}
 .nav a.on{color:var(--hot)}
 
 .sos{display:flex;gap:6px;margin:10px 0}
-.sos a{flex:1;text-align:center;background:#26141a;border:1px solid #5c2b2b;color:#ff9aa2;
+.sos a{flex:1;text-align:center;background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--soft-red);
  border-radius:10px;padding:10px 4px;font-size:11.5px;font-weight:800}
 
-hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+hr{border:0;border-top:1px solid var(--line);margin:var(--sp-7) 0}
 .src,.src a{font-size:10.5px;color:var(--dimmer)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media(max-width:400px){.grid2{grid-template-columns:1fr}}
@@ -206,21 +261,21 @@ ul.tight li{margin-bottom:6px}
  padding:5px 11px;font-size:11.5px;color:var(--dim);margin:0 5px 5px 0}
 .src-badge{font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
  padding:2px 5px;border-radius:4px;margin-left:6px}
-.src-osm{background:#1a2635;color:var(--blue)}
-.src-wv{background:#2a1c38;color:var(--violet)}
+.src-osm{background:var(--info-bg);color:var(--blue)}
+.src-wv{background:var(--violet-bg);color:var(--violet)}
 .big{width:100%;background:var(--hot);color:#1a0e06;border:0;border-radius:12px;padding:14px;
  font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:6px}
 .big.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
 
 #map{height:64vh;min-height:340px;border-radius:var(--r);border:1px solid var(--line);
- background:#12101a;margin:4px 0 8px}
-.leaflet-popup-content-wrapper{background:#1a1622;color:var(--ink);border-radius:11px;border:1px solid var(--line)}
-.leaflet-popup-tip{background:#1a1622}
+ background:var(--bg2);margin:4px 0 8px}
+.leaflet-popup-content-wrapper{background:var(--card);color:var(--ink);border-radius:11px;border:1px solid var(--line)}
+.leaflet-popup-tip{background:var(--card)}
 .leaflet-popup-content{margin:11px 13px;font-size:13px;line-height:1.5}
 .leaflet-popup-content a{color:var(--gold)}
-.leaflet-container{background:#12101a;font:inherit}
-.leaflet-bar a{background:#1a1622;color:var(--ink);border-color:var(--line)}
-.leaflet-bar a:hover{background:#241d30}
+.leaflet-container{background:var(--bg2);font:inherit}
+.leaflet-bar a{background:var(--card);color:var(--ink);border-color:var(--line)}
+.leaflet-bar a:hover{background:color-mix(in srgb,var(--card) 88%,var(--ink) 12%)}
 
 /* ============ place cards ============ */
 .pc{display:flex;gap:0;background:var(--card);border:1px solid var(--line);
@@ -240,15 +295,15 @@ ul.tight li{margin-bottom:6px}
 .pc-glyph span,.pc-failed:after{font-size:34px;line-height:1;opacity:.85}
 .pc-near{position:absolute;left:5px;bottom:5px;font-size:8.5px;font-weight:800;
  letter-spacing:.4px;text-transform:uppercase;background:rgba(13,11,18,.82);
- color:var(--dim);padding:2px 5px;border-radius:4px}
+ color:var(--hero-dim);padding:2px 5px;border-radius:4px}
 
-.pc-body{flex:1;min-width:0;padding:12px 13px}
+.pc-body{flex:1;min-width:0;padding:var(--sp-4) var(--sp-5)}
 .pc-head{display:flex;align-items:baseline;gap:9px;justify-content:space-between}
 .pc-head h3{font-size:15.5px;margin:0;line-height:1.25;letter-spacing:-.2px}
 .pc-price{flex:0 0 auto;font-weight:800;font-size:12.5px;color:var(--cool);white-space:nowrap}
 .pc-tags{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:0}
 .pc-why{margin:7px 0 0;font-size:13px;color:var(--dim);line-height:1.5}
-.pc-warn{margin:6px 0 0;font-size:11.5px;color:#ff9aa2;line-height:1.45}
+.pc-warn{margin:6px 0 0;font-size:11.5px;color:var(--soft-red);line-height:1.45}
 @media(min-width:560px){.pc-img{flex-basis:150px}.pc-head h3{font-size:16.5px}}
 
 /* ============ destination hero ============ */
@@ -279,23 +334,23 @@ ul.tight li{margin-bottom:6px}
 .rangerow b{font-variant-numeric:tabular-nums;color:var(--hot);min-width:62px;text-align:right}
 
 /* ============ the plan ============ */
-.btn.picked{border-color:var(--green);color:var(--green);background:#152119}
+.btn.picked{border-color:var(--green);color:var(--green);background:var(--ok-bg)}
 .btn.drop,.btn.nudge{padding:2px 8px;font-size:15px;line-height:1;border-color:transparent;color:var(--dimmer)}
-.btn.drop:hover{color:var(--red);border-color:#5c2b2b}
-.btn.nudge:hover{color:var(--hot);border-color:#5d3f2f}
+.btn.drop:hover{color:var(--red);border-color:var(--warn-border)}
+.btn.nudge:hover{color:var(--hot);border-color:var(--gold-border)}
 
 .plan{position:relative;padding-left:2px}
 .prow{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);
- border-radius:14px;padding:12px 13px;margin:8px 0}
-.prow-bad{border-color:#5c2b2b;background:#231a1c}
+ border-radius:14px;padding:var(--sp-4) var(--sp-5);margin:var(--sp-3) 0}
+.prow-bad{border-color:var(--warn-border);background:var(--warn-bg)}
 .ptime{flex:0 0 58px;font-variant-numeric:tabular-nums;font-weight:800;font-size:14px;
  color:var(--gold);line-height:1.25}
 .ptime span{display:block;font-weight:600;font-size:11.5px;color:var(--dimmer)}
 .pbody{flex:1;min-width:0}
 .pname{font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.pissue{font-size:11.5px;color:#ff9aa2;margin-top:4px;line-height:1.45}
+.pissue{font-size:11.5px;color:var(--soft-red);margin-top:4px;line-height:1.45}
 
-.gap{border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin:8px 0;background:var(--bg2)}
+.gap{border:1px dashed var(--line);border-radius:14px;padding:var(--sp-4) var(--sp-5);margin:var(--sp-3) 0;background:var(--bg2)}
 .gap-h{font-size:12.5px;font-weight:800;color:var(--hot);text-transform:uppercase;letter-spacing:.5px}
 .gap-opts{display:flex;flex-wrap:wrap;gap:6px}
 .gap-opts .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -327,22 +382,30 @@ ul.tight li{margin-bottom:6px}
 .prow.journey .pname{color:var(--blue);font-size:13.5px}
 #towns{margin-bottom:2px}
 
-/* ============ landing ============ */
+/* ============ landing ============
+   Same fixed dark accent band as .hero above: --hero-ink/--hero-dim/--hero-line
+   are the same value in every theme block, so this reads the same way regardless
+   of which theme the rest of the page is in. */
 .land{position:relative;overflow:hidden;padding:34px 0 26px;
  background:linear-gradient(168deg,#2b1d3f 0%,#1a1224 52%,#0d0b12 100%)}
 .land-glow{position:absolute;right:-90px;top:-110px;width:340px;height:340px;pointer-events:none;
  background:radial-gradient(circle,rgba(255,138,76,.30),transparent 68%)}
 .land-in{position:relative;z-index:1}
 .land-mark{display:flex;align-items:center;gap:9px;margin-bottom:22px}
-.land-mark span{font-weight:800;font-size:17px;letter-spacing:-.4px}
-.land-h{font-size:40px;line-height:1.05;letter-spacing:-1.8px;margin:0 0 12px}
+.land-mark span{font-weight:800;font-size:17px;letter-spacing:-.4px;color:var(--hero-ink)}
+.land-logo .land-logo-ring{stroke:var(--hero-line)}
+.land-logo .land-logo-gold{stroke:var(--gold)}
+.land-logo .land-logo-hot{stroke:var(--hot)}
+.land-logo .land-logo-dot{fill:var(--hot)}
+.land-h{font-size:40px;line-height:1.05;letter-spacing:-1.8px;margin:0 0 12px;color:var(--hero-ink)}
 .land-h em{font-style:normal;color:var(--hot)}
-.land-p{color:var(--dim);font-size:15.5px;line-height:1.55;margin:0 0 18px;max-width:34em}
+.land-p{color:var(--hero-dim);font-size:15.5px;line-height:1.55;margin:0 0 18px;max-width:34em}
 .land-q{font-size:17px;padding:16px 17px;border-radius:14px}
 .land-eg{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px}
 .land-eg .chip{cursor:pointer}
+.land-eg .tiny{color:var(--hero-dim)}
 .land-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
-.land-pills .pill{background:rgba(13,11,18,.5);border-color:var(--line);color:var(--green);
+.land-pills .pill{background:rgba(13,11,18,.5);border-color:var(--hero-line);color:var(--green);
  font-weight:700;font-size:11.5px}
 @media(min-width:620px){.land-h{font-size:56px}.land{padding:52px 0 40px}}
 
@@ -361,7 +424,7 @@ ul.tight li{margin-bottom:6px}
 .punknown{font-size:11.5px;color:var(--dimmer);margin-top:4px;line-height:1.45}
 .daytabs{margin:0 0 8px}
 .daytabs .chip[data-addday],.daytabs .chip[data-rmday]{color:var(--dimmer);border-style:dashed}
-.daytabs .chip[data-rmday]:hover{color:var(--red);border-color:#5c2b2b}
+.daytabs .chip[data-rmday]:hover{color:var(--red);border-color:var(--warn-border)}
 #printAll{display:none}
 @media print{
   body.printing-all #vPlan{display:none!important}
@@ -369,3 +432,44 @@ ul.tight li{margin-bottom:6px}
   .printday{font-size:14pt;margin:14px 0 6px;page-break-before:auto;color:#000!important}
   .printday:first-child{page-break-before:avoid}
 }
+
+/* ============ list row ============
+   A compact horizontal row: an optional lead thumbnail, a title, a meta line,
+   and an optional trailing value. Built for the distance-sorted list a later
+   unit adds; min-width:0 plus ellipsis on the text pieces is what keeps a long
+   name from forcing horizontal scroll at 360px. */
+.list-row{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) 0;
+ border-bottom:1px solid var(--line)}
+.list-row:last-child{border-bottom:0}
+.list-row .lr-thumb{flex:0 0 44px;width:44px;height:44px;border-radius:10px;
+ background:var(--bg2);overflow:hidden;display:flex;align-items:center;justify-content:center;
+ font-size:18px}
+.list-row .lr-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.list-row .lr-body{flex:1;min-width:0}
+.list-row .lr-title{font-weight:700;font-size:var(--fs-4);white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis}
+.list-row .lr-meta{font-size:var(--fs-2);color:var(--dimmer);white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis}
+.list-row .lr-end{flex:0 0 auto;font-size:var(--fs-2);color:var(--dim);text-align:right;
+ white-space:nowrap}
+
+/* ============ section head ============
+   A heading row that carries an optional count badge and an optional trailing
+   action, reusing the same count-pill look h2 .n already has. */
+.section-head{display:flex;align-items:center;justify-content:space-between;
+ gap:var(--sp-3);margin:24px 0 var(--sp-5)}
+.section-head h2{margin:0}
+.section-head .sh-count{font-size:var(--fs-0);color:var(--dimmer);border:1px solid var(--line);
+ border-radius:99px;padding:2px 8px;font-weight:700;flex:0 0 auto;white-space:nowrap}
+.section-head .sh-action{font-size:var(--fs-2);color:var(--hot);font-weight:700;
+ background:none;border:0;cursor:pointer;padding:0;font-family:inherit;flex:0 0 auto}
+
+/* ============ state ============
+   A centered block for loading / empty / error states, one variant class each.
+   .state-error borrows the themed --red token so it stays readable both ways. */
+.state{text-align:center;padding:var(--sp-7) var(--sp-4);color:var(--dimmer);font-size:var(--fs-3)}
+.state .state-icon{font-size:28px;display:block;margin-bottom:var(--sp-3);line-height:1}
+.state-loading .state-icon{display:inline-block;animation:state-spin 1s linear infinite}
+.state-error{color:var(--red)}
+.state-error .state-icon{color:var(--red)}
+@keyframes state-spin{to{transform:rotate(360deg)}}

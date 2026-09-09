@@ -148,6 +148,131 @@ const ok = (cond, what) => {
        ? "every dark-mode token also has a bare :root (light) definition"
        : `these tokens exist only inside the dark media block: ${orphaned.join(", ")}`);
 
+    // 5b. same check against the explicit [data-theme="dark"] block, which is a
+    // separate rule from the @media one above and could drift from it on its own.
+    // Applies to every token added in U2 (--warn-bg, --hero-ink, --fs-4, etc), not
+    // just the ones U1 shipped.
+    const darkAttrBlock = css.match(/:root\[data-theme="dark"\]\{([^}]*)\}/);
+    const darkAttrProps = propNames(darkAttrBlock);
+    const orphanedAttr = darkAttrProps.filter(p => !rootProps.has(p));
+    ok(darkAttrProps.length > 0, `found ${darkAttrProps.length} custom properties in the [data-theme="dark"] block`);
+    ok(orphanedAttr.length === 0, orphanedAttr.length === 0
+       ? "every explicit dark-theme token also has a bare :root (light) definition"
+       : `these tokens exist only inside [data-theme="dark"]: ${orphanedAttr.join(", ")}`);
+
+    console.log("\n  U2: light-mode coherence on the tinted card/tag/button surfaces");
+    // The hardcoded-hex offenders U1 left behind: .card.warn shipped with a dark
+    // hex background regardless of theme, which is unreadable once the page can
+    // actually be light. --warn-bg/--warn-border replace it; this proves both
+    // directions rather than trusting the CSS source alone.
+    const warnBgLight = hexToRgb(propValue(rootBlock, "--warn-bg"));
+    const warnBgDark = hexToRgb(propValue(darkBlock, "--warn-bg"));
+    const oldHardcodedDarkWarn = "rgb(35, 26, 28)"; // the literal #231a1c this replaced
+
+    const themedSurface = async theme => {
+      return page.evaluate(t => {
+        document.documentElement.setAttribute("data-theme", t);
+        const el = document.createElement("div");
+        el.className = "card warn";
+        el.id = "u2-warn-probe";
+        el.textContent = "probe";
+        document.body.appendChild(el);
+        const bg = getComputedStyle(el).backgroundColor;
+        el.remove();
+        return bg;
+      }, theme);
+    };
+    const warnLight = await themedSurface("light");
+    ok(warnLight === warnBgLight, `a .card.warn in light theme uses the light warn token (${warnLight})`);
+    ok(warnLight !== oldHardcodedDarkWarn,
+       `a .card.warn in light theme is not stuck on the old hardcoded dark hex (${warnLight})`);
+
+    const warnDark = await themedSurface("dark");
+    ok(warnDark === warnBgDark, `a .card.warn in dark theme still uses the dark warn token (${warnDark})`);
+    ok(warnDark === oldHardcodedDarkWarn,
+       `dark theme still renders the same value the old hardcoded hex gave (${warnDark})`);
+
+    // The sticky top bar used a hardcoded rgba(13,11,18,...) regardless of theme,
+    // which is the .top / .nav class of bug: chrome that stayed dark even when
+    // the page went light, with themed text drawn on top of it. It now reads
+    // color-mix(in srgb,var(--bg) 94%,transparent), which Chromium serializes as
+    // color(srgb r g b / a) rather than rgb(...), so parse channels numerically
+    // instead of doing a string compare.
+    const parseChannels = str => {
+      const m = /color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+))?\)/.exec(str) ||
+                /rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)(?:[, ]+([\d.]+))?\)/.exec(str);
+      if (!m) return null;
+      const scale = str.startsWith("color(") ? 255 : 1;
+      return { r: Math.round(parseFloat(m[1]) * scale), g: Math.round(parseFloat(m[2]) * scale),
+               b: Math.round(parseFloat(m[3]) * scale), a: m[4] !== undefined ? parseFloat(m[4]) : 1 };
+    };
+    const near = (a, b, tol = 2) => Math.abs(a - b) <= tol;
+    const expectLightBg = hexToRgb(propValue(rootBlock, "--bg")).match(/\d+/g).map(Number);
+    const expectDarkBg = hexToRgb(propValue(darkBlock, "--bg")).match(/\d+/g).map(Number);
+
+    const chromeSurface = async theme => {
+      return page.evaluate(t => {
+        document.documentElement.setAttribute("data-theme", t);
+        const top = document.querySelector(".top");
+        return top ? getComputedStyle(top).backgroundColor : null;
+      }, theme);
+    };
+    const topLight = parseChannels(await chromeSurface("light"));
+    ok(!!topLight, `the sticky top bar's background is a readable color value in light theme`);
+    if (topLight) {
+      ok(near(topLight.r, expectLightBg[0]) && near(topLight.g, expectLightBg[1]) && near(topLight.b, expectLightBg[2]),
+         `the top bar tracks the light --bg token in light theme (got ${topLight.r},${topLight.g},${topLight.b}, expected ~${expectLightBg.join(",")})`);
+    }
+    const topDark = parseChannels(await chromeSurface("dark"));
+    if (topDark) {
+      ok(near(topDark.r, expectDarkBg[0]) && near(topDark.g, expectDarkBg[1]) && near(topDark.b, expectDarkBg[2]),
+         `the top bar tracks the dark --bg token in dark theme (got ${topDark.r},${topDark.g},${topDark.b}, expected ~${expectDarkBg.join(",")})`);
+    }
+    ok(topLight && topDark && (topLight.r !== topDark.r || topLight.g !== topDark.g || topLight.b !== topDark.b),
+       "the top bar actually differs between the two themes, it is not a fixed dark bar with themed text drawn on it");
+
+    console.log("\n  U2: new primitives (.list-row, .section-head, .state) at 360px");
+    // 360px is the hard mobile-first floor for this project; a primitive that
+    // overflows here forces horizontal body scroll, which is the one thing a
+    // mobile guide can never do.
+    await page.setViewportSize({ width: 360, height: 780 });
+    const overflowCheck = await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.id = "u2-primitive-probe";
+      host.className = "wrap";
+      host.innerHTML = `
+        <div class="section-head">
+          <h2>A section heading that is deliberately long enough to be a risk<span class="sh-count">12</span></h2>
+          <button class="sh-action">See all</button>
+        </div>
+        <div class="list-row">
+          <div class="lr-thumb"><span>&#128205;</span></div>
+          <div class="lr-body">
+            <div class="lr-title">A place name long enough to force ellipsis handling on a 360px screen</div>
+            <div class="lr-meta">0.4 km &middot; open now &middot; a fairly long meta string too</div>
+          </div>
+          <div class="lr-end">4 min</div>
+        </div>
+        <div class="state state-loading"><span class="state-icon">&#8635;</span>Loading the guide&#8230;</div>
+        <div class="state state-empty"><span class="state-icon">&#128269;</span>Nothing matched that filter.</div>
+        <div class="state state-error"><span class="state-icon">&#9888;</span>Could not reach OpenStreetMap.</div>
+      `;
+      document.body.appendChild(host);
+      const before = { docScroll: document.documentElement.scrollWidth,
+                        docClient: document.documentElement.clientWidth };
+      const rows = [...host.querySelectorAll(".list-row, .section-head, .state")]
+        .map(el => ({ cls: el.className, w: el.getBoundingClientRect().width }));
+      host.remove();
+      return { ...before, rows };
+    });
+    ok(overflowCheck.docScroll <= overflowCheck.docClient,
+       `no horizontal overflow at 360px with all three new primitives rendered (scrollWidth ${overflowCheck.docScroll} vs clientWidth ${overflowCheck.docClient})`);
+    ok(overflowCheck.rows.length === 5, `all three primitives rendered, including all 3 .state variants (${overflowCheck.rows.map(r => r.cls).join(" | ")})`);
+    ok(overflowCheck.rows.every(r => r.w <= 360),
+       `every rendered primitive itself stays within 360px (${overflowCheck.rows.map(r => Math.round(r.w)).join(", ")})`);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+
     console.log("\n  the engine is actually wired up");
     const wired = await page.evaluate(() => ({
       engine: typeof rankNow === "function" && typeof openState === "function",
