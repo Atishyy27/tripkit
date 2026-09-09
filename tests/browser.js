@@ -541,6 +541,61 @@ const ok = (cond, what) => {
     ok(JSON.stringify(backToBest.order) === JSON.stringify(beforeOrder),
        "switching back to Best now restores the original score order");
 
+    console.log("\n  Guide / All splits curated places from the live list, offline");
+    const modeInit = await page.evaluate(() => {
+      const guide = document.querySelector('#listMode [data-mode="guide"]');
+      const all = document.querySelector('#listMode [data-mode="all"]');
+      return {
+        hasControl: !!guide && !!all,
+        guidePressed: guide && guide.getAttribute("aria-pressed"),
+        allPressed: all && all.getAttribute("aria-pressed"),
+        cards: document.querySelectorAll("#list .pc").length,
+        countText: (document.getElementById("count") || {}).textContent || "",
+      };
+    });
+    ok(modeInit.hasControl, "a Guide / All mode control is on the list view");
+    ok((modeInit.guidePressed === "true") !== (modeInit.allPressed === "true"),
+       `exactly one of Guide/All starts pressed (guide=${modeInit.guidePressed}, all=${modeInit.allPressed})`);
+
+    // A mode switch only re-filters GUIDE.places, already in memory from the
+    // build. If it ever regresses into a fetch, this catches it immediately
+    // rather than as a mystery slow toggle later.
+    let netDuringToggle = 0;
+    const countReq = () => { netDuringToggle++; };
+    page.on("request", countReq);
+    await page.click('#listMode [data-mode="all"]');
+    await page.waitForTimeout(300);
+    const modeAll = await page.evaluate(() => ({
+      allPressed: document.querySelector('#listMode [data-mode="all"]').getAttribute("aria-pressed"),
+      cards: document.querySelectorAll("#list .pc").length,
+      countText: (document.getElementById("count") || {}).textContent || "",
+    }));
+    ok(modeAll.allPressed === "true", "All becomes pressed once chosen");
+    ok(modeAll.countText !== modeInit.countText || modeInit.guidePressed === "true" && modeAll.cards === modeInit.cards,
+       `the count line reflects the active mode ("${modeInit.countText}" -> "${modeAll.countText}")`);
+
+    await page.click('#listMode [data-mode="guide"]');
+    await page.waitForTimeout(300);
+    page.off("request", countReq);
+    const modeGuide = await page.evaluate(() => ({
+      guidePressed: document.querySelector('#listMode [data-mode="guide"]').getAttribute("aria-pressed"),
+      cards: document.querySelectorAll("#list .pc").length,
+    }));
+    ok(modeGuide.guidePressed === "true", "Guide can be reselected");
+    ok(netDuringToggle === 0,
+       `switching list mode fired ${netDuringToggle} network request(s) across the round trip, expected 0`);
+
+    // Guarded on cards actually existing: live Overpass can hand back a thin
+    // town (few or zero cards) which is a data condition, not a filter defect.
+    // Guide is always a subset of the same underlying ranked list, so when
+    // there is anything to compare, All must never show fewer places.
+    if (modeAll.cards > 0 || modeGuide.cards > 0) {
+      ok(modeAll.cards >= modeGuide.cards,
+         `All shows at least as many places as Guide (${modeAll.cards} vs ${modeGuide.cards})`);
+    } else {
+      ok(true, "no cards rendered from live data this run, Guide/All comparison skipped");
+    }
+
     console.log("\n  the search radius is adjustable");
     const rad = await page.evaluate(() => ({
       widen: !!document.getElementById("widerBtn"),

@@ -342,6 +342,14 @@ function sortByDistance(list) {
   });
 }
 
+/* A "guide" is the set of places a human actually wrote a sentence about:
+   Wikivoyage text, or (for a bare Overpass pin) an OSM description tag carried
+   through as p.why during the merge. Everything else is a live map pin with a
+   name and nothing else; real, but not what a guide leads a traveller with. */
+function isCurated(p) {
+  return p.from === "Wikivoyage" || !!(p.why && String(p.why).trim());
+}
+
 /* ============================================================
    Planning.
 

@@ -424,6 +424,30 @@ describe("engine: distance (haversine and the nearest sort)", () => {
   });
 });
 
+describe("engine: isCurated (guide vs live search)", () => {
+  it("treats a Wikivoyage place as curated even with no why written", () => {
+    ok(isCurated({ from: "Wikivoyage" }), "Wikivoyage provenance alone should be enough");
+  });
+
+  it("does not treat a bare Overpass place with no description as curated", () => {
+    no(isCurated({ from: "OpenStreetMap", id: "osm-1" }), "a bare live pin is not a guide entry");
+  });
+
+  it("treats an Overpass place carrying a real OSM description as curated", () => {
+    ok(isCurated({ from: "OpenStreetMap", id: "osm-2", why: "A quiet ghat away from the crowds." }),
+       "a written description makes a live pin part of the guide");
+  });
+
+  it("does not count a why that is only whitespace", () => {
+    no(isCurated({ from: "OpenStreetMap", id: "osm-3", why: "   " }),
+       "whitespace is not a written description");
+  });
+
+  it("treats a merged OSM + Wikivoyage place as curated via its why", () => {
+    ok(isCurated({ from: "OpenStreetMap + Wikivoyage", id: "osm-4", why: "The old fort above the lake." }));
+  });
+});
+
 describe("engine: robustness against thin data", () => {
   it("survives a build with no conditions at all", () => {
     init({ config: { arrive: 0, depart: 1439 }, places: [], conditions: undefined });

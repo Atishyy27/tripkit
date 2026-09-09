@@ -541,6 +541,7 @@ function open(trip) {
   drawTowns();
   buildCats();
   buildSort();
+  buildListMode();
   render();
   setView("list");
   clearInterval(window._tick);
@@ -563,6 +564,26 @@ function buildSort() {
     `<button class="chip" data-sort="near" aria-pressed="${mode === "near"}">Nearest</button>`;
   $$("#sortMode .chip").forEach(b => b.onclick = () => {
     GUIDE.sortMode = b.dataset.sort; save(GUIDE); buildSort(); render();
+  });
+}
+
+/* Guide is the default whenever a town actually has curated places, because a
+   well-documented town leads with the human-written guide, not the raw live
+   list. A thin town where Wikivoyage wrote nothing falls back to All on its
+   own, so the guide screen is never just empty. Once he picks a mode by hand
+   that choice sticks (GUIDE.listMode) and stops recomputing off the count. */
+function activeListMode() {
+  if (GUIDE.listMode) return GUIDE.listMode;
+  return GUIDE.places.some(isCurated) ? "guide" : "all";
+}
+
+function buildListMode() {
+  const mode = activeListMode();
+  $("#listMode").innerHTML =
+    `<button class="chip" data-mode="guide" aria-pressed="${mode === "guide"}">Guide</button>` +
+    `<button class="chip" data-mode="all" aria-pressed="${mode === "all"}">All</button>`;
+  $$("#listMode .chip").forEach(b => b.onclick = () => {
+    GUIDE.listMode = b.dataset.mode; save(GUIDE); buildListMode(); render();
   });
 }
 
@@ -699,10 +720,22 @@ function render() {
   let ranked = withDistance(r.list, GUIDE.place);
   if ((GUIDE.sortMode || "best") === "near") ranked = sortByDistance(ranked);
 
+  // Guide mode narrows to the human-written places (Wikivoyage, or an OSM
+  // description carried through as why); All keeps every ranked place,
+  // Overpass included. Pure filter over data already in memory, no fetch.
+  const mode = activeListMode();
+  const curatedTotal = GUIDE.places.filter(isCurated).length;
+  if (mode === "guide") ranked = ranked.filter(x => isCurated(x.p));
+
   const top = ranked.slice(0, 40);
+  const emptyMsg = (mode === "guide" && curatedTotal === 0)
+    ? "This town has no written guide yet. Switch to All to see everything nearby."
+    : "Nothing in this filter is open and still fits.";
   $("#list").innerHTML = top.length ? top.map(card).join("")
-    : `<div class="empty">Nothing in this filter is open and still fits.</div>`;
-  $("#count").textContent = `${ranked.length} of ${GUIDE.places.length} places fit right now`;
+    : `<div class="empty">${emptyMsg}</div>`;
+  $("#count").textContent = mode === "guide"
+    ? `${ranked.length} of ${curatedTotal} places in the guide fit right now`
+    : `${ranked.length} of ${GUIDE.places.length} places nearby fit right now`;
   $$("#list [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
   paintPlanCount();
 }
