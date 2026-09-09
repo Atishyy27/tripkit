@@ -236,7 +236,6 @@ hr{border:0;border-top:1px solid var(--line);margin:var(--sp-7) 0}
 .stat .k{font-size:10.5px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 ul.tight{padding-left:17px;margin:0}
 ul.tight li{margin-bottom:6px}
-.empty{text-align:center;color:var(--dimmer);padding:26px 10px;font-size:13px}
 
 /* ---- web app additions ---- */
 .screen{display:none}.screen.on{display:block}

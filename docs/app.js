@@ -221,7 +221,7 @@ function wireSearch() {
     clearTimeout(searchTimer);
     const v = box.value.trim();
     if (v.length < 2) { $("#hits").innerHTML = ""; return; }
-    $("#hits").innerHTML = '<p class="tiny">searching…</p>';
+    $("#hits").innerHTML = '<div class="state state-loading"><span class="state-icon">⟳</span>searching…</div>';
     searchTimer = setTimeout(() => doSearch(v), 450);
   });
 }
@@ -230,12 +230,18 @@ async function doSearch(q) {
   try {
     const found = await findPlace(q, m => console.info(m));
     const rows = found.value || [];
-    if (!rows.length) { $("#hits").innerHTML = '<p class="tiny">Nothing found. Try the plain name of the town.</p>'; return; }
+    if (!rows.length) {
+      $("#hits").innerHTML = '<div class="state state-empty"><span class="state-icon">🔍</span>' +
+        'Nothing found. Try the plain name of the town.</div>';
+      return;
+    }
     $("#hits").innerHTML = rows.map((r, i) =>
       `<div class="hit" data-i="${i}"><b>${esc(r.name)}</b><span>${esc(r.label)}</span></div>`).join("");
     $$("#hits .hit").forEach(el => el.onclick = () => pick(rows[+el.dataset.i]));
   } catch (e) {
-    $("#hits").innerHTML = `<div class="card warn"><p class="sub">Could not reach OpenStreetMap's search: ${esc(e.message)}. That service is free and sometimes rate-limits. Wait a moment and try again.</p></div>`;
+    $("#hits").innerHTML = `<div class="state state-error"><span class="state-icon">⚠</span>` +
+      `Could not reach OpenStreetMap's search: ${esc(e.message)}. That service is free and ` +
+      `sometimes rate-limits. Wait a moment and try again.</div>`;
   }
 }
 
@@ -728,11 +734,23 @@ function render() {
   if (mode === "guide") ranked = ranked.filter(x => isCurated(x.p));
 
   const top = ranked.slice(0, 40);
-  const emptyMsg = (mode === "guide" && curatedTotal === 0)
-    ? "This town has no written guide yet. Switch to All to see everything nearby."
-    : "Nothing in this filter is open and still fits.";
+  // Two very different reasons the list can be empty get two very different
+  // messages: a curated-only guide with nothing written yet points at the All
+  // toggle already sitting right there; a town that genuinely has almost
+  // nothing mapped points at OpenStreetMap itself, same honesty framing as the
+  // "hours unknown" tags on individual cards. Only when there IS enough mapped
+  // data and a filter or search term is just excluding all of it do we say so.
+  const scopeTotal = (GUIDE.townFilter && GUIDE.townFilter !== "all")
+    ? GUIDE.places.filter(p => p.town === GUIDE.townFilter).length
+    : GUIDE.places.length;
+  const emptyState = (mode === "guide" && curatedTotal === 0)
+    ? { icon: "📝", msg: "This town has no written guide yet. Switch to All to see everything nearby." }
+    : scopeTotal < 5
+    ? { icon: "🗺", msg: "This town has very few places mapped yet. Add some on OpenStreetMap and " +
+        "they will show up here next time this guide is built." }
+    : { icon: "🔍", msg: "Nothing in this filter is open and still fits." };
   $("#list").innerHTML = top.length ? top.map(card).join("")
-    : `<div class="empty">${emptyMsg}</div>`;
+    : `<div class="state state-empty"><span class="state-icon">${emptyState.icon}</span>${emptyState.msg}</div>`;
   $("#count").textContent = mode === "guide"
     ? `${ranked.length} of ${curatedTotal} places in the guide fit right now`
     : `${ranked.length} of ${GUIDE.places.length} places nearby fit right now`;
@@ -1497,7 +1515,8 @@ function drawLocal() {
        follow one for the terms.</p>`;
   }
 
-  if (!html) html = '<div class="empty">Nothing extra was available for this place.</div>';
+  if (!html) html = '<div class="state state-empty"><span class="state-icon">🗺</span>' +
+    'Nothing extra was available for this place.</div>';
   el.innerHTML = html;
 }
 

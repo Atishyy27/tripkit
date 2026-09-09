@@ -286,6 +286,31 @@ const ok = (cond, what) => {
     ok(wired.sources, "the parsers are defined");
     ok(wired.leaflet, "Leaflet loaded");
 
+    console.log("\n  U6: search loading/empty states use the .state primitive");
+    // A gibberish query is deterministic where a live-data check would not be:
+    // Nominatim will never match it, so the "nothing found" branch always
+    // fires, regardless of how thin or rich the actual town data is tonight.
+    await page.fill("#q", "zzzqqqxxxnonexistentplacenobodytypes");
+    // The loading indicator is set synchronously in the input handler, before
+    // the 450ms debounce even starts, so it must already be there.
+    const loadingNow = await page.locator("#hits .state.state-loading").count();
+    ok(loadingNow > 0, "the searching indicator uses .state.state-loading, not bare text");
+    await page.waitForSelector("#hits .state.state-empty", { timeout: 45000 });
+    const notFoundHtml = await page.evaluate(() => document.getElementById("hits").innerHTML);
+    ok(notFoundHtml.includes("state-icon"), "the nothing-found state carries an icon");
+    ok(/Nothing found/.test(notFoundHtml),
+       "the nothing-found state keeps the specific message, an icon alone is not enough");
+
+    // The search-error branch (Nominatim unreachable) can't be forced without
+    // actually breaking the network mid-test, so it is checked at the source:
+    // the same file this suite is already exercising must render the .state
+    // .state-error markup on that catch path, with the real message intact.
+    const appSrc = fs.readFileSync(path.join(DOCS, "app.js"), "utf8");
+    ok(/class="state state-error"/.test(appSrc),
+       "the search-error catch path renders .state.state-error");
+    ok(/Could not reach OpenStreetMap's search/.test(appSrc),
+       "the search-error message stays specific (free service, rate-limits, retry)");
+
     console.log("\n  searching finds a place");
     await page.fill("#q", "Pushkar");
     await page.waitForSelector("#hits .hit", { timeout: 45000 });
@@ -328,11 +353,25 @@ const ok = (cond, what) => {
 
     console.log("\n  the guide is usable");
     const n = await page.locator("#list .pc").count();
-    const empty = await page.locator("#list .empty").count();
+    const empty = await page.locator("#list .state.state-empty").count();
     ok(n > 0 || empty > 0,
        `${n} place cards rendered` + (n === 0 ? " (or an honest empty state, if upstreams were down)" : ""));
     ok((await page.textContent("#clock")).match(/\d\d:\d\d/) !== null, "the clock shows a time");
     ok((await page.textContent("#count")).includes("places"), "the count line is populated");
+
+    console.log("\n  U6: list empty state uses the .state primitive");
+    // A nonsense name filter matches nothing regardless of how thin or rich
+    // tonight's live town data is, so this stays deterministic where relying
+    // on a genuinely thin town would not.
+    await page.fill("#filter", "zzzqqqxxxnonexistentplacenobodytypes");
+    await page.waitForTimeout(200);
+    const listEmptyHtml = await page.evaluate(() => document.getElementById("list").innerHTML);
+    ok(listEmptyHtml.includes('class="state state-empty"'),
+       "an unmatched filter renders .state.state-empty, not the old bare .empty div");
+    ok(listEmptyHtml.includes("state-icon"), "the empty list state carries an icon");
+    ok(!/class="empty"/.test(listEmptyHtml), "the old bare .empty class is gone from the output");
+    await page.fill("#filter", "");
+    await page.waitForTimeout(200);
 
     console.log("\n  the map view works");
     await page.click('#views .chip[data-v="map"]');
