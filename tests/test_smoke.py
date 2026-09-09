@@ -177,9 +177,12 @@ class TestHouseStyle:
         EM = chr(0x2014)
         bad = []
         for root, dirs, files in os.walk(ROOT):
+            # "planning" is the compound-engineering artifact root (internal plans
+            # and notes), never served to users, so the shipped-content rule does
+            # not reach it; prose plans there use em dashes freely.
             dirs[:] = [d for d in dirs if d not in
                        {".git", "__pycache__", "demo", "examples", "node_modules",
-                        ".pytest_cache", "vendor"}]
+                        ".pytest_cache", "vendor", "planning"}]
             for f in files:
                 if not f.endswith((".py", ".js", ".md", ".html", ".css",
                                   ".txt", ".json", ".yml", ".yaml", ".toml",
