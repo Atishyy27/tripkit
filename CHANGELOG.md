@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-09-11
+
+### Fixed
+- **Timezone was guessed from longitude, so "what is open right now" was wrong by
+  1 to 2 hours across Western Europe.** Portugal and Spain run on
+  Central-European-style clocks well east of their meridian, so Porto and Lisbon
+  came out at -60 minutes year round when the real offset is 0 in winter and +60
+  in summer. This broke the app's core answer exactly where opening_hours coverage
+  is strongest. guessTz now keys off the country code with a date-based DST rule
+  (EU, North America, and reversed-season New Zealand) and falls back to longitude
+  only for multi-zone or unknown countries. Single-zone countries are exact;
+  multi-zone ones get an approximate base plus the correct DST hour, with the
+  per-state and exotic-zone limits noted in the code.
+
+### Changed
+- **The browser suite is now deterministic in time, not just in data.** It froze
+  the network responses with captured fixtures but still ranked against the real
+  wall clock, so "what fits right now" depended on when CI ran; the timezone fix
+  above exposed this by shifting the clock past the build's departure window. The
+  suite now pins a fixed instant, so the same build renders the same guide every
+  run.
+
 ## [0.11.0] - 2026-09-10
 
 A ground-up visual overhaul and a run of researched features, planned and built

@@ -84,6 +84,18 @@ const ok = (cond, what) => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 
+  // Freeze the wall clock so the suite is deterministic in time, not just in data.
+  // The app ranks places against the real clock, so "what is open and fits right
+  // now" otherwise depended on when CI ran and on the destination timezone: the
+  // timezone fix corrected Lisbon from -60 to +60, and a late-evening run then
+  // landed past the build's departure time, rendering zero cards. setFixedTime
+  // pins Date and now while leaving timers (debounce, rotation) running, and the
+  // app stays in genuine Now mode. 2026-09-16 09:00 UTC is a Wednesday; that is
+  // 10:00 in Lisbon (+60) and 14:30 in Pushkar (+330). 10:00 is chosen so places
+  // are open AND the planning window from now to the 21:00 departure is wide
+  // enough that every picked stop fits, which the day-plan assertions require.
+  await page.clock.setFixedTime(new Date("2026-09-16T09:00:00Z"));
+
   // A thrown exception is a bug. A third party image or map tile returning 503 is
   // the internet, and the app already handles it by swapping in a category glyph.
   // Counting them as the same thing makes the suite fail for reasons nobody can fix.
