@@ -463,6 +463,59 @@ async function geocodePhoton(q) {
   }).filter(r => r.lat != null && r.lng != null);
 }
 
+/* Pure mapper, pulled out of photonSuggest() the same way mapNominatim() is
+   pulled out of geocode(), so the shape of a Photon typeahead answer is
+   testable without a network call, and so a malformed or empty response is
+   proven never to throw. A row with no name is useless as a suggestion and
+   is dropped rather than shown as a blank line. */
+function mapPhotonFeatures(d) {
+  const feats = (d && Array.isArray(d.features)) ? d.features : [];
+  return feats.map(f => {
+    const p = (f && f.properties) || {};
+    const c = ((f && f.geometry) || {}).coordinates || [];
+    const name = p.name || "";
+    if (!name) return null;
+    return {
+      name,
+      label: [p.name, p.city, p.state, p.country].filter(Boolean).join(", "),
+      lat: typeof c[1] === "number" ? c[1] : null,
+      lng: typeof c[0] === "number" ? c[0] : null,
+      country: p.country || "",
+      countryCode: (p.countrycode || "").toUpperCase()
+    };
+  }).filter(Boolean);
+}
+
+/* As-you-type suggestions only. This never sets the town a guide gets built
+   for; it only ever hands back a query string for the SAME findPlace chain
+   above to resolve authoritatively. That is why it carries no bbox and its
+   own lat/lng are never read by the caller: they exist only so a caller that
+   wants them for something else has them, not as a shortcut around geocode().
+
+   Deliberately not routed through jget()/withTimeout(): those build their own
+   AbortController and Object.assign would let an external `signal` silently
+   replace it, so the timeout would fire but no longer abort anything. Here
+   both have to be able to abort the same request, so both control the same
+   controller instead. */
+async function photonSuggest(q, signal) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 6000);
+  if (signal) {
+    if (signal.aborted) ac.abort();
+    else signal.addEventListener("abort", () => ac.abort(), { once: true });
+  }
+  try {
+    const url = "https://photon.komoot.io/api/?" +
+      new URLSearchParams({ q, limit: "6", lang: "en" });
+    const r = await fetch(url, { signal: ac.signal, headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    const d = await r.json();
+    return mapPhotonFeatures(d);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function geocodeOpenMeteo(q) {
   const d = await jget("https://geocoding-api.open-meteo.com/v1/search?" +
     new URLSearchParams({ name: q, count: "6", language: "en", format: "json" }));

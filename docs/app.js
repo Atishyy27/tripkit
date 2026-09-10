@@ -210,7 +210,21 @@ function track(path, title) {
 let PLACE = null, GUIDE = null, SHARED_PLAN = null;
 
 /* ---------- screen 1: search ---------- */
+/* Two independent timers off the same keystroke, on purpose: `typeaheadTimer`
+   is short and cosmetic (Photon suggestions, may fail silently), `searchTimer`
+   is the slower authoritative one (findPlace's full fallback chain) that was
+   already here before this unit and is unchanged. Typeahead never gets to
+   skip it; picking a suggestion just triggers it early. */
 let searchTimer = null;
+let typeaheadTimer = null, typeaheadAbort = null;
+
+function hideSuggest() {
+  const el = $("#suggest");
+  if (!el) return;
+  el.innerHTML = "";
+  el.hidden = true;
+}
+
 function wireSearch() {
   const box = $("#q");
   $$(".land-eg .chip").forEach(b => b.onclick = () => {
@@ -219,14 +233,75 @@ function wireSearch() {
   });
   box.addEventListener("input", () => {
     clearTimeout(searchTimer);
+    clearTimeout(typeaheadTimer);
+    if (typeaheadAbort) { typeaheadAbort.abort(); typeaheadAbort = null; }
     const v = box.value.trim();
-    if (v.length < 2) { $("#hits").innerHTML = ""; return; }
+    if (v.length < 2) { $("#hits").innerHTML = ""; hideSuggest(); return; }
     $("#hits").innerHTML = '<div class="state state-loading"><span class="state-icon">⟳</span>searching…</div>';
+    // Shorter than the search debounce on purpose: typeahead is meant to feel
+    // live. It fires first, the authoritative search below still fires on its
+    // own unchanged schedule and its render replaces whatever typeahead showed.
+    typeaheadTimer = setTimeout(() => runTypeahead(v), 180);
     searchTimer = setTimeout(() => doSearch(v), 450);
   });
+  // A tap on a suggestion fires a click after this box's blur, so the list is
+  // torn down on a short delay rather than immediately, or the click never lands.
+  box.addEventListener("blur", () => setTimeout(hideSuggest, 150));
+  box.addEventListener("keydown", e => { if (e.key === "Escape") hideSuggest(); });
+}
+
+/* Fetches live Photon suggestions and renders them under the box. Never the
+   thing that resolves a town: it degrades to nothing the moment it fails, and
+   the 450ms findPlace search on its own timer is completely unaffected. */
+async function runTypeahead(q) {
+  const ac = new AbortController();
+  typeaheadAbort = ac;
+  let rows;
+  try {
+    rows = await photonSuggest(q, ac.signal);
+  } catch (e) {
+    // Photon is a shared public instance we do not control: an outage, a
+    // timeout, or an abort from a newer keystroke all land here, and all of
+    // them mean the same thing, say nothing and let the real search carry on.
+    if (typeaheadAbort === ac) hideSuggest();
+    return;
+  }
+  // A slower request that lost the race to a newer keystroke must never
+  // overwrite what the newer one already showed (or is about to show).
+  if (typeaheadAbort !== ac) return;
+  renderSuggest(rows || []);
+}
+
+function renderSuggest(rows) {
+  const el = $("#suggest");
+  if (!el) return;
+  if (!rows.length) { hideSuggest(); return; }
+  el.innerHTML = rows.map((r, i) =>
+    `<button type="button" class="suggest-item" data-i="${i}">${esc(r.label || r.name)}</button>`).join("");
+  el.hidden = false;
+  $$("#suggest .suggest-item").forEach(btn =>
+    btn.onclick = () => chooseSuggestion(rows[+btn.dataset.i]));
+}
+
+/* A suggestion is a shortcut to a query, never a bypass: choosing one runs the
+   exact same findPlace -> pick chain typing it out and waiting would, just
+   started immediately instead of on the debounce. The town that actually
+   gets set always comes back through that authoritative resolve, never from
+   Photon's own coordinates. */
+function chooseSuggestion(s) {
+  clearTimeout(searchTimer);
+  clearTimeout(typeaheadTimer);
+  if (typeaheadAbort) { typeaheadAbort.abort(); typeaheadAbort = null; }
+  hideSuggest();
+  const q = s.label || s.name;
+  const box = $("#q");
+  if (box) box.value = q;
+  $("#hits").innerHTML = '<div class="state state-loading"><span class="state-icon">⟳</span>searching…</div>';
+  doSearch(q);
 }
 
 async function doSearch(q) {
+  hideSuggest();
   try {
     const found = await findPlace(q, m => console.info(m));
     const rows = found.value || [];
@@ -1705,7 +1780,7 @@ function wireGuide() {
     $("#about").showModal();
   };
   $("#closeAbout").onclick = () => $("#about").close();
-  $("#newBtn").onclick = () => { show("s1"); $("#q").value = ""; $("#hits").innerHTML = ""; $("#q").focus(); };
+  $("#newBtn").onclick = () => { show("s1"); $("#q").value = ""; $("#hits").innerHTML = ""; hideSuggest(); $("#q").focus(); };
 }
 
 /* ---------- landing: rotating photo hero ----------

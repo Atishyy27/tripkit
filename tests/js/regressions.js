@@ -980,3 +980,66 @@ describe("U8: rank and disambiguate town search by Nominatim importance", () => 
     eq(rows[0].importance, undefined);
   });
 });
+
+describe("U9: Photon typeahead mapper (mapPhotonFeatures)", () => {
+  /* Photon's GeoJSON answer feeds a live suggestion list as the user types, so
+     the mapper has to survive a network hiccup's favourite shapes: an empty
+     collection, a missing field, and outright garbage, without ever throwing
+     into the middle of a keystroke handler. */
+
+  it("maps a well formed feature collection to suggestion rows", () => {
+    const raw = { features: [{
+      type: "Feature",
+      geometry: { coordinates: [74.856, 26.9124] },
+      properties: { name: "Pushkar", city: "Ajmer", state: "Rajasthan", country: "India", countrycode: "in" }
+    }] };
+    const rows = mapPhotonFeatures(raw);
+    eq(rows.length, 1);
+    eq(rows[0].name, "Pushkar");
+    eq(rows[0].label, "Pushkar, Ajmer, Rajasthan, India");
+    eq(rows[0].lat, 26.9124);
+    eq(rows[0].lng, 74.856);
+    eq(rows[0].country, "India");
+    eq(rows[0].countryCode, "IN");
+  });
+
+  it("an empty feature collection maps to an empty list, not an error", () => {
+    eq(mapPhotonFeatures({ features: [] }), []);
+  });
+
+  it("a response with no features array at all does not throw", () => {
+    eq(mapPhotonFeatures({}), []);
+  });
+
+  it("null and undefined input do not throw", () => {
+    eq(mapPhotonFeatures(null), []);
+    eq(mapPhotonFeatures(undefined), []);
+  });
+
+  it("a feature missing properties or geometry is skipped, not a crash", () => {
+    const raw = { features: [{}, { properties: {} }, { geometry: {} }] };
+    eq(mapPhotonFeatures(raw), []);
+  });
+
+  it("a feature with no name is dropped rather than shown as a blank suggestion", () => {
+    const raw = { features: [
+      { properties: { city: "Ajmer", country: "India" }, geometry: { coordinates: [74, 26] } },
+      { properties: { name: "Pushkar" }, geometry: { coordinates: [74, 26] } }
+    ] };
+    const rows = mapPhotonFeatures(raw);
+    eq(rows.length, 1);
+    eq(rows[0].name, "Pushkar");
+  });
+
+  it("label falls back gracefully when only name is present", () => {
+    const raw = { features: [{ properties: { name: "Kyoto" }, geometry: { coordinates: [135.77, 35.01] } }] };
+    eq(mapPhotonFeatures(raw)[0].label, "Kyoto");
+  });
+
+  it("missing coordinates map to null lat/lng instead of NaN", () => {
+    const raw = { features: [{ properties: { name: "Nowhere" }, geometry: {} }] };
+    const rows = mapPhotonFeatures(raw);
+    eq(rows[0].lat, null);
+    eq(rows[0].lng, null);
+  });
+});

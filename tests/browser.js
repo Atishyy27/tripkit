@@ -382,6 +382,52 @@ const ok = (cond, what) => {
     const hits = await page.locator("#hits .hit").count();
     ok(hits > 0, `search returned ${hits} results`);
 
+    console.log("\n  U9: Photon typeahead is wired, additive, and never a bypass");
+    const wired9 = await page.evaluate(() => ({
+      photonSuggest: typeof photonSuggest === "function",
+      mapper: typeof mapPhotonFeatures === "function",
+      suggestEl: !!document.getElementById("suggest"),
+    }));
+    ok(wired9.photonSuggest, "photonSuggest() is defined");
+    ok(wired9.mapper, "the pure Photon mapper (mapPhotonFeatures) is defined");
+    ok(wired9.suggestEl, "a dedicated suggestion container exists, separate from #hits");
+
+    // A fresh, distinct query so the ~180ms typeahead debounce reacts to a real
+    // keystroke rather than to state left over from "Pushkar" above.
+    await page.fill("#q", "");
+    await page.fill("#q", "Jaip");
+    await page.waitForTimeout(1500);
+    const suggestCount = await page.locator("#suggest .suggest-item").count();
+    if (suggestCount > 0) {
+      console.log("      choosing a suggestion runs the authoritative resolve, not a Photon-only geocode");
+      await page.locator("#suggest .suggest-item").first().click();
+      await page.waitForSelector("#hits .hit, #hits .state-empty, #hits .state-error", { timeout: 45000 });
+      ok(await page.locator("#suggest").isHidden(),
+         "the suggestion list is torn down once the authoritative search takes over, so it never competes with #hits");
+    } else {
+      console.log("      (Photon returned no live suggestions for this query just now, that is Photon, not this app)");
+    }
+
+    console.log("\n  U9: a Photon outage leaves the search box fully usable");
+    await page.route("**photon.komoot.io/**", route => route.abort("failed"));
+    await page.fill("#q", "");
+    await page.fill("#q", "Lisbon");
+    await page.waitForSelector("#hits .hit", { timeout: 45000 });
+    const hitsWithPhotonDown = await page.locator("#hits .hit").count();
+    ok(hitsWithPhotonDown > 0,
+       `the 450ms findPlace search still resolves with Photon unreachable (${hitsWithPhotonDown} hits)`);
+    const suggestWithPhotonDown = await page.locator("#suggest .suggest-item").count();
+    ok(suggestWithPhotonDown === 0, "no suggestion list is left showing while Photon is down");
+    ok(errors.length === 0,
+       "a Photon failure produced no uncaught exception" +
+       (errors.length ? "\n        " + errors.slice(0, 3).join("\n        ") : ""));
+    await page.unroute("**photon.komoot.io/**");
+
+    // Leave #hits holding a real hit again, which is the state the next test expects.
+    await page.fill("#q", "");
+    await page.fill("#q", "Pushkar");
+    await page.waitForSelector("#hits .hit", { timeout: 45000 });
+
     console.log("\n  choosing one moves to the clock screen");
     await page.locator("#hits .hit").first().click();
     await page.waitForSelector("#s2.on", { timeout: 15000 });
