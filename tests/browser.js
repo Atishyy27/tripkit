@@ -10,6 +10,31 @@
  *
  * Needs playwright. It is not a project dependency and CI installs it in its own
  * job, so a missing browser skips rather than fails.
+ *
+ * Two phases, on purpose:
+ *
+ *   Phase A, live: the app's own scripts load for real and drive a real search
+ *   against real Nominatim and Overpass for Pushkar, all the way to a finished
+ *   guide screen with no dead end. That is the exact class of bug this file was
+ *   written to catch (the app shipped fully dead twice, every other check passed)
+ *   and it needs a genuine network round trip, not a stub, to prove it.
+ *
+ *   Phase B, fixtured: once that is proven, the suite installs page.route()
+ *   interceptors and rebuilds against captured real responses for Lisbon
+ *   (tests/fixtures/*-lisbon.json), then runs everything that counts places,
+ *   builds a day, or checks a category. Overpass returns a different number of
+ *   places every time depending on the hour and what happens to be open, and a
+ *   handful of day-builder assertions used to fail spuriously on a quiet
+ *   Pushkar evening ("it built a day of 0 stops") when nothing was actually
+ *   wrong. Fixed input removes that without removing the app's own code from
+ *   the test: only the network DATA is stubbed, every script still runs for
+ *   real against it.
+ *
+ *   Fixtures were captured 2026-09-10 with plain curl requests against the
+ *   live endpoints, using the exact same query builders the app itself uses
+ *   (overpassQL, geocode, wikivoyage, getPhotos, weatherOpenMeteo, all in
+ *   docs/sources.js), never hand written. To recapture: rerun those same
+ *   requests for Lisbon and overwrite the matching file in tests/fixtures/.
  */
 const path = require("path");
 const http = require("http");
@@ -464,11 +489,67 @@ const ok = (cond, what) => {
     if (degraded.notes.length)
       console.log("      upstreams that fell back: " + degraded.notes.length);
 
+    /* --------------------------------------------------------------------
+     * Phase B starts here: switch to captured fixtures and rebuild.
+     *
+     * Everything above just proved the real page can drive a real Nominatim
+     * search and a real Overpass build to a finished guide with no dead end.
+     * That is the one thing this suite exists to catch and it only needs to
+     * be shown once. Everything below counts places, builds a day, or adds
+     * a stop, and needs a known quantity of material to be a meaningful
+     * check rather than a coin flip on how busy Pushkar happens to be
+     * tonight. So the app's own network calls are intercepted from here on
+     * and answered with real responses captured once for Lisbon; the app's
+     * own scripts are not touched or mocked, only the data they receive.
+     * -------------------------------------------------------------------- */
+    const FIXDIR = path.join(__dirname, "fixtures");
+    const fixture = name => JSON.parse(fs.readFileSync(path.join(FIXDIR, name + ".json"), "utf8"));
+    const FIX = {
+      overpass: fixture("overpass-lisbon"),
+      nominatim: fixture("nominatim-lisbon"),
+      wikivoyage: fixture("wikivoyage-lisbon"),
+      commons: fixture("commons-lisbon"),
+      weather: fixture("weather-lisbon"),
+    };
+    const fixtureHits = { overpass: 0, nominatim: 0, wikivoyage: 0, commons: 0, weather: 0 };
+    const serveFixture = (key, body) => route => {
+      fixtureHits[key]++;
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    };
+    // Path-only matches, no query string: this app never calls any of these five
+    // hosts for anything other than the one endpoint fixtured here, so matching
+    // broadly is deliberate rather than loose. Overpass also serves the
+    // Getting-around widget's own query on the same URL; handing it the same
+    // place data is harmless, nothing asserts on transit content.
+    await page.route("**/api/interpreter", serveFixture("overpass", FIX.overpass));
+    await page.route("**nominatim.openstreetmap.org/search**", serveFixture("nominatim", FIX.nominatim));
+    await page.route("**en.wikivoyage.org/w/api.php**", serveFixture("wikivoyage", FIX.wikivoyage));
+    await page.route("**commons.wikimedia.org/w/api.php**", serveFixture("commons", FIX.commons));
+    await page.route("**api.open-meteo.com/v1/forecast**", serveFixture("weather", FIX.weather));
+
+    console.log("\n  rebuilding against the captured Lisbon fixtures");
+    await page.evaluate(() => { const b = document.getElementById("newBtn"); if (b) b.click(); });
+    await page.waitForTimeout(300);
+    await page.fill("#q", "Lisbon");
+    await page.waitForSelector("#hits .hit", { timeout: 45000 });
+    await page.locator("#hits .hit").first().click();
+    await page.waitForSelector("#s2.on", { timeout: 15000 });
+    await page.click("#goBtn");
+    await page.waitForSelector("#s4.on", { timeout: 60000 });
+    ok(fixtureHits.overpass > 0 && fixtureHits.nominatim > 0 && fixtureHits.wikivoyage > 0,
+       `the fixtures actually served the build (overpass x${fixtureHits.overpass}, nominatim x${fixtureHits.nominatim}, wikivoyage x${fixtureHits.wikivoyage}, commons x${fixtureHits.commons}, weather x${fixtureHits.weather})`);
+    const fixturedTown = await page.evaluate(() => GUIDE.place.name);
+    ok(fixturedTown === "Lisbon", `the fixtured build resolved to Lisbon, not a live fallback (got "${fixturedTown}")`);
+
     console.log("\n  the guide is usable");
     const n = await page.locator("#list .pc").count();
     const empty = await page.locator("#list .state.state-empty").count();
-    ok(n > 0 || empty > 0,
-       `${n} place cards rendered` + (n === 0 ? " (or an honest empty state, if upstreams were down)" : ""));
+    // No "or an honest empty state" branch here on purpose: with the fixtures
+    // installed, the build has real material every single run. If this ever
+    // renders empty now, that is a real regression, not a quiet Pushkar
+    // evening, and it should fail loud rather than be waved through.
+    ok(n > 0, `${n} place cards rendered from the fixtured build`);
+    ok(empty === 0, "no empty state shown when the fixtured build has places");
     ok((await page.textContent("#clock")).match(/\d\d:\d\d/) !== null, "the clock shows a time");
     ok((await page.textContent("#count")).includes("places"), "the count line is populated");
 
@@ -658,18 +739,24 @@ const ok = (cond, what) => {
     ok(after2.manual, "a hand made order is remembered, so the scheduler stops re-sorting it");
 
     console.log("\n  the day can start at a chosen time");
+    // 10:00, not the 07:30 this used to say: the first stop in the fixtured plan
+    // is Basilica da Estrela, which really only opens 09:00-11:30 and 15:00-16:00
+    // (tests/fixtures/overpass-lisbon.json), and the scheduler correctly refuses
+    // to schedule an arrival while a place is shut rather than pretending you can
+    // walk in at 07:30. 10:00 is inside its real morning window, so this proves
+    // the chosen time actually drives the schedule without fighting real hours.
     const started = await page.evaluate(() => {
       const el = document.getElementById("planStart");
       if (!el) return null;
-      el.value = "07:30"; el.dispatchEvent(new Event("change"));
+      el.value = "10:00"; el.dispatchEvent(new Event("change"));
       return true;
     });
     ok(started, "there is a start time control");
     await page.waitForTimeout(300);
     const firstTime = await page.evaluate(() =>
       (document.querySelector("#vPlan .ptime") || {}).textContent || "");
-    ok(firstTime.startsWith("07:3") || firstTime.startsWith("07:"),
-       `the day now starts around 07:30 (${firstTime.slice(0, 5)})`);
+    ok(firstTime.startsWith("10:0") || firstTime.startsWith("10:"),
+       `the day now starts around 10:00 (${firstTime.slice(0, 5)})`);
 
     console.log("\n  it looks like a product");
     const look = await page.evaluate(() => ({
@@ -739,16 +826,12 @@ const ok = (cond, what) => {
     const labelled = afterSort.rows.filter(r => r.dist || r.approx);
     ok(labelled.length === afterSort.rows.length,
        `every row shows a distance or an approximate label (${labelled.length} of ${afterSort.rows.length})`);
-    // Guard on rows existing: when live OSM returns a thin town (evening, quiet
-    // place) there are no cards to carry a distance, which is a data condition,
-    // not a distance-logic defect. The 7 fixture-based unit tests prove the
-    // computation; this only asserts the real distance shows WHEN a row exists.
-    if (afterSort.rows.length) {
-      ok(afterSort.rows.some(r => r.dist && /\d/.test(r.dist)),
-         `at least one row shows a real distance (e.g. "${(afterSort.rows.find(r => r.dist) || {}).dist}")`);
-    } else {
-      ok(true, "no rows rendered from live data this run, distance shown only when a row exists");
-    }
+    // Phase B guarantees rows exist (the fixtured build always has material),
+    // so this asserts directly rather than guarding on rows.length the way it
+    // had to when this ran against a live town that could come back thin.
+    ok(afterSort.rows.length > 0, `Nearest has real rows to check (${afterSort.rows.length})`);
+    ok(afterSort.rows.some(r => r.dist && /\d/.test(r.dist)),
+       `at least one row shows a real distance (e.g. "${(afterSort.rows.find(r => r.dist) || {}).dist}")`);
 
     console.log("\n  Best now still works after Nearest has been used");
     await page.click('#sortMode [data-sort="best"]');
@@ -779,9 +862,15 @@ const ok = (cond, what) => {
 
     // A mode switch only re-filters GUIDE.places, already in memory from the
     // build. If it ever regresses into a fetch, this catches it immediately
-    // rather than as a mystery slow toggle later.
+    // rather than as a mystery slow toggle later. Counting every request type
+    // is the wrong test: All shows more cards than Guide, some of them with a
+    // photo Guide never rendered, and the browser fetching that <img> for the
+    // first time is normal product behaviour, not a data refetch. It made this
+    // assertion flaky against the richer fixtured data, passing or failing by
+    // luck depending on which photos happened to be cached already. Only
+    // fetch/xhr are the app's own network calls; image loads are excluded.
     let netDuringToggle = 0;
-    const countReq = () => { netDuringToggle++; };
+    const countReq = r => { if (r.resourceType() === "fetch" || r.resourceType() === "xhr") netDuringToggle++; };
     page.on("request", countReq);
     await page.click('#listMode [data-mode="all"]');
     await page.waitForTimeout(300);
@@ -805,16 +894,12 @@ const ok = (cond, what) => {
     ok(netDuringToggle === 0,
        `switching list mode fired ${netDuringToggle} network request(s) across the round trip, expected 0`);
 
-    // Guarded on cards actually existing: live Overpass can hand back a thin
-    // town (few or zero cards) which is a data condition, not a filter defect.
-    // Guide is always a subset of the same underlying ranked list, so when
-    // there is anything to compare, All must never show fewer places.
-    if (modeAll.cards > 0 || modeGuide.cards > 0) {
-      ok(modeAll.cards >= modeGuide.cards,
-         `All shows at least as many places as Guide (${modeAll.cards} vs ${modeGuide.cards})`);
-    } else {
-      ok(true, "no cards rendered from live data this run, Guide/All comparison skipped");
-    }
+    // Phase B guarantees both modes have cards to compare, so this asserts
+    // directly. Guide is always a subset of the same underlying ranked list,
+    // so All must never show fewer places.
+    ok(modeAll.cards > 0 && modeGuide.cards > 0, "both Guide and All rendered real cards to compare");
+    ok(modeAll.cards >= modeGuide.cards,
+       `All shows at least as many places as Guide (${modeAll.cards} vs ${modeGuide.cards})`);
 
     console.log("\n  a point-in-time preview lets you look at a different time and day (U7)");
     // Control-only assertions: none of this depends on a place card existing,
@@ -935,7 +1020,7 @@ const ok = (cond, what) => {
       // label straight after them and "112all" has no word boundary at the seam.
       const tels = [...el.querySelectorAll('a[href^="tel:"]')].map(a => a.getAttribute("href"));
       return { len: (el.textContent || "").length,
-               tels, currency: (el.textContent || "").includes("INR"),
+               tels, currency: (el.textContent || "").includes("EUR"),
                photos: el.querySelectorAll("img").length };
     });
     ok(loc.len > 100, `the local screen has content (${loc.len} chars)`);
@@ -944,16 +1029,16 @@ const ok = (cond, what) => {
     ok(loc.photos > 0, `photos rendered (${loc.photos})`);
 
     console.log("\n  U12: opening_hours coverage trend, static data only");
-    // Pushkar is the town this whole run just built, and it is one of the five
-    // towns shipped in docs/data/coverage-trend.json, so the trend section
-    // must be showing already, from the committed JSON, with no ohsome call.
+    // Lisbon is the town Phase B just built, and it is one of the five towns
+    // shipped in docs/data/coverage-trend.json, so the trend section must be
+    // showing already, from the committed JSON, with no ohsome call.
     const trendOn = await page.evaluate(() => ({
       hasCard: !!document.getElementById("coverageTrend"),
       loaded: !!(typeof COVERAGE_TREND !== "undefined" && COVERAGE_TREND),
       text: (document.getElementById("coverageTrend") || {}).textContent || "",
     }));
     ok(trendOn.loaded, "the static coverage-trend.json loaded");
-    ok(trendOn.hasCard, "the trend card renders for Pushkar, a town with a real entry");
+    ok(trendOn.hasCard, "the trend card renders for Lisbon, a town with a real entry");
     ok(/%/.test(trendOn.text), `the card shows a coverage percentage ("${trendOn.text.slice(0, 60)}")`);
 
     // A town with no entry in the JSON must render nothing and never touch the
@@ -984,7 +1069,7 @@ const ok = (cond, what) => {
     // offer what is already on the device rather than refetching everything.
     await page.evaluate(() => { const b = document.getElementById("newBtn"); if (b) b.click(); });
     await page.waitForTimeout(400);
-    await page.fill("#q", "Pushkar");
+    await page.fill("#q", "Lisbon");
     await page.waitForSelector("#hits .hit", { timeout: 45000 });
     await page.locator("#hits .hit").first().click();
     await page.waitForSelector("#s2.on", { timeout: 15000 });

@@ -182,7 +182,7 @@ class TestHouseStyle:
             # not reach it; prose plans there use em dashes freely.
             dirs[:] = [d for d in dirs if d not in
                        {".git", "__pycache__", "demo", "examples", "node_modules",
-                        ".pytest_cache", "vendor", "planning"}]
+                        ".pytest_cache", "vendor", "planning", "fixtures"}]
             for f in files:
                 if not f.endswith((".py", ".js", ".md", ".html", ".css",
                                   ".txt", ".json", ".yml", ".yaml", ".toml",
