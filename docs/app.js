@@ -620,11 +620,14 @@ const CAT_TINT = {
 
 function card(r, i) {
   const p = r.p, st = r.st;
-  const badge = { open: '<span class="tag t-open">open now</span>',
-    closing: `<span class="tag t-soon">${esc(st.label)}</span>`,
-    soon: `<span class="tag t-soon">${esc(st.label)}</span>`,
-    shut: `<span class="tag t-shut">${esc(st.label)}</span>`,
-    unknown: '<span class="tag t-unv">hours unknown</span>' }[st.state] || "";
+  // The open/closed read is the one thing that has to land at a glance, so it
+  // rides on the photo itself as a fixed dark-glass chip (see .pc-badge in
+  // style.css), not in the quieter tag row with everything else below.
+  const badge = { open: '<span class="pc-badge b-open">open now</span>',
+    closing: `<span class="pc-badge b-soon">${esc(st.label)}</span>`,
+    soon: `<span class="pc-badge b-soon">${esc(st.label)}</span>`,
+    shut: `<span class="pc-badge b-shut">${esc(st.label)}</span>`,
+    unknown: '<span class="pc-badge">hours unknown</span>' }[st.state] || "";
   const src = p.from === "Wikivoyage" ? '<span class="src-badge src-wv">Wikivoyage</span>'
     : p.from === "OpenStreetMap + Wikivoyage" ? '<span class="src-badge src-wv">OSM + Wikivoyage</span>'
     : '<span class="src-badge src-osm">OpenStreetMap</span>';
@@ -653,10 +656,10 @@ function card(r, i) {
   const dim = st.state === "shut";
 
   const media = safeUrl(p.photo)
-    ? `<div class="pc-img"><img src="${esc(safeUrl(p.photo))}" loading="lazy" decoding="async"
+    ? `<div class="pc-img">${badge}<img src="${esc(safeUrl(p.photo))}" loading="lazy" decoding="async"
          alt="${esc(p.name)}" onerror="this.closest('.pc-img').classList.add('pc-glyph');this.remove()">
        ${p.photoExact ? "" : '<span class="pc-near">nearby</span>'}</div>`
-    : `<div class="pc-img pc-glyph"><span>${icon}</span></div>`;
+    : `<div class="pc-img pc-glyph">${badge}<span class="pc-icon">${icon}</span></div>`;
 
   return `<article class="pc${i === 0 ? " pc-top" : ""}${dim ? " pc-dim" : ""}" style="--tint:${tint}">
     ${media}
@@ -665,7 +668,7 @@ function card(r, i) {
         <h3>${esc(p.name)}</h3>
         ${price ? `<span class="pc-price">${price}</span>` : ""}
       </div>
-      <div class="pc-tags">${badge}${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
+      <div class="pc-tags">${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
       ${p.why ? `<p class="pc-why">${esc(p.why).slice(0, 260)}</p>` : ""}
       ${p.warn ? `<p class="pc-warn">\u26A0 ${esc(p.warn)}</p>` : ""}
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
@@ -1359,7 +1362,7 @@ function drawHero() {
       ${safeUrl(shot && shot.thumb) ? `<img src="${esc(safeUrl(shot.thumb))}" alt="${esc(g.place.name)}" loading="eager">` : ""}
       <div class="in">
         <h1>${esc(g.place.name)}</h1>
-        <p class="sub" style="margin:0;color:#cfc6e6" data-liveline></p>
+        <p class="sub" style="margin:0;color:var(--hero-dim)" data-liveline></p>
         <div class="meta">
           ${w ? `<span class="m">${wmo(w.code)[1]} <b>${w.temp}\u00B0</b></span>` : ""}
           <span class="m"><b>${open}</b> open now</span>
@@ -1640,8 +1643,51 @@ function wireGuide() {
   $("#newBtn").onclick = () => { show("s1"); $("#q").value = ""; $("#hits").innerHTML = ""; $("#q").focus(); };
 }
 
+/* ---------- landing: rotating photo hero ----------
+   HEROES/HERO_LQIP come from hero/heroes.js, loaded before this file. Guarded
+   with typeof checks because the unit test sandbox runs this script alone,
+   without heroes.js, and calling a function is fine there as long as nothing
+   at the top level of this file assumes those globals exist. */
+function wireLandingHero() {
+  if (typeof HEROES === "undefined" || !HEROES.length) return;
+  const imgs = $$(".land-hero-img");
+  if (!imgs.length) return;
+  const link = $("#landCreditLink");
+
+  function paintCredit(i) {
+    const h = HEROES[i];
+    if (!link || !h) return;
+    link.textContent = `${h.town} · ${h.by}, ${h.lic}`;
+    link.href = h.src;
+  }
+
+  // All three load right away rather than one-then-lazy: the set is small
+  // (under 400KB together) and loading them up front means the first
+  // cross-fade a few seconds later is instant, not a second load waiting on
+  // the network.
+  imgs.forEach((img, i) => { if (HEROES[i]) img.src = HEROES[i].file; });
+  paintCredit(0);
+
+  let reduced = false;
+  try { reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  // A held first photo instead of a slideshow, for anyone who asked their
+  // system to cut motion. The hero itself, and the search over it, stay.
+  if (reduced || imgs.length < 2) return;
+
+  let cur = 0;
+  setInterval(() => {
+    const next = (cur + 1) % imgs.length;
+    if (!HEROES[next]) return;
+    imgs[cur].classList.remove("on");
+    imgs[next].classList.add("on");
+    paintCredit(next);
+    cur = next;
+  }, 7000);
+}
+
 /* ---------- boot ---------- */
 window.addEventListener("DOMContentLoaded", () => {
+  wireLandingHero();
   wireSearch(); wireTimes(); wireGuide();
   const u = new URLSearchParams(location.search);
   if (u.get("lat") && u.get("lng")) {

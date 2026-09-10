@@ -276,48 +276,78 @@ ul.tight li{margin-bottom:6px}
 .leaflet-bar a{background:var(--card);color:var(--ink);border-color:var(--line)}
 .leaflet-bar a:hover{background:color-mix(in srgb,var(--card) 88%,var(--ink) 12%)}
 
-/* ============ place cards ============ */
-.pc{display:flex;gap:0;background:var(--card);border:1px solid var(--line);
- border-radius:16px;overflow:hidden;margin:11px 0;position:relative;
- transition:border-color .18s,transform .18s}
-.pc:active{transform:scale(.995)}
-.pc-top{border-color:var(--tint);box-shadow:0 0 0 1px color-mix(in srgb,var(--tint) 30%,transparent)}
-.pc-top:before{content:"";position:absolute;inset:0;pointer-events:none;
- background:linear-gradient(120deg,color-mix(in srgb,var(--tint) 9%,transparent),transparent 55%)}
-.pc-dim{opacity:.55}
+/* ============ place cards ============
+   Rebuilt image-forward for the photo-first redesign: the photo now leads on
+   its own full-width band with the open/closed state overlaid directly on it
+   (the one thing that has to read at a glance), and everything else -- name,
+   price, tags, why, actions -- sits quieter underneath. #list is the grid: one
+   column on a phone, two from 560px, never more, so a card never gets so
+   narrow the photo stops meaning anything. */
+#list{display:grid;grid-template-columns:1fr;gap:var(--sp-6)}
+@media(min-width:560px){#list{grid-template-columns:1fr 1fr}}
 
-.pc-img{flex:0 0 108px;position:relative;background:var(--bg2);overflow:hidden;min-height:120px}
+.pc{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);
+ border-radius:18px;overflow:hidden;margin:0;position:relative;
+ transition:border-color .18s,transform .18s}
+.pc:active{transform:scale(.98)}
+.pc-top{border-color:var(--tint);box-shadow:0 0 0 1px color-mix(in srgb,var(--tint) 30%,transparent)}
+.pc-top:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+ background:linear-gradient(120deg,color-mix(in srgb,var(--tint) 9%,transparent),transparent 55%)}
+.pc-dim{opacity:.6}
+
+.pc-img{flex:0 0 auto;width:100%;aspect-ratio:4/3;position:relative;background:var(--bg2);overflow:hidden}
 .pc-img img{width:100%;height:100%;object-fit:cover;display:block}
 .pc-img.pc-failed img{display:none}
 .pc-img.pc-failed,.pc-glyph{display:flex;align-items:center;justify-content:center;
  background:linear-gradient(150deg,color-mix(in srgb,var(--tint) 22%,var(--bg2)),var(--bg2))}
-.pc-glyph span,.pc-failed:after{font-size:34px;line-height:1;opacity:.85}
-.pc-near{position:absolute;left:5px;bottom:5px;font-size:8.5px;font-weight:800;
- letter-spacing:.4px;text-transform:uppercase;background:rgba(13,11,18,.82);
- color:var(--hero-dim);padding:2px 5px;border-radius:4px}
+.pc-glyph .pc-icon,.pc-failed:after{font-size:44px;line-height:1;opacity:.85}
+.pc-near{position:absolute;right:8px;bottom:8px;font-size:8.5px;font-weight:800;
+ letter-spacing:.4px;text-transform:uppercase;background:rgba(13,11,18,.78);
+ color:var(--hero-dim);padding:3px 7px;border-radius:99px}
 
-.pc-body{flex:1;min-width:0;padding:var(--sp-4) var(--sp-5)}
+/* The open/closed read: overlaid directly on the photo, always the same fixed
+   dark-glass chip regardless of theme, the same reasoning as .pc-near above --
+   it sits on a photograph, not on a themed card surface, so it needs its own
+   guaranteed contrast rather than a token tuned for --card. */
+.pc-badge{position:absolute;left:8px;top:8px;font-size:10.5px;font-weight:800;
+ letter-spacing:.4px;text-transform:uppercase;padding:4px 10px;border-radius:99px;
+ backdrop-filter:blur(6px);background:rgba(13,11,18,.6);color:#f4eeff}
+.pc-badge.b-open{background:rgba(20,46,32,.72);color:#7ee0a8}
+.pc-badge.b-soon{background:rgba(51,38,18,.72);color:#ffc857}
+.pc-badge.b-shut{background:rgba(51,24,28,.72);color:#ff9aa2}
+
+.pc-body{flex:1;min-width:0;padding:var(--sp-5)}
 .pc-head{display:flex;align-items:baseline;gap:9px;justify-content:space-between}
-.pc-head h3{font-size:15.5px;margin:0;line-height:1.25;letter-spacing:-.2px}
+.pc-head h3{font-size:16px;margin:0;line-height:1.25;letter-spacing:-.3px}
 .pc-price{flex:0 0 auto;font-weight:800;font-size:12.5px;color:var(--cool);white-space:nowrap}
-.pc-tags{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:0}
+.pc-tags{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:0}
 .pc-why{margin:7px 0 0;font-size:13px;color:var(--dim);line-height:1.5}
 .pc-warn{margin:6px 0 0;font-size:11.5px;color:var(--soft-red);line-height:1.45}
-@media(min-width:560px){.pc-img{flex-basis:150px}.pc-head h3{font-size:16.5px}}
+@media(min-width:560px){.pc-head h3{font-size:16.5px}}
 
-/* ============ destination hero ============ */
-.dhero{position:relative;border-radius:18px;overflow:hidden;margin:2px 0 14px;
- border:1px solid var(--line);background:var(--bg2);min-height:186px;display:flex;align-items:flex-end}
-.dhero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+/* ============ destination hero ============
+   The town's own photo is now the actual hero of the page, not a dimmed wash
+   behind it: full opacity, a taller band, a gradient that goes from nearly
+   clear at the top to solid only where the title/stats sit, so the photo
+   still reads as a photo, not as decoration behind a dark tile. */
+.dhero{position:relative;border-radius:20px;overflow:hidden;margin:2px 0 14px;
+ border:1px solid var(--line);background:var(--bg2);min-height:240px;display:flex;align-items:flex-end}
+.dhero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1}
 .dhero:after{content:"";position:absolute;inset:0;
- background:linear-gradient(180deg,rgba(13,11,18,.15) 0%,rgba(13,11,18,.55) 45%,rgba(13,11,18,.94) 100%)}
-.dhero .in{position:relative;z-index:2;padding:16px 16px 14px;width:100%}
-.dhero h1{font-size:31px;margin:0 0 4px;letter-spacing:-1px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+ background:linear-gradient(180deg,rgba(13,11,18,.04) 0%,rgba(13,11,18,.22) 42%,rgba(13,11,18,.92) 100%)}
+.dhero .in{position:relative;z-index:2;padding:20px 18px 16px;width:100%}
+/* color:var(--hero-ink)/--hero-dim here, not --ink/--dim: this text sits on a
+   gradient that is always dark regardless of site theme (same fixed-band
+   reasoning as .land/.hero above), so it needs the theme-invariant text pair,
+   not the one that goes dark-on-dark the moment someone is in light mode. */
+.dhero h1{font-size:34px;margin:0 0 4px;letter-spacing:-1.1px;color:var(--hero-ink);
+ text-shadow:0 2px 20px rgba(0,0,0,.65)}
 .dhero .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .dhero .m{background:rgba(13,11,18,.66);backdrop-filter:blur(6px);border:1px solid var(--line);
- border-radius:99px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--ink)}
+ border-radius:99px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--hero-ink)}
 .dhero .m b{color:var(--hot)}
 .dcredit{font-size:10px;color:var(--dimmer);margin:-9px 0 14px;text-align:right}
+@media(min-width:560px){.dhero{min-height:300px}.dhero h1{font-size:40px}}
 
 /* ============ gallery ============ */
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px}
@@ -382,32 +412,62 @@ ul.tight li{margin-bottom:6px}
 #towns{margin-bottom:2px}
 #sortMode{margin-bottom:2px}
 
-/* ============ landing ============
-   Same fixed dark accent band as .hero above: --hero-ink/--hero-dim/--hero-line
-   are the same value in every theme block, so this reads the same way regardless
-   of which theme the rest of the page is in. */
-.land{position:relative;overflow:hidden;padding:34px 0 26px;
- background:linear-gradient(168deg,#2b1d3f 0%,#1a1224 52%,#0d0b12 100%)}
-.land-glow{position:absolute;right:-90px;top:-110px;width:340px;height:340px;pointer-events:none;
- background:radial-gradient(circle,rgba(255,138,76,.30),transparent 68%)}
-.land-in{position:relative;z-index:1}
-.land-mark{display:flex;align-items:center;gap:9px;margin-bottom:22px}
+/* ============ landing: full-bleed photo hero ============
+   The first thing anyone sees, so it carries the whole "does this look
+   different" question. A real destination photograph fills the screen, three
+   of them cross-fading slowly so it feels alive rather than static; the
+   headline and search sit low, over a scrim, the way a premium travel app's
+   opening screen does. The LQIP paints inline (see index.html) before any
+   network request resolves, offline included, so there is never a blank
+   band. Text tokens are the same fixed --hero-ink/--hero-dim/--hero-line as
+   the rest of the "dark accent band" family (.hero, .dhero): they do not
+   change with the site theme, because the photo underneath never does
+   either, and that is what keeps this legible in both. */
+.land{position:relative;overflow:hidden;isolation:isolate;
+ min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
+ padding-top:env(safe-area-inset-top);padding-bottom:34px;background:#0d0b12}
+.land-hero{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;
+ pointer-events:none}
+.land-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ opacity:0;transition:opacity 1.6s ease}
+.land-hero-img.on{opacity:1}
+.land-scrim{position:absolute;inset:0;
+ background:linear-gradient(180deg,rgba(13,11,18,.55) 0%,rgba(13,11,18,.28) 26%,
+   rgba(13,11,18,.46) 62%,rgba(13,11,18,.92) 100%)}
+/* padding-block, not the padding shorthand: .land-in also carries .wrap, and a
+   shorthand here would win the cascade (same specificity, declared later) and
+   silently erase .wrap's horizontal 14px, pinning the whole hero's text to
+   the screen edges. */
+.land-in{position:relative;z-index:1;padding-block:26px 22px}
+.land-mark{display:flex;align-items:center;gap:9px;margin-bottom:26px}
 .land-mark span{font-weight:800;font-size:17px;letter-spacing:-.4px;color:var(--hero-ink)}
 .land-logo .land-logo-ring{stroke:var(--hero-line)}
 .land-logo .land-logo-gold{stroke:var(--gold)}
 .land-logo .land-logo-hot{stroke:var(--hot)}
 .land-logo .land-logo-dot{fill:var(--hot)}
-.land-h{font-size:40px;line-height:1.05;letter-spacing:-1.8px;margin:0 0 12px;color:var(--hero-ink)}
+.land-h{font-size:42px;line-height:1.04;letter-spacing:-1.8px;margin:0 0 12px;color:var(--hero-ink);
+ text-shadow:0 4px 28px rgba(0,0,0,.45)}
 .land-h em{font-style:normal;color:var(--hot)}
-.land-p{color:var(--hero-dim);font-size:15.5px;line-height:1.55;margin:0 0 18px;max-width:34em}
-.land-q{font-size:17px;padding:16px 17px;border-radius:14px}
-.land-eg{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px}
+.land-p{color:var(--hero-dim);font-size:15.5px;line-height:1.55;margin:0 0 20px;max-width:34em;
+ text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.land-q{font-size:17px;padding:16px 17px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.land-eg{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}
 .land-eg .chip{cursor:pointer}
 .land-eg .tiny{color:var(--hero-dim)}
-.land-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
-.land-pills .pill{background:rgba(13,11,18,.5);border-color:var(--hero-line);color:var(--green);
- font-weight:700;font-size:11.5px}
-@media(min-width:620px){.land-h{font-size:56px}.land{padding:52px 0 40px}}
+.land-credit{position:relative;z-index:1;margin:14px 0 0;padding:0 14px;font-size:10.5px;
+ color:var(--hero-dim);text-align:right}
+.land-credit a{color:var(--hero-dim);text-decoration:underline;text-decoration-color:var(--hero-line)}
+
+/* The panel below the photo: pulled up over the hero's bottom edge with a
+   rounded top and the page's own background, the "floating sheet peeking
+   over a photo" look. Ordinary theme tokens from here down, because this
+   part sits on the page background, not on the photo. */
+.land-panel{position:relative;z-index:1;margin-top:-22px;background:var(--bg);
+ border-radius:22px 22px 0 0;padding-top:20px}
+.land-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.land-pills .pill{color:var(--green);font-weight:700;font-size:11.5px}
+@media(min-width:620px){.land-h{font-size:58px}.land-in{padding-block:34px 28px}}
+@media(prefers-reduced-motion:reduce){.land-hero-img{transition:none}}
 
 .feat{display:grid;grid-template-columns:1fr;gap:10px;margin-top:22px}
 @media(min-width:600px){.feat{grid-template-columns:1fr 1fr}}
