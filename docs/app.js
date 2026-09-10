@@ -163,19 +163,104 @@ function ago(ms) {
 }
 
 /* A timezone offset without shipping a timezone database.
-   Longitude gives the solar offset; most of the world rounds that to a whole
-   hour, and a handful of places sit on a half hour. It is an estimate and the
-   UI says so, because a guide that is silently an hour out is worse than one
-   that admits it does not know. */
+   Longitude gives the SOLAR offset, not the political one, and a lot of clocks
+   do not follow the sun: Portugal and Spain sit close together in longitude but
+   Spain clocks itself an hour ahead of Portugal because it runs on Central
+   European time by political choice, not geography. A pure longitude guess put
+   Porto/Lisbon two hours off a real Western European summer clock (-60 instead
+   of +60), which is exactly the region this app's opening_hours data covers best,
+   so it was wrong where it mattered most.
+
+   The fix: single-zone countries get their real standard offset from a table,
+   plus a DST rule keyed off the date, and only unlisted or genuinely multi-zone
+   countries (US, CA, AU, RU, BR, MX, or an unknown code) fall back to the old
+   longitude guess, which is at least honest about being a guess there. */
+
+// Standard (winter, no DST) offset in minutes, single-zone countries only.
+const STD_TZ_OFFSET = {
+  GB: 0, IE: 0, PT: 0, IS: 0,
+  ES: 60, FR: 60, DE: 60, IT: 60, NL: 60, BE: 60, LU: 60, CH: 60, AT: 60,
+  PL: 60, CZ: 60, SK: 60, HU: 60, SI: 60, HR: 60, RS: 60, DK: 60, SE: 60, NO: 60,
+  GR: 120, FI: 120, EE: 120, LV: 120, LT: 120, RO: 120, BG: 120, UA: 120,
+  IL: 120, EG: 120, ZA: 120,
+  TR: 180, SA: 180, KE: 180,
+  AE: 240,
+  IN: 330, LK: 330, NP: 345, IR: 210, AF: 270, MM: 390,
+  TH: 420, VN: 420, ID: 420,
+  SG: 480, MY: 480, PH: 480, HK: 480, TW: 480, CN: 480,
+  JP: 540, KR: 540,
+  NZ: 720,
+};
+
+// Countries that move their clocks, grouped by which rule decides the window.
+// Everyone else in STD_TZ_OFFSET (most of Asia, the Gulf, Africa, and South
+// America since Brazil dropped DST) stays on standard time all year.
+const EU_DST_COUNTRIES = new Set([
+  "GB", "IE", "PT", "ES", "FR", "DE", "IT", "NL", "BE", "LU", "CH", "AT",
+  "PL", "CZ", "SK", "HU", "SI", "HR", "RS", "DK", "SE", "NO",
+  "GR", "FI", "EE", "LV", "LT", "RO", "BG", "UA",
+]);
+const NA_DST_COUNTRIES = new Set(["US", "CA", "MX"]);
+const SOUTHERN_DST_COUNTRIES = new Set(["NZ"]); // reversed: on in the southern summer
+
+// nth Sunday of a UTC month (n=1 -> first Sunday), at a given UTC hour.
+function nthSundayUTC(year, monthIndex0, n, hourUTC) {
+  const first = new Date(Date.UTC(year, monthIndex0, 1));
+  const firstSunday = 1 + ((7 - first.getUTCDay()) % 7);
+  return new Date(Date.UTC(year, monthIndex0, firstSunday + (n - 1) * 7, hourUTC || 0));
+}
+
+// last Sunday of a UTC month, at a given UTC hour.
+function lastSundayUTC(year, monthIndex0, hourUTC) {
+  const lastDay = new Date(Date.UTC(year, monthIndex0 + 1, 0));
+  const day = lastDay.getUTCDate() - lastDay.getUTCDay();
+  return new Date(Date.UTC(year, monthIndex0, day, hourUTC || 0));
+}
+
+// EU rule: last Sunday March 01:00 UTC to last Sunday October 01:00 UTC.
+function isEuDst(date) {
+  const y = date.getUTCFullYear();
+  return date >= lastSundayUTC(y, 2, 1) && date < lastSundayUTC(y, 9, 1);
+}
+
+// US/CA/MX rule: 2nd Sunday March to 1st Sunday November. Treated in UTC for
+// simplicity, same as the EU rule above; these are multi-zone countries so the
+// base offset already came from longitude, this only adds the DST hour.
+function isNaDst(date) {
+  const y = date.getUTCFullYear();
+  return date >= nthSundayUTC(y, 2, 2, 2) && date < nthSundayUTC(y, 10, 1, 2);
+}
+
+// Southern hemisphere rule (NZ): reversed, on from first Sunday October
+// through first Sunday April of the following year, so the window wraps the
+// new year instead of sitting inside one calendar year.
+function isSouthernDst(date) {
+  const y = date.getUTCFullYear();
+  const octStart = nthSundayUTC(y, 9, 1, 2);
+  const aprEnd = nthSundayUTC(y, 3, 1, 2);
+  return date >= octStart || date < aprEnd;
+}
+
+/* Pure and testable: no Date.now(), no globals, so a DST window can be tested
+   with fixed dates instead of whatever day the suite happens to run on.
+   Scope, stated plainly: this gets single-zone countries exact and multi-zone
+   ones (US, CA, AU, RU, BR, MX, unknown codes) approximate, longitude base plus
+   the correct DST hour. It does not handle a multi-zone country's per-region
+   DST rules (Australia's states do not all observe DST) or exotic half/quarter
+   hour zones like Lord Howe or Chatham; those need a real timezone database,
+   which this project deliberately does not ship. */
+function tzOffsetFor(cc, lng, date) {
+  date = date || new Date();
+  const base = STD_TZ_OFFSET[cc] !== undefined ? STD_TZ_OFFSET[cc] : Math.round(lng / 15) * 60;
+  let dst = 0;
+  if (EU_DST_COUNTRIES.has(cc) && isEuDst(date)) dst = 60;
+  else if (NA_DST_COUNTRIES.has(cc) && isNaDst(date)) dst = 60;
+  else if (SOUTHERN_DST_COUNTRIES.has(cc) && isSouthernDst(date)) dst = 60;
+  return base + dst;
+}
+
 function guessTz(lat, lng, cc) {
-  // Whole country offsets, for the places where a longitude guess is simply wrong.
-  // An earlier version listed AU and CA here and then excluded them again in the
-  // condition below, so those two entries could never be reached: dead code that
-  // looked like coverage. Both are dropped, because neither has one offset anyway,
-  // and a longitude guess is at least honest about being a guess.
-  const HALF = { IN: 330, LK: 330, NP: 345, IR: 210, AF: 270, MM: 390 };
-  if (HALF[cc] !== undefined) return HALF[cc];
-  return Math.round(lng / 15) * 60;
+  return tzOffsetFor(cc, lng, new Date());
 }
 
 /* ---------- counting, without following anyone ----------

@@ -207,19 +207,112 @@ describe("regression: schedule invariants, whatever it is given", () => {
 describe("regression: timezone guessing has no unreachable entries", () => {
   /* The half hour table listed AU and CA and then excluded them again in the
      condition below it, so those entries could never be reached. Dead code that
-     looked like coverage. */
+     looked like coverage. That table was later folded into STD_TZ_OFFSET, so
+     this now checks the merged table: every country in it must actually come
+     back from STD_TZ_OFFSET, not from a coincidental longitude guess. A far out
+     longitude (999) and a December date (DST off for every group except the
+     reversed southern one) make the two sources easy to tell apart. */
 
-  it("every country in the table is actually returned", () => {
+  it("every country in the table is actually returned, not the longitude fallback", () => {
     const fs = require("fs"), path = require("path");
     const app = fs.readFileSync(path.join(DOCS_DIR, "app.js"), "utf8");
-    const m = app.match(/const HALF = \{([^}]*)\}/);
+    const m = app.match(/const STD_TZ_OFFSET = \{([\s\S]*?)\};/);
     ok(m, "the offsets table has moved or been renamed");
-    const codes = [...m[1].matchAll(/([A-Z]{2}):/g)].map(x => x[1]);
-    ok(codes.length > 0);
-    for (const cc of codes) {
-      const got = guessTz(0, 0, cc);
-      ok(got !== 0, `${cc} is in the table but guessTz returns a longitude guess for it`);
+    const pairs = [...m[1].matchAll(/([A-Z]{2}):\s*(-?\d+)/g)].map(x => [x[1], Number(x[2])]);
+    ok(pairs.length > 0);
+    const longitudeFallback = Math.round(999 / 15) * 60; // 3960, never a real STD entry
+    const decemberOff = new Date("2026-12-15T00:00:00Z");   // DST off: GB..UA, US/CA/MX
+    const juneOff = new Date("2026-06-15T00:00:00Z");       // DST off for NZ (reversed)
+    for (const [cc, expected] of pairs) {
+      const date = cc === "NZ" ? juneOff : decemberOff;
+      const got = tzOffsetFor(cc, 999, date);
+      eq(got, expected, `${cc} should return its table entry, not the longitude fallback (${longitudeFallback})`);
     }
+  });
+});
+
+describe("regression: political time, not longitude (Porto/Lisbon)", () => {
+  /* guessTz used to be pure longitude, Math.round(lng/15)*60. Portugal sits at
+     roughly the same longitude as Ireland but runs UTC+0/+1 while its
+     neighbour Spain runs UTC+1/+2 on Central European time, a political choice
+     with no relation to the sun. The old code returned -60 for Porto in every
+     season; the real offset is 0 in winter and +60 in summer. This is the bug
+     report this fix exists for, asserted directly. */
+
+  it("Porto/Lisbon (PT) is +60 in summer and 0 in winter, never the old -60", () => {
+    const summer = tzOffsetFor("PT", -8.6, new Date("2026-07-15T12:00:00Z"));
+    const winter = tzOffsetFor("PT", -8.6, new Date("2026-01-15T12:00:00Z"));
+    eq(summer, 60, "Porto in July should be WEST summer time, +60");
+    eq(winter, 0, "Porto in January should be WET, 0");
+    ok(summer !== -60 && winter !== -60, "must never reproduce the old pure-longitude -60");
+  });
+});
+
+describe("tzOffsetFor: political offset plus a date-based DST rule", () => {
+  /* tzOffsetFor is the pure, testable core guessTz now wraps. Fixed dates make
+     DST deterministic instead of depending on whatever day the suite runs. */
+
+  const JUL = new Date("2026-07-15T12:00:00Z");
+  const JAN = new Date("2026-01-15T12:00:00Z");
+
+  it("Madrid (ES) is +120 in summer, +60 in winter", () => {
+    eq(tzOffsetFor("ES", -3.7, JUL), 120);
+    eq(tzOffsetFor("ES", -3.7, JAN), 60);
+  });
+
+  it("Munich (DE) is +120 in summer, +60 in winter", () => {
+    eq(tzOffsetFor("DE", 11.6, JUL), 120);
+    eq(tzOffsetFor("DE", 11.6, JAN), 60);
+  });
+
+  it("London (GB) is +60 in summer, 0 in winter", () => {
+    eq(tzOffsetFor("GB", -0.1, JUL), 60);
+    eq(tzOffsetFor("GB", -0.1, JAN), 0);
+  });
+
+  it("New York (US, multi-zone base from longitude) is -240 in summer, -300 in winter", () => {
+    eq(tzOffsetFor("US", -74, JUL), -240, "EDT");
+    eq(tzOffsetFor("US", -74, JAN), -300, "EST");
+  });
+
+  it("Delhi (IN) never moves for DST, in either season", () => {
+    eq(tzOffsetFor("IN", 77, JUL), 330);
+    eq(tzOffsetFor("IN", 77, JAN), 330);
+  });
+
+  it("Tokyo (JP) never moves for DST, in either season", () => {
+    eq(tzOffsetFor("JP", 139, JUL), 540);
+    eq(tzOffsetFor("JP", 139, JAN), 540);
+  });
+
+  it("an unknown country code falls back to the longitude guess without throwing", () => {
+    ok(!STD_TZ_OFFSET["ZZ"], "ZZ must not be a real entry for this test to prove anything");
+    let got;
+    const attempt = () => { got = tzOffsetFor("ZZ", 45, JUL); };
+    attempt();
+    eq(got, Math.round(45 / 15) * 60, "unknown cc should use the plain longitude guess");
+  });
+
+  it("a date-only default (no date argument) does not throw", () => {
+    // guessTz relies on this default; calling tzOffsetFor without a date must
+    // still return a number, using the real current date.
+    const got = tzOffsetFor("GB", 0);
+    eq(typeof got, "number");
+  });
+
+  it("crosses the EU last-Sunday-March boundary: PT flips from 0 to +60", () => {
+    // Last Sunday of March 2026 is the 29th, switch at 01:00 UTC.
+    const justBefore = new Date("2026-03-29T00:59:00Z");
+    const justAfter = new Date("2026-03-29T01:01:00Z");
+    eq(tzOffsetFor("PT", -8.6, justBefore), 0, "still winter one minute before the switch");
+    eq(tzOffsetFor("PT", -8.6, justAfter), 60, "already summer one minute after the switch");
+  });
+
+  it("guessTz is a thin wrapper: it matches tzOffsetFor for today's real date", () => {
+    // Both must be called back to back so "today" cannot drift between them.
+    const now = new Date();
+    eq(guessTz(41.15, -8.6, "PT"), tzOffsetFor("PT", -8.6, now),
+       "guessTz must delegate to tzOffsetFor, not keep its own logic");
   });
 });
 
