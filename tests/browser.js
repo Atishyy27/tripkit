@@ -78,6 +78,50 @@ const ok = (cond, what) => {
     ok(await page.locator("#q").isVisible(), "the search box is visible");
     ok((await page.title()).length > 0, "the page has a title");
 
+    console.log("\n  the landing is a full-bleed photo hero, not the old dark gradient");
+    // None of this depends on live data: the landing shows before any search, so
+    // it must hold regardless of whatever Overpass gives back tonight.
+    const heroLook = await page.evaluate(() => {
+      const land = document.querySelector(".land");
+      const heroLayer = document.querySelector(".land-hero");
+      const imgs = document.querySelectorAll(".land-hero-img");
+      const q = document.getElementById("q");
+      const rect = q ? q.getBoundingClientRect() : null;
+      const topEl = rect
+        ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        : null;
+      return {
+        hasLand: !!land,
+        heroImgCount: imgs.length,
+        inlineBg: heroLayer ? heroLayer.getAttribute("style") || "" : "",
+        qInsideLand: !!(land && q && land.contains(q)),
+        qOnTop: !!(topEl && (topEl === q || q.contains(topEl))),
+        heroesLoaded: typeof HEROES !== "undefined" && Array.isArray(HEROES) && HEROES.length === 3,
+        lqipLoaded: typeof HERO_LQIP === "string" && HERO_LQIP.startsWith("data:image/webp;base64,"),
+      };
+    });
+    ok(heroLook.hasLand, "the landing hero band exists");
+    ok(heroLook.heroImgCount === 3, `the hero rotates through ${heroLook.heroImgCount} photo elements`);
+    // The blurred placeholder is a literal inline style attribute, not something
+    // JS paints in later, so it is there the instant the HTML parses, offline
+    // included, before any of the three real photos can possibly have loaded.
+    ok(/^data:image\/webp;base64,/.test(heroLook.inlineBg.replace(/^background-image:\s*url\(['"]?/, "")) ||
+       /data:image\/webp;base64/.test(heroLook.inlineBg),
+       "a blurred placeholder paints instantly, inline, before any network image can load");
+    ok(heroLook.heroesLoaded, "hero/heroes.js loaded HEROES with all 3 destinations");
+    ok(heroLook.lqipLoaded, "hero/heroes.js loaded HERO_LQIP as an inline webp data uri");
+    ok(heroLook.qInsideLand, "the search box sits inside the photo hero band");
+    ok(heroLook.qOnTop, "the search box is on top of the photo and actually clickable");
+
+    console.log("\n  the hero photo credit is present and links to the Commons source");
+    const credit = await page.evaluate(() => {
+      const a = document.getElementById("landCreditLink");
+      return { text: a ? a.textContent : "", href: a ? a.getAttribute("href") : "" };
+    });
+    ok(credit.text.length > 0, `the hero photo credit is shown (${credit.text})`);
+    ok(/^https:\/\/commons\.wikimedia\.org\//.test(credit.href || ""),
+       `the credit links to the Commons source (${credit.href})`);
+
     console.log("\n  theming: light-first tokens, system preference, and the toggle");
     // Token values, read straight from the light and dark blocks in style.css so
     // this test breaks if those values drift, not just if theming breaks outright.
@@ -159,6 +203,27 @@ const ok = (cond, what) => {
     ok(orphanedAttr.length === 0, orphanedAttr.length === 0
        ? "every explicit dark-theme token also has a bare :root (light) definition"
        : `these tokens exist only inside [data-theme="dark"]: ${orphanedAttr.join(", ")}`);
+
+    console.log("\n  the toggle still flips data-theme, and the landing scrim text stays legible either way");
+    // The landing headline sits on a photo, not on the page background, so it
+    // must use the fixed --hero-ink token rather than the themed --ink one: if
+    // it ever regressed to --ink, this would catch it as a color that suddenly
+    // changes with the theme, which is exactly the dark-text-on-a-dark-photo bug
+    // this redesign had to avoid.
+    const landHeadlineColor = theme => page.evaluate(t => {
+      document.documentElement.setAttribute("data-theme", t);
+      const h = document.querySelector(".land-h");
+      return h ? getComputedStyle(h).color : null;
+    }, theme);
+    const landColorLight = await landHeadlineColor("light");
+    const landColorDark = await landHeadlineColor("dark");
+    ok(!!landColorLight && !!landColorDark, "the landing headline has a computed color in both themes");
+    ok(landColorLight === landColorDark,
+       `the landing headline stays the fixed light-on-photo color regardless of site theme (${landColorLight})`);
+    await page.click("#themeToggle");
+    const toggledTheme = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+    ok(toggledTheme === "light" || toggledTheme === "dark",
+       `the toggle still flips data-theme after the redesign (now ${toggledTheme})`);
 
     console.log("\n  U2: light-mode coherence on the tinted card/tag/button surfaces");
     // The hardcoded-hex offenders U1 left behind: .card.warn shipped with a dark
@@ -521,6 +586,21 @@ const ok = (cond, what) => {
     ok(look.cardsWithPhotos + look.cardsWithGlyph === look.totalCards,
        `every card has an image or a proper fallback (${look.cardsWithPhotos} photos, ${look.cardsWithGlyph} glyphs, ${look.totalCards} cards)`);
     ok(look.cardsWithPhotos > 0, `${look.cardsWithPhotos} cards carry a real photograph`);
+
+    console.log("\n  place cards form a 2-column grid at 560px+, single column at 360px");
+    // #list itself is the grid container regardless of how many cards live
+    // inside it (even the empty state renders inside the same element), so
+    // this holds independent of tonight's live Overpass data.
+    const gridColumns = async width => {
+      await page.setViewportSize({ width, height: 900 });
+      const tracks = await page.evaluate(() => getComputedStyle(document.getElementById("list")).gridTemplateColumns);
+      return tracks.trim().split(/\s+/).filter(Boolean).length;
+    };
+    const cols360 = await gridColumns(360);
+    ok(cols360 === 1, `#list is a single column at the 360px mobile floor (${cols360} track(s))`);
+    const cols700 = await gridColumns(700);
+    ok(cols700 === 2, `#list becomes a 2-column grid at 700px (${cols700} track(s))`);
+    await page.setViewportSize({ width: 390, height: 844 });
 
     console.log("\n  the near-me list has a sort control, and Best now leads");
     await page.click('#views .chip[data-v="list"]');
