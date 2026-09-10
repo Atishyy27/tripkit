@@ -74,6 +74,7 @@
   --hero-ink:#f4eeff; --hero-dim:#a99fc4; --hero-line:#2c2438;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 /* ---- theme toggle ---- */
 .theme-toggle{position:fixed;right:12px;bottom:calc(var(--nav) - 10px);z-index:960;
  width:38px;height:38px;border-radius:99px;border:1px solid var(--line);background:var(--card);

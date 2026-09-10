@@ -1,12 +1,16 @@
 /* Capture real screenshots of the real app, so the README shows what it is rather
-   than describing it. Run: node tests/shots.js */
+   than describing it. Run: node tests/shots.js
+
+   The clock is frozen to a fixed mid-day instant so the guide shot always shows a
+   real "open now" count instead of whatever the wall clock happens to make open
+   when the script runs. Same reason the browser suite freezes it. */
 const { chromium } = require("playwright");
 const http = require("http"), fs = require("fs"), path = require("path");
 const DOCS = path.join(__dirname, "..", "docs");
 const OUT = path.join(DOCS, "shots");
 const MIME = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css",
   ".webmanifest":"application/manifest+json", ".svg":"image/svg+xml", ".png":"image/png",
-  ".txt":"text/plain" };
+  ".txt":"text/plain", ".json":"application/json", ".webp":"image/webp" };
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
@@ -22,42 +26,28 @@ const MIME = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css",
   const base = `http://127.0.0.1:${server.address().port}/`;
 
   const b = await chromium.launch();
-  const page = await b.newPage({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 2 });
+  const page = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  // 2026-09-16 13:00 UTC is a Wednesday; Porto (+60 WEST) reads 14:00, mid-day and
+  // open, and the town photo hero shows a real open-now count.
+  await page.clock.setFixedTime(new Date("2026-09-16T13:00:00Z"));
   const shot = async (name, note) => {
     await page.screenshot({ path: path.join(OUT, name + ".png") });
     console.log("  " + name + ".png  " + note);
   };
 
   await page.goto(base, { waitUntil: "networkidle" });
-  await shot("01-landing", "the first screen");
+  await page.waitForTimeout(2000); // let a hero photo paint
+  await shot("new-landing", "the full-bleed photo landing");
 
-  await page.fill("#q", "Pushkar");
+  await page.fill("#q", "Porto");
   await page.waitForSelector("#hits .hit", { timeout: 45000 });
   await page.locator("#hits .hit").first().click();
   await page.waitForSelector("#s2.on");
-  await shot("02-when", "the hours you have");
-
-  await page.click("#goBtn");
-  await page.waitForSelector("#s4.on", { timeout: 240000 });
-  await page.waitForTimeout(1500);
-  await shot("03-now", "what is open right now");
-
-  await page.click('#views .chip[data-v="plan"]');
-  await page.waitForTimeout(500);
-  await page.evaluate(() => {
-    const btn = document.querySelector('#vPlan [data-auto="steady"]');
-    if (btn) btn.click();
-  });
-  await page.waitForTimeout(1600);
-  await shot("04-plan", "a day it built");
-
-  await page.click('#views .chip[data-v="map"]');
-  await page.waitForTimeout(3000);
-  await shot("05-map", "the map");
-
-  await page.click('#views .chip[data-v="weather"]');
-  await page.waitForTimeout(900);
-  await shot("06-weather", "weather and light");
+  const fresh = page.locator("#freshBuild");
+  if (await fresh.count()) { await fresh.click(); } else { await page.click("#goBtn"); }
+  await page.waitForSelector("#s4.on .pc, #s4.on .dhero", { timeout: 240000 });
+  await page.waitForTimeout(2500);
+  await shot("new-guide", "the guide, town photo hero and what is open now");
 
   await b.close();
   server.close();

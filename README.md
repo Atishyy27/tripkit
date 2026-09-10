@@ -25,14 +25,14 @@ Add it to your home screen and it behaves like an app. A town you have already o
 working with no signal; searching a new one needs a connection.
 
 <p>
-<img src="docs/shots/03-now.png" width="200" alt="What is open right now in Pushkar">
-<img src="docs/shots/04-plan.png" width="200" alt="A day it built, with times">
-<img src="docs/shots/05-map.png" width="200" alt="The map, faded pins are shut">
-<img src="docs/shots/06-weather.png" width="200" alt="Weather, air and light">
+<img src="docs/shots/new-landing.png" width="240" alt="The tripkit landing: a full-bleed destination photo with the search over it">
+<img src="docs/shots/new-guide.png" width="240" alt="A Porto guide: the town photo, 408 places open right now, and the day controls">
 </p>
 
-<sub>Real screenshots, taken by <a href="tests/shots.js">a script</a> against the running app,
-so they cannot drift out of date the way a hand made mockup does.</sub>
+<sub>An open source, self-hostable travel guide: it is a static site with no
+backend, so your own copy is a git clone away. These screenshots are captured
+from the running app by <a href="tests/shots.js">a script</a>, so they track the
+real UI rather than drifting the way a hand made mockup does.</sub>
 
 ---
 

@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-09-11
+
+### Fixed
+- **The "Preview a time" picker showed an empty time box even in Now mode.** The
+  code set the box's hidden attribute correctly, but a `.when-picker{display:flex}`
+  rule overrode it, since a class selector beats the browser default for hidden.
+  Added a `[hidden]{display:none!important}` guard so the attribute wins. The
+  README screenshots are refreshed to the current photo-first UI and now lead the
+  page, and the six pre-redesign screenshots are removed.
+
 ## [0.11.1] - 2026-09-11
 
 ### Fixed
