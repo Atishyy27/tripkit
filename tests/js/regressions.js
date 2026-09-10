@@ -1043,3 +1043,139 @@ describe("U9: Photon typeahead mapper (mapPhotonFeatures)", () => {
     eq(rows[0].lng, null);
   });
 });
+
+
+describe("U10: exporting the trip as GeoJSON, KML and GPX", () => {
+  /* Three pure serializers: places in, a document out, nothing about the
+     download. A place carrying an OSM name with < > & " in it must not break
+     the XML it lands in, and a loose (town centre) pin must never be sent out
+     as if it were a real coordinate. */
+  const real = { id: "p1", name: "Brahma Temple", cat: "temple", lat: 26.4855, lng: 74.5544,
+                 why: "The only Brahma temple most people ever see." };
+  const second = { id: "p2", name: "Sunset Point", cat: "view", lat: 26.4900, lng: 74.5600,
+                   why: "Best around dusk." };
+  const angry = { id: "p3", name: `Rana's "Rooftop" <Cafe> & Bar`, cat: "food", lat: 26.4700, lng: 74.5500,
+                  why: "Tom & Jerry's favourite, apparently." };
+  const loose = { id: "p4", name: "Some Unmapped Shrine", cat: "temple", why: "no coordinate on record",
+                  loose: true, lat: 26.4855, lng: 74.5544 };
+  const noCoord = { id: "p5", name: "Ghost Listing", cat: "shop", why: "never geocoded" };
+
+  it("toGeoJSON is a valid FeatureCollection, one Feature per exportable place", () => {
+    const geo = toGeoJSON([real, second, angry, loose, noCoord], { title: "Pushkar" });
+    eq(geo.type, "FeatureCollection");
+    ok(Array.isArray(geo.features), "features is an array");
+    eq(geo.features.length, 3, "the loose pin and the coordinate-less place are left out");
+  });
+
+  it("toGeoJSON coordinates are [lng, lat], matching the input, not swapped", () => {
+    const geo = toGeoJSON([real], {});
+    eq(geo.features[0].geometry.type, "Point");
+    eq(geo.features[0].geometry.coordinates, [real.lng, real.lat]);
+    ok(geo.features[0].geometry.coordinates[0] === 74.5544 &&
+       geo.features[0].geometry.coordinates[1] === 26.4855,
+       "longitude comes first, latitude second");
+  });
+
+  it("toGeoJSON round trips through JSON.stringify/parse without moving a coordinate", () => {
+    const geo = toGeoJSON([real, second], {});
+    const back = JSON.parse(JSON.stringify(geo));
+    eq(back.features[0].geometry.coordinates, [real.lng, real.lat]);
+    eq(back.features[1].geometry.coordinates, [second.lng, second.lat]);
+  });
+
+  it("toGeoJSON: a name with quotes and angle brackets survives JSON.stringify unbroken", () => {
+    const geo = toGeoJSON([angry], {});
+    const text = JSON.stringify(geo);
+    const back = JSON.parse(text);
+    eq(back.features[0].properties.name, angry.name);
+    ok(/</.test(back.features[0].properties.name), "the literal text is preserved, not stripped");
+  });
+
+  it("toGeoJSON: a loose pin is never emitted with a fabricated position", () => {
+    eq(toGeoJSON([loose], {}).features.length, 0);
+  });
+
+  it("toGeoJSON: a place with no coordinate at all is skipped, not sent as null island", () => {
+    eq(toGeoJSON([noCoord], {}).features.length, 0);
+  });
+
+  it("toKML produces a KML 2.2 document with one Placemark per exportable place", () => {
+    const kml = toKML([real, second, loose], { title: "Pushkar" });
+    ok(kml.includes('<kml xmlns="http://www.opengis.net/kml/2.2">'), "declares the KML 2.2 namespace");
+    const count = (kml.match(/<Placemark>/g) || []).length;
+    eq(count, 2, "the loose pin is not placemarked");
+  });
+
+  it("toKML coordinates are written lng,lat,alt, matching the input", () => {
+    const kml = toKML([real], {});
+    ok(kml.includes(`<coordinates>${real.lng},${real.lat},0</coordinates>`),
+       "longitude must come before latitude inside <coordinates>");
+  });
+
+  it("toKML parses as well formed XML (structural check; DOMParser check lives in tests/browser.js)", () => {
+    const kml = toKML([real, second, angry], { title: "Pushkar" });
+    ok(/^<\?xml version="1\.0" encoding="UTF-8"\?>/.test(kml), "starts with an XML declaration");
+    const opens = (kml.match(/<Placemark>/g) || []).length;
+    const closes = (kml.match(/<\/Placemark>/g) || []).length;
+    eq(opens, closes, "every Placemark opened is closed");
+    ok(kml.includes("</kml>"), "the document is closed");
+  });
+
+  it("toKML: a name with < > & \" does not break the document", () => {
+    const kml = toKML([angry], {});
+    const nameLine = kml.split("\n").find(l => l.includes("<name>") && l.includes("Rana"));
+    ok(nameLine, "the placemark name is present");
+    ok(!/<name>[^<]*<Cafe>/.test(kml), "a literal <Cafe> would have opened a bogus tag");
+    ok(nameLine.includes("&lt;Cafe&gt;") && nameLine.includes("&amp;") && nameLine.includes("&quot;"),
+       "angle brackets, ampersand and quotes are all escaped");
+    const opens = (kml.match(/<Placemark>/g) || []).length;
+    const closes = (kml.match(/<\/Placemark>/g) || []).length;
+    eq(opens, closes, "the malformed name did not unbalance the tags");
+  });
+
+  it("toGPX produces a GPX 1.1 document with one <wpt> per exportable place", () => {
+    const gpx = toGPX([real, second, loose], { title: "Pushkar" });
+    ok(gpx.includes('<gpx version="1.1"'), "declares GPX 1.1");
+    const count = (gpx.match(/<wpt /g) || []).length;
+    eq(count, 2, "the loose pin gets no waypoint");
+  });
+
+  it("toGPX lat and lon attributes match the input, not swapped", () => {
+    const gpx = toGPX([real], {});
+    ok(gpx.includes(`<wpt lat="${real.lat}" lon="${real.lng}">`),
+       "wpt must carry lat= then lon=, each equal to the source value");
+  });
+
+  it("toGPX: a name with < > & \" does not break the document", () => {
+    const gpx = toGPX([angry], {});
+    const opens = (gpx.match(/<wpt /g) || []).length;
+    const closes = (gpx.match(/<\/wpt>/g) || []).length;
+    eq(opens, closes, "the malformed name did not unbalance the tags");
+    ok(!/<name>[^<]*<Cafe>/.test(gpx), "a literal <Cafe> would have opened a bogus tag");
+    ok(gpx.includes("&lt;Cafe&gt;") && gpx.includes("&amp;"), "angle brackets and ampersand are escaped");
+  });
+
+  it("toGPX round trips: the coordinates that go in come out unchanged, in the right slots", () => {
+    const gpx = toGPX([real, second], {});
+    const lats = [...gpx.matchAll(/lat="([\d.\-]+)"/g)].map(m => Number(m[1]));
+    const lons = [...gpx.matchAll(/lon="([\d.\-]+)"/g)].map(m => Number(m[1]));
+    eq(lats, [real.lat, second.lat]);
+    eq(lons, [real.lng, second.lng]);
+  });
+
+  it("pickedTripPlaces gathers every stop across every day of the trip, once each", () => {
+    // GUIDE is set directly here rather than through open(), which also draws
+    // the DOM; ensureDays/syncDay only need the plain data shape below.
+    GUIDE = {
+      place: { name: "Pushkar" }, places: [real, second, angry],
+      day: 0,
+      days: [
+        { label: "Day 1", plan: [real.id, second.id], start: null, manualOrder: false, autoPace: null, autoNotes: [] },
+        { label: "Day 2", plan: [second.id, angry.id], start: null, manualOrder: false, autoPace: null, autoNotes: [] },
+      ],
+    };
+    const out = pickedTripPlaces();
+    eq(out.map(p => p.id), [real.id, second.id, angry.id],
+       "each place appears once, in first-seen order across the days");
+  });
+});

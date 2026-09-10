@@ -1289,6 +1289,17 @@ function drawPlan() {
       <button class="btn b" id="sharePlan">Share this day</button>
       <button class="btn r" id="clearPlan">Clear</button>
     </div>
+    <details style="margin:0 0 14px">
+      <summary>Export the trip for a map app</summary>
+      <p class="tiny" style="margin:0 0 8px">Every stop across every day of this trip, as a
+      file most map apps (Google Maps, Maps.me, Gaia, OsmAnd) already know how to open.
+      A place with no recorded location is left out rather than guessed at.</p>
+      <div class="btns">
+        <button class="btn" id="geoPlan">GeoJSON</button>
+        <button class="btn" id="kmlPlan">KML</button>
+        <button class="btn" id="gpxPlan">GPX</button>
+      </div>
+    </details>
     <div class="plan">${rows}</div>
     <p class="tiny" style="margin-top:12px">Walking times assume 75 metres a minute with a
     third added for real streets, which is a realistic pace in a place you do not know.</p>`;
@@ -1343,6 +1354,9 @@ function drawPlan() {
     }
   };
   $("#icsPlan").onclick = () => { track("/plan/calendar"); downloadIcs(); };
+  $("#geoPlan").onclick = () => { track("/plan/geojson"); downloadGeoJSON(); };
+  $("#kmlPlan").onclick = () => { track("/plan/kml"); downloadKML(); };
+  $("#gpxPlan").onclick = () => { track("/plan/gpx"); downloadGPX(); };
   $("#clearPlan").onclick = () => { GUIDE.plan = []; syncDay(); save(GUIDE); render(); paintPlanCount(); drawPlan(); };
   $("#sharePlan").onclick = async () => {
     const u = location.origin + location.pathname + "?" + new URLSearchParams({
@@ -1461,6 +1475,122 @@ function downloadIcs() {
   a.download = `${GUIDE.place.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-trip.ics`;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* GeoJSON, KML and GPX export. Same reasoning as the calendar export above: the
+   format is small enough that a library would be more code than the feature,
+   and pure functions here mean they are tested as data in, document out, with
+   nothing about downloading involved.
+
+   All three take a plain array of places, not the calendar's per-day rows,
+   because a waypoint file has no concept of a time slot; it is just where things
+   are. They cover the same set the calendar does, every stop across every day of
+   the trip, so the three are a true peer of "Add to calendar" rather than a
+   second, different export. */
+function xmlEscape(t) {
+  return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+/* A loose pin is the town centre standing in for a place OpenStreetMap and
+   Wikivoyage never gave a real coordinate. Exporting it as a waypoint would
+   put a temple and a fort on the exact same dot, which is worse than leaving
+   the place out. Same rule downloadIcs already applies to GEO. */
+function exportablePlaces(places) {
+  return (places || []).filter(p => p && !p.loose &&
+    typeof p.lat === "number" && typeof p.lng === "number" &&
+    isFinite(p.lat) && isFinite(p.lng));
+}
+
+function toGeoJSON(places, meta) {
+  const pts = exportablePlaces(places);
+  return {
+    type: "FeatureCollection",
+    name: (meta && meta.title) || "tripkit",
+    features: pts.map(p => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+      properties: { name: p.name || "", category: p.cat || "", description: p.why || "" },
+    })),
+  };
+}
+
+function toKML(places, meta) {
+  const pts = exportablePlaces(places);
+  const placemarks = pts.map(p => `    <Placemark>
+      <name>${xmlEscape(p.name)}</name>
+      <description>${xmlEscape(p.why || "")}</description>
+      <Point><coordinates>${p.lng},${p.lat},0</coordinates></Point>
+    </Placemark>`).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${xmlEscape((meta && meta.title) || "tripkit")}</name>
+${placemarks}
+  </Document>
+</kml>`;
+}
+
+function toGPX(places, meta) {
+  const pts = exportablePlaces(places);
+  const wpts = pts.map(p => `  <wpt lat="${p.lat}" lon="${p.lng}">
+    <name>${xmlEscape(p.name)}</name>
+    <desc>${xmlEscape(p.why || "")}</desc>
+  </wpt>`).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="tripkit" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>${xmlEscape((meta && meta.title) || "tripkit")}</name></metadata>
+${wpts}
+</gpx>`;
+}
+
+/* Every stop picked on any day of the trip, in the order the days run, each
+   place appearing once even if it were somehow picked twice. This is the same
+   set downloadIcs turns into events, gathered the same way: walk GUIDE.days
+   rather than only the day on screen. */
+function pickedTripPlaces() {
+  ensureDays(); syncDay();
+  const byId = {};
+  (GUIDE.places || []).forEach(p => byId[p.id] = p);
+  const seen = new Set(), out = [];
+  (GUIDE.days || []).forEach(d => {
+    (d.plan || []).forEach(id => {
+      if (seen.has(id)) return;
+      seen.add(id);
+      const p = byId[id];
+      if (p) out.push(p);
+    });
+  });
+  return out;
+}
+
+function tripSlug() {
+  return String((GUIDE.place && GUIDE.place.name) || "trip")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "trip";
+}
+
+function downloadText(text, mime, filename) {
+  const blob = new Blob([text], { type: mime });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function downloadGeoJSON() {
+  const geo = toGeoJSON(pickedTripPlaces(), { title: GUIDE.place.name });
+  downloadText(JSON.stringify(geo, null, 2), "application/geo+json", `tripkit-${tripSlug()}.geojson`);
+}
+
+function downloadKML() {
+  const kml = toKML(pickedTripPlaces(), { title: GUIDE.place.name });
+  downloadText(kml, "application/vnd.google-earth.kml+xml", `tripkit-${tripSlug()}.kml`);
+}
+
+function downloadGPX() {
+  const gpx = toGPX(pickedTripPlaces(), { title: GUIDE.place.name });
+  downloadText(gpx, "application/gpx+xml", `tripkit-${tripSlug()}.gpx`);
 }
 
 function buildDayFor(pace, btn) {

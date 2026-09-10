@@ -568,15 +568,68 @@ const ok = (cond, what) => {
                gaps: el.querySelectorAll(".gap").length,
                hasPrint: !!document.getElementById("printPlan"),
                hasShare: !!document.getElementById("sharePlan"),
+               hasGeo: !!document.getElementById("geoPlan"),
+               hasKml: !!document.getElementById("kmlPlan"),
+               hasGpx: !!document.getElementById("gpxPlan"),
                summary: (el.querySelector(".card h3") || {}).textContent || "",
                times: [...el.querySelectorAll(".ptime")].map(t => t.textContent.slice(0, 5)) };
     });
     ok(plan.picked >= 1, `${plan.picked} places picked`);
     ok(plan.rows === plan.picked, `every pick has a row in the plan (${plan.rows})`);
     ok(plan.hasPrint && plan.hasShare, "the plan can be printed and shared");
+    ok(plan.hasGeo && plan.hasKml && plan.hasGpx,
+       "the plan offers GeoJSON, KML and GPX export (U10), a true peer of Add to calendar");
     ok(/^\d\d:\d\d$/.test(plan.times[0] || ""), `stops carry clock times (${plan.times.join(" ")})`);
     const ordered = plan.times.every((t, i, a) => i === 0 || t >= a[i - 1]);
     ok(ordered, "the stops are in chronological order");
+
+    console.log("\n  U10: the exported GeoJSON, KML and GPX actually parse");
+    // Note: this does not click the export buttons and check a real file landed
+    // on disk. A script-triggered download is blocked in this sandboxed browser
+    // context, which the task itself calls out as expected and unrelated to
+    // correctness. Instead the serializers (already globals on the page, exactly
+    // like icsEscape/downloadIcs) are called directly and the documents are
+    // parsed for real with the browser's own DOMParser, which node does not have.
+    const exported = await page.evaluate(() => {
+      const angry = { id: "zz1", name: `Rana's "Rooftop" <Cafe> & Bar`, cat: "food",
+                       lat: 26.47, lng: 74.55, why: "Tom & Jerry's favourite" };
+      const loose = { id: "zz2", name: "Unmapped Shrine", cat: "temple", loose: true,
+                       lat: 26.47, lng: 74.55, why: "no coordinate on record" };
+      const geo = toGeoJSON([angry, loose], { title: "Pushkar" });
+      const kmlText = toKML([angry, loose], { title: "Pushkar" });
+      const gpxText = toGPX([angry, loose], { title: "Pushkar" });
+      const dp = new DOMParser();
+      const kmlDoc = dp.parseFromString(kmlText, "application/xml");
+      const gpxDoc = dp.parseFromString(gpxText, "application/xml");
+      return {
+        geoFeatures: geo.features.length,
+        geoCoords: geo.features[0].geometry.coordinates,
+        geoName: geo.features[0].properties.name,
+        kmlParseError: !!kmlDoc.querySelector("parsererror"),
+        kmlPlacemarks: kmlDoc.getElementsByTagName("Placemark").length,
+        kmlName: kmlDoc.getElementsByTagName("name")[1]
+          ? kmlDoc.getElementsByTagName("name")[1].textContent : null,
+        gpxParseError: !!gpxDoc.querySelector("parsererror"),
+        gpxWpts: gpxDoc.getElementsByTagName("wpt").length,
+        gpxLat: gpxDoc.getElementsByTagName("wpt")[0]
+          ? gpxDoc.getElementsByTagName("wpt")[0].getAttribute("lat") : null,
+        gpxLon: gpxDoc.getElementsByTagName("wpt")[0]
+          ? gpxDoc.getElementsByTagName("wpt")[0].getAttribute("lon") : null,
+      };
+    });
+    ok(exported.geoFeatures === 1, "GeoJSON drops the loose pin, keeps the real place");
+    ok(exported.geoCoords[0] === 74.55 && exported.geoCoords[1] === 26.47,
+       `GeoJSON coordinates are [lng, lat] (${JSON.stringify(exported.geoCoords)})`);
+    ok(exported.geoName.includes("<Cafe>"),
+       "GeoJSON kept the literal angry name (JSON needs no XML escaping)");
+    ok(!exported.kmlParseError, "the KML parses as well formed XML via DOMParser");
+    ok(exported.kmlPlacemarks === 1, "KML drops the loose pin, keeps the real place");
+    ok(exported.kmlName && exported.kmlName.includes("<Cafe>"),
+       `KML escaped the name and DOMParser decoded it back to the original (${exported.kmlName})`);
+    ok(!exported.gpxParseError, "the GPX parses as well formed XML via DOMParser");
+    ok(exported.gpxWpts === 1, "GPX drops the loose pin, keeps the real place");
+    ok(exported.gpxLat === "26.47" && exported.gpxLon === "74.55",
+       `GPX wpt carries lat/lon matching the input, not swapped (lat=${exported.gpxLat} lon=${exported.gpxLon})`);
     if (plan.gaps) console.log(`      (${plan.gaps} gaps offered something to fill them)`);
 
     console.log("\n  removing a stop works");
