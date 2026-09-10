@@ -915,3 +915,68 @@ describe("U7: point-in-time preview (choosing a time and day other than now)", (
     ok(/Sunday/.test(st.label));
   });
 });
+
+describe("U8: rank and disambiguate town search by Nominatim importance", () => {
+  /* Nominatim already sends an importance score (0..1) and a place_rank with
+     every geocode hit, and the mapper threw both away, so an obscure node
+     sharing a name with a real city could out-rank the city just because it
+     happened to come back first in the raw list. rankByImportance() is a pure
+     reorder step: it never invents a score, and a provider that sends none
+     (Photon, Open-Meteo) passes through completely unchanged. */
+
+  it("two same-named results: the higher importance one sorts first", () => {
+    const low = { name: "Springfield", label: "Springfield, a hamlet", importance: 0.31 };
+    const high = { name: "Springfield", label: "Springfield, the actual city", importance: 0.71 };
+    eq(rankByImportance([low, high]).map(r => r.label), [high.label, low.label]);
+  });
+
+  it("a result with no importance sorts behind ones that have a real score, not scattered", () => {
+    const scored = { name: "A", importance: 0.4 };
+    const unscored = { name: "B" }; // e.g. merged in from a source with no signal
+    eq(rankByImportance([unscored, scored]).map(r => r.name), ["A", "B"],
+       "the scored result still wins even though it was second in the input");
+  });
+
+  it("a full list with nothing scored (a Photon or Open-Meteo answer) is returned unchanged", () => {
+    const rows = [{ name: "C" }, { name: "A" }, { name: "B" }];
+    eq(rankByImportance(rows).map(r => r.name), ["C", "A", "B"],
+       "no row carries importance, so the provider's own order is left alone, not re-sorted alphabetically or otherwise");
+  });
+
+  it("single result: unaffected", () => {
+    const rows = [{ name: "Solo", importance: 0.2 }];
+    eq(rankByImportance(rows), rows);
+  });
+
+  it("equal importance: stable, keeps input order", () => {
+    const a = { name: "A", importance: 0.5 };
+    const b = { name: "B", importance: 0.5 };
+    const c = { name: "C", importance: 0.5 };
+    eq(rankByImportance([a, b, c]).map(r => r.name), ["A", "B", "C"]);
+  });
+
+  it("empty list and non-array input do not throw", () => {
+    eq(rankByImportance([]), []);
+  });
+
+  it("the Nominatim mapper carries importance and placeRank onto every result instead of discarding them", () => {
+    // the actual Nominatim response shape (raw field names: importance,
+    // place_rank), not a hand-built rankByImportance fixture, so a future
+    // change to the mapper's field list is caught here too
+    const raw = [{
+      name: "Testville", display_name: "Testville, Testland",
+      lat: "12.5", lon: "45.5", address: { country: "Testland", country_code: "tl" },
+      addresstype: "city", boundingbox: ["12.0", "13.0", "45.0", "46.0"],
+      importance: 0.62, place_rank: 16
+    }];
+    const rows = mapNominatim(raw);
+    eq(rows[0].importance, 0.62);
+    eq(rows[0].placeRank, 16);
+  });
+
+  it("the mapper leaves importance undefined, not null or NaN, when Nominatim omits it", () => {
+    const raw = [{ name: "X", display_name: "X", lat: "1", lon: "1", address: {}, boundingbox: null }];
+    const rows = mapNominatim(raw);
+    eq(rows[0].importance, undefined);
+  });
+});

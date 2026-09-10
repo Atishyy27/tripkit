@@ -32,11 +32,10 @@ async function jget(url, opts, ms) {
 }
 
 /* ---------------- 1. Find the place (Nominatim) ---------------- */
-async function geocode(q) {
-  const u = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams({
-    q, format: "jsonv2", limit: "6", addressdetails: "1", "accept-language": "en"
-  });
-  const rows = await jget(u);
+
+/* Pure mapper, pulled out of geocode() so the field mapping is testable
+   without a network call. */
+function mapNominatim(rows) {
   return rows.map(r => ({
     name: (r.name || r.display_name.split(",")[0]).trim(),
     label: r.display_name,
@@ -45,8 +44,45 @@ async function geocode(q) {
     countryCode: (r.address && (r.address.country_code || "")).toUpperCase(),
     kind: r.addresstype || r.type,
     // bbox tells us how big the place is, which sets a sensible search radius
-    bbox: r.boundingbox ? r.boundingbox.map(Number) : null
+    bbox: r.boundingbox ? r.boundingbox.map(Number) : null,
+    // Nominatim's own relevance score (0..1) and rank; kept, not discarded, so
+    // the hit list can be ordered by how prominent a place actually is instead
+    // of whatever order the provider happened to return
+    importance: typeof r.importance === "number" ? r.importance : undefined,
+    placeRank: typeof r.place_rank === "number" ? r.place_rank : undefined
   }));
+}
+
+async function geocode(q) {
+  const u = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams({
+    q, format: "jsonv2", limit: "6", addressdetails: "1", "accept-language": "en"
+  });
+  const rows = await jget(u);
+  return mapNominatim(rows);
+}
+
+/* Order search hits so the more prominent place comes first, without inventing
+   a score for a provider that does not send one (Photon, Open-Meteo). A result
+   with no importance is not moved to the back of the whole list; it only sorts
+   behind results that DO carry a real score, keeping its original position
+   relative to every other importance-less result. That means a list where
+   nothing has a score (a full Photon or Open-Meteo answer) is returned
+   completely unchanged, and a lone importance-less row mixed into a scored
+   list still lands somewhere sane rather than being buried. The sort is a
+   proper total order (missing importance treated as -1, below Nominatim's
+   real 0..1 range), so it is stable and deterministic across engines: equal
+   scores, including two missing scores, keep their original input order. */
+function rankByImportance(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return rows;
+  return rows
+    .map((r, i) => [r, i])
+    .sort((a, b) => {
+      const ai = typeof a[0].importance === "number" ? a[0].importance : -1;
+      const bi = typeof b[0].importance === "number" ? b[0].importance : -1;
+      if (ai !== bi) return bi - ai;
+      return a[1] - b[1];
+    })
+    .map(pair => pair[0]);
 }
 
 /* radius that suits the place rather than a fixed guess */
@@ -441,11 +477,16 @@ async function geocodeOpenMeteo(q) {
 }
 
 async function findPlace(q, onNote) {
-  return firstThatWorks("Place search", [
+  const found = await firstThatWorks("Place search", [
     ["OpenStreetMap Nominatim", () => geocode(q)],
     ["Photon", () => geocodePhoton(q)],
     ["Open-Meteo", () => geocodeOpenMeteo(q)],
   ], onNote);
+  // rank by importance regardless of which provider answered: a real signal
+  // when Nominatim answered, a harmless no-op when Photon or Open-Meteo did
+  // (neither sends one, so rankByImportance returns their list untouched)
+  if (found.value) found.value = rankByImportance(found.value);
+  return found;
 }
 
 /* ---------------- weather, hourly, no key ---------------- */
