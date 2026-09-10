@@ -129,7 +129,10 @@ function overpassQL(lat, lng, r) {
   return `[out:json][timeout:60];(${sel.join("")});out center tags;`;
 }
 
-async function overpass(lat, lng, r, onNote) {
+/* The actual network call, unchanged: same query shape, same mirror fallback,
+   same timeout. Renamed from `overpass` only so that name can belong to the
+   cached wrapper below instead, without touching a single caller. */
+async function overpassFetch(lat, lng, r, onNote) {
   let lastErr;
   for (const url of OVERPASS) {
     try {
@@ -142,6 +145,122 @@ async function overpass(lat, lng, r, onNote) {
   }
   throw new Error("every OpenStreetMap mirror refused: " + (lastErr && lastErr.message));
 }
+
+/* ---------------- 2b. Buffer-region cache for Overpass ---------------- */
+/* The Overpass instances above are free, keyless, and run by volunteers on
+   donated hardware. A single session can easily ask the same spot twice: the
+   initial build, then a widen, then a narrow back down, then re-adding a town
+   that is already on the trip. None of that needs a second trip to the network:
+   a region already fetched at radius R can answer any later request at the
+   same point for a radius <= R by filtering the elements already in hand,
+   using real distance rather than trusting a box drawn a second time.
+
+   Deliberately NOT over-fetching a buffer beyond what was asked: a bigger
+   `around:` box means a bigger response for a big city, which is exactly the
+   payload capPlaces() downstream is already fighting to keep small. Caching
+   and filtering exactly what was requested already makes widen-then-narrow
+   and a repeat build free; that is the win, without inflating anyone's fetch.
+
+   Session-lifetime, in memory only, never localStorage: the guide already
+   persists what it needs there, and OSM data moving between page loads is
+   not a problem worth solving. */
+const OVERPASS_CACHE_MAX = 6;      // at most this many distinct points remembered
+const OVERPASS_CACHE_TOL_M = 50;   // same "point" within this many metres
+
+/* engine.js already has haversineMeters(a,b) doing the same maths, but it is
+   not reused here: sources.js loads BEFORE engine.js in index.html, and
+   e2e.js (npm run test:live) evals sun.js and sources.js only, never
+   engine.js, so a call into engine.js from here would throw on the very
+   script that is supposed to prove the network path works. This file has no
+   other dependency on engine.js; keeping that true is worth six lines of
+   duplication. */
+function ovDistMeters(a, b) {
+  const R = 6371000, p = Math.PI / 180;
+  const dx = (b.lat - a.lat) * p, dy = (b.lng - a.lng) * p;
+  const h = Math.sin(dx / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dy / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/* A node has its own lat/lon; a way or relation only gets one from `center`,
+   which is why the query asks Overpass for `out center`. Returns null rather
+   than guessing when neither is present, so a coordinate-less element can be
+   dropped instead of silently miscounted as near or far. */
+function overpassElementCoord(el) {
+  const lat = el.lat != null ? el.lat : (el.center && el.center.lat);
+  const lng = el.lon != null ? el.lon : (el.center && el.center.lon);
+  return (lat == null || lng == null) ? null : { lat, lng };
+}
+
+/* Keep only the elements genuinely within r of the point, by real haversine
+   distance, not by trusting whatever box produced the list in the first
+   place. This is what makes a cache hit correct rather than merely fast: a
+   3km region filtered to 1km must match what a fresh 1km fetch would have
+   returned, modulo data changing between calls within the session. */
+function filterElementsWithinRadius(elements, lat, lng, r) {
+  const origin = { lat, lng };
+  return elements.filter(el => {
+    const c = overpassElementCoord(el);
+    if (!c) return false;
+    const d = ovDistMeters(origin, c);
+    return d != null && d <= r;
+  });
+}
+
+/* Builds the cache as its own closure so a test can hand it a fake network
+   function and spy on how often it is called, without the production code
+   needing to know it is being watched. `networkFn` does the real fetch (or,
+   in a test, doesn't); it may hand back a plain array or a promise, and
+   whichever it is, that is what the wrapper hands back too. A cache HIT
+   always answers with a plain array and never touches networkFn at all,
+   since a filter over data already in hand needs nothing asynchronous. */
+function makeOverpassCache(networkFn, maxPoints) {
+  const points = []; // [{lat, lng, r, elements}], oldest first
+
+  function findBucket(lat, lng) {
+    const origin = { lat, lng };
+    return points.find(p => {
+      const d = ovDistMeters(origin, { lat: p.lat, lng: p.lng });
+      return d != null && d <= OVERPASS_CACHE_TOL_M;
+    });
+  }
+
+  function remember(lat, lng, r, elements) {
+    const existing = findBucket(lat, lng);
+    if (existing) {
+      existing.lat = lat; existing.lng = lng; existing.r = r; existing.elements = elements;
+      return;
+    }
+    points.push({ lat, lng, r, elements });
+    if (points.length > maxPoints) points.shift(); // oldest point evicted first
+  }
+
+  return function cachedOverpass(lat, lng, r, onNote) {
+    const hit = findBucket(lat, lng);
+    if (hit && r <= hit.r) return filterElementsWithinRadius(hit.elements, lat, lng, r);
+
+    // A miss goes to the real network at exactly the radius asked for (no
+    // buffer over-fetch), and what comes back is handed to the caller exactly
+    // as overpassFetch produced it, same as before this cache existed. Only a
+    // later HIT ever runs elements back through the distance filter above;
+    // the point of asking Overpass itself for `around:r` is that a fresh
+    // fetch is already correct, and re-filtering it here could only make a
+    // first call disagree with what it returned before caching was added.
+    const result = networkFn(lat, lng, r, onNote);
+    if (result && typeof result.then === "function") {
+      return result.then(elements => { remember(lat, lng, r, elements); return elements; });
+    }
+    // a synchronous stub, as used in tests: no promise to wait on
+    remember(lat, lng, r, result);
+    return result;
+  };
+}
+
+/* The public name every caller already uses. Wrapping it here, rather than
+   changing app.js, is what makes the caching transparent: build, addTown and
+   the widen button all keep calling overpass(lat, lng, r, onNote) exactly as
+   before and simply make fewer network calls when the answer is already
+   in hand. */
+const overpass = makeOverpassCache(overpassFetch, OVERPASS_CACHE_MAX);
 
 const OSM_DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 

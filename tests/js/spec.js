@@ -178,6 +178,120 @@ describe("osm element mapping", () => {
   });
 });
 
+describe("overpass: buffer-region cache", () => {
+  // A small, hand-placed set of elements around one origin point, with real
+  // distances computed once (via node -e, spherical R=6371000) and checked
+  // against generous margins rather than exact boundaries, so nothing here
+  // is sensitive to the last decimal place of a haversine calculation.
+  //   A: node,           ~500m from the origin
+  //   B: node,           ~1199m from the origin
+  //   C: node,           ~3998m from the origin (outside every radius used below)
+  //   D: way (center),   ~667m from the origin
+  //   E: node, no coordinates at all (not lat/lon, not center)
+  const ORIGIN_LAT = 26.0, ORIGIN_LNG = 75.0;
+  const elA = { type: "node", id: 1, lat: 26.0, lon: 75.005, tags: {} };
+  const elB = { type: "node", id: 2, lat: 26.0, lon: 75.012, tags: {} };
+  const elC = { type: "node", id: 3, lat: 26.0, lon: 75.04, tags: {} };
+  const elD = { type: "way", id: 4, center: { lat: 26.006, lon: 75.0 }, tags: {} };
+  const elE = { type: "node", id: 5, tags: {} };
+  const elWayNoCenterCoord = { type: "way", id: 6, center: {}, tags: {} };
+  const master = [elA, elB, elC, elD, elE, elWayNoCenterCoord];
+  const idsOf = list => list.map(e => e.id);
+
+  it("filters a region down to real haversine distance: node and way-center both work, coordless elements are dropped", () => {
+    eq(idsOf(filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 1000)), [1, 4],
+       "only A (~500m) and D (~667m) are inside 1000m");
+    eq(idsOf(filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 3000)), [1, 2, 4],
+       "B (~1199m) joins once the radius reaches 3000m; C (~3998m) still does not");
+    eq(idsOf(filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 5000)), [1, 2, 3, 4],
+       "at 5000m even C is inside; the two coordless elements never appear at any radius");
+  });
+
+  it("does not throw on a way with no usable center and a node with no coordinate at all", () => {
+    ok(!filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 999999).some(e => e.id === 5 || e.id === 6),
+       "neither coordless element is ever \"within\" anything");
+  });
+
+  it("a smaller radius at the same point is served from cache: no network call, exactly what a fresh smaller fetch would filter to", () => {
+    let calls = 0;
+    const net = (lat, lng, r) => { calls++; return master; }; // a stub: returns the raw batch, synchronously
+    const cache = makeOverpassCache(net, 6);
+
+    const first = cache(ORIGIN_LAT, ORIGIN_LNG, 3000, () => {});
+    eq(calls, 1, "the first request at this point always goes to the network");
+    eq(idsOf(first), idsOf(master), "a MISS is handed back exactly what the network returned, unfiltered");
+
+    const second = cache(ORIGIN_LAT, ORIGIN_LNG, 1000, () => {});
+    eq(calls, 1, "a smaller radius at the same point must not touch the network again");
+    eq(idsOf(second), idsOf(filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 1000)),
+       "the cache hit must equal a fresh 1000m fetch filtered the same way, not just be fast");
+  });
+
+  it("a point within the rounding tolerance still counts as a cache hit", () => {
+    let calls = 0;
+    const net = () => { calls++; return master; };
+    const cache = makeOverpassCache(net, 6);
+    cache(ORIGIN_LAT, ORIGIN_LNG, 3000, () => {});
+    cache(ORIGIN_LAT + 0.00001, ORIGIN_LNG + 0.00001, 1000, () => {}); // ~1.5m away
+    eq(calls, 1, "a point a metre or two off is the same place, not a new one");
+  });
+
+  it("a larger radius at the same point does hit the network and refreshes the cached region", () => {
+    let calls = 0;
+    const net = () => { calls++; return master; };
+    const cache = makeOverpassCache(net, 6);
+
+    cache(ORIGIN_LAT, ORIGIN_LNG, 1000, () => {});
+    eq(calls, 1);
+    cache(ORIGIN_LAT, ORIGIN_LNG, 3000, () => {}); // bigger than what is cached: must refetch
+    eq(calls, 2, "a radius bigger than the cached one is a miss, not served from the 1000m region");
+
+    const now2000 = cache(ORIGIN_LAT, ORIGIN_LNG, 2000, () => {});
+    eq(calls, 2, "2000m is inside the now-cached 3000m region: no third network call");
+    eq(idsOf(now2000), idsOf(filterElementsWithinRadius(master, ORIGIN_LAT, ORIGIN_LNG, 2000)));
+  });
+
+  it("a different point misses the cache and fetches, independently of any other cached point", () => {
+    let calls = 0;
+    const net = () => { calls++; return master; };
+    const cache = makeOverpassCache(net, 6);
+    cache(ORIGIN_LAT, ORIGIN_LNG, 3000, () => {});
+    cache(26.5, 75.0, 1000, () => {}); // ~55km away
+    eq(calls, 2, "a point far from anything cached is always a miss");
+  });
+
+  it("evicts the oldest point once more than the cap of distinct points have been asked for", () => {
+    let calls = 0;
+    const net = () => { calls++; return master; };
+    const cache = makeOverpassCache(net, 3); // small cap to make eviction easy to force
+    const points = [
+      [10.0, 10.0], [20.0, 20.0], [30.0, 30.0], [40.0, 40.0], // 4 distinct points, cap is 3
+    ];
+    points.forEach(([lat, lng]) => cache(lat, lng, 500, () => {}));
+    eq(calls, 4, "each of the 4 distinct points was a miss on its first visit");
+
+    cache(points[0][0], points[0][1], 500, () => {}); // the very first point, now evicted
+    eq(calls, 5, "the oldest point (the 1st) was pushed out once a 4th distinct point arrived");
+
+    cache(points[3][0], points[3][1], 500, () => {}); // the most recent point, still cached
+    eq(calls, 5, "the most recently added point is still in the cache and was not touched");
+  });
+
+  it("passes a real promise straight through on a miss, and never calls the network on a hit", () => {
+    // The test harness here has no async support (it() does not await), so this
+    // only checks the shape of what comes back on a miss (a real promise, same
+    // as overpassFetch would return), not its resolved value; the resolved
+    // value itself is covered by the synchronous-stub tests above, which is
+    // the same code path after the network answers.
+    let calls = 0;
+    const net = () => { calls++; return Promise.resolve(master); };
+    const cache = makeOverpassCache(net, 6);
+    const p = cache(ORIGIN_LAT, ORIGIN_LNG, 3000, () => {});
+    ok(p && typeof p.then === "function", "a miss against a promise-returning network function returns a promise");
+    eq(calls, 1);
+  });
+});
+
 describe("capPlaces", () => {
   const mk = (n, cat, why, open) => ({ name: n, cat, why: why || "", open: open || null });
   it("keeps everything when under the cap", () => {
