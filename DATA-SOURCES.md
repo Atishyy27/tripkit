@@ -311,6 +311,65 @@ question. Confirmed live, no key required (2026-09-10):
 
 ---
 
+## 8. SQL and SPARQL surfaces over OSM (evaluated 2026-09-10, unit U13, verdict: defer)
+
+Three alternatives to Overpass were evaluated against a concrete tripkit need, not adopted.
+All three were confirmed reachable from a browser with no key and CORS open (live checks,
+2026-09-09), so the blocker is not access, it is whether they earn their place.
+
+### Postpass (Geofabrik), PostGIS SQL over OSM
+
+Endpoint `https://postpass.geofabrik.de/api/interpreter`, read-only SQL, refreshed every 5
+minutes, no key, `access-control-allow-origin: *` confirmed live. Rate limiting is a
+cost-based priority queue, no fixed quota published. Software GPLv3; data ODbL.
+
+The one concrete thing it buys tripkit: a coverage count like "what fraction of restaurants
+in this bbox carry opening_hours" becomes one `GROUP BY` query instead of the two Overpass
+calls plus client-side counting that section 1.4 does by hand. Verdict: **defer.** tripkit
+does not compute live coverage in the browser; U12 already answers the coverage-over-time
+question from precomputed ohsome data, which is the version users actually see. Adopting
+Postpass would add a second query language and a second dependency on one provider to
+optimize a query the app does not make at runtime.
+
+### QLever, SPARQL over the OSM planet
+
+Endpoint `https://qlever.dev/api/osm-planet`, no key, `access-control-allow-origin: *` and
+explicit `access-control-allow-methods` confirmed live; a real `SELECT` returned valid SPARQL
+JSON. Default 100-row cap unless `LIMIT` is raised. University-backed, actively developed.
+
+It buys complex multi-hop queries Overpass QL expresses awkwardly (places within a named
+admin boundary AND near a station AND matching a name pattern, in one query). Verdict:
+**defer.** tripkit's queries are simple `around:` radius filters that Overpass already serves
+well; the app has no query that needs a join or a multi-hop, and SPARQL plus QLever's
+OSM-to-RDF vocabulary is a real learning and maintenance cost for a capability the product
+does not currently want.
+
+### Sophox, SPARQL joining OSM to Wikidata
+
+Endpoint `https://sophox.org/sparql` (found empirically, not in the docs), no key,
+`access-control-allow-origin: *` confirmed live with real bindings returned. It joins OSM
+geometry and tags to Wikidata facts (heritage status, inception date, official website) in a
+single query, which directly addresses the name-matching gap section 3 flagged: today
+Wikidata enrichment needs a separate fuzzy name match, and a past review found a real
+collision from exactly that ("Grand Heritage Hotel" vs "Grand Heritage Hotel Restaurant").
+Verdict: **defer, but it is the most interesting of the three.** The reason to hold is
+maintenance risk: Sophox reads as a small personal project (Apache-2.0, no institutional
+backing like QLever's university or Postpass's Geofabrik), and building a shipped feature on
+an endpoint that could go dark is the opposite of the no-backend, keeps-working-forever
+property tripkit sells. If Wikidata enrichment ever becomes a priority, Sophox is where to
+start, gated on confirming it is still maintained.
+
+### Why all three defer, in one line
+
+They each solve a problem tripkit does not currently have. The app's data needs are met by
+Overpass (places and hours), Wikivoyage (descriptions), and precomputed ohsome (the trend).
+Adopting a SQL or SPARQL surface would add a query language, a provider dependency, and
+maintenance surface to optimize or enable something the product is not asking for yet. This
+evaluation exists so the option is on record with its access already proven, and does not get
+re-litigated from scratch next time it comes up.
+
+---
+
 ## Direct answers
 
 **Could the core dataset be built with NO LLM at all?**
