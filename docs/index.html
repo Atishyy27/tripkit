@@ -323,7 +323,8 @@ try {
 <!-- ============ 4. the guide ============ -->
 <div class="screen" id="s4">
   <div class="top"><div class="wrap">
-    <div><div class="tnow" id="clock">--:--</div><div class="tphase" id="phase"></div></div>
+    <div><div class="tnow" id="clock">--:--</div><div class="tphase" id="phase"></div>
+      <div class="tprev" id="whenNote" hidden></div></div>
     <div class="tcd" id="sun"></div>
   </div></div>
   <div class="wrap" style="padding-top:12px">
@@ -342,6 +343,11 @@ try {
 
     <div id="vList">
       <input class="search" id="filter" type="search" placeholder="Filter by name…" aria-label="Filter" style="margin-bottom:4px">
+      <div class="chips" id="whenMode" aria-label="Now or a chosen time"></div>
+      <div class="when-picker" id="whenPicker" hidden>
+        <input type="time" id="whenTime" aria-label="Preview time">
+        <div class="chips" id="whenDays" aria-label="Preview day of week"></div>
+      </div>
       <div class="chips" id="listMode" aria-label="Guide or all"></div>
       <div class="chips" id="sortMode" aria-label="Sort"></div>
       <div class="chips" id="cats"></div>

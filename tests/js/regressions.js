@@ -839,3 +839,79 @@ describe("regression: a place shut today was reported open", () => {
     eq(on(SUNDAY, { open: "10:00", close: "20:00", openDays: [0,1,2,3,4,5,6] }, 600).state, "open");
   });
 });
+
+describe("U7: point-in-time preview (choosing a time and day other than now)", () => {
+  /* render() reuses rankNow/openState/exitState exactly as they are: they
+     already take any minute-of-day, so previewing a TIME needed no engine
+     change at all. Previewing a WEEKDAY did, because openDays is resolved
+     against the module level BASE_DOW, which is fixed once at init() and has
+     no other seam. previewDow() is that seam: it overrides what openState
+     reads in place of BASE_DOW, scoped to whatever the caller does between
+     setting it and clearing it again, and touches nothing else init() computed
+     (PHASES, TRIP, SUNRISE/SUNSET all stay exactly as the real trip set them). */
+
+  it("an evening-only place ranks differently at 18:00 than at 09:00, with no override needed", () => {
+    // This is the "near-free" half of U7: rankNow already takes any t, so a
+    // time preview falls out of the existing engine with zero new code.
+    const bar = { name: "Rooftop bar", cat: "bar", open: "18:00", close: "23:59",
+                  dur: 30, tags: ["evening", "bar"], why: "x" };
+    init({ config: { arrive: 0, depart: 1439, tzOffsetMinutes: 0 },
+           conditions: { sunrise: 360, sunset: 1080 }, places: [bar] });
+    eq(openState(bar, M("09:00")).state, "shut", "not open yet at 9am");
+    eq(openState(bar, M("18:30")).state, "open", "open once evening arrives");
+    eq(rankNow(M("09:00"), {}).list.map(r => r.p.name), [],
+       "rankNow must not offer a shut place at the earlier preview time");
+    eq(rankNow(M("18:30"), {}).list.map(r => r.p.name), ["Rooftop bar"],
+       "the same rankNow call offers it once the previewed time is within its hours");
+  });
+
+  const on = (dow, place, t) => {
+    // A fixed real weekday (Wednesday, via startDate) so BASE_DOW itself never
+    // matches the days under test here; only previewDow() should decide the
+    // outcome below, proving the override, not a lucky BASE_DOW, is doing it.
+    init({ config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439, startDate: "2026-09-09" },
+           conditions: { sunrise: 400, sunset: 1100 }, places: [] });
+    previewDow(dow);
+    const st = openState(place, t);
+    previewDow(null);          // a render pass always clears it again; tests must too
+    return st;
+  };
+  const OFFICE = { open: "09:00", close: "17:00", openDays: [0, 1, 2, 3, 4] };   // Mo-Fr
+  const MONDAY = 0, WEDNESDAY = 2, SUNDAY = 6;
+
+  it("resolves a Mo-Fr place shut when the previewed day is Sunday", () => {
+    eq(on(SUNDAY, OFFICE, M("12:00")).state, "shut",
+       "previewing Sunday must shut a weekday-only place regardless of the real day");
+  });
+
+  it("resolves the same place open when the previewed day is Wednesday", () => {
+    eq(on(WEDNESDAY, OFFICE, M("12:00")).state, "open");
+  });
+
+  it("resolves it open on the previewed Monday too, at the boundary of the run", () => {
+    eq(on(MONDAY, OFFICE, M("12:00")).state, "open");
+  });
+
+  it("clearing the override (previewDow(null)) returns to the trip's real BASE_DOW, not to whatever was last previewed", () => {
+    // startDate above is a Wednesday, so with no override the office must read
+    // open; this runs straight after a Sunday preview above to prove clearing
+    // really does hand control back to BASE_DOW rather than sticking.
+    init({ config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439, startDate: "2026-09-09" },
+           conditions: { sunrise: 400, sunset: 1100 }, places: [] });
+    previewDow(SUNDAY);
+    previewDow(null);
+    eq(openState(OFFICE, M("12:00")).state, "open",
+       "no override active must mean the trip's own Wednesday, unaffected by the earlier preview");
+  });
+
+  it('"Now" (previewDow never called) is byte-for-byte the pre-U7 behaviour', () => {
+    // Same fixture and day as the very first weekday regression test above,
+    // reproduced here with no preview involved at all, to pin that adding the
+    // override introduced no change whatsoever to the default path.
+    init({ config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439, startDate: "2026-09-13" /* a Sunday */ },
+           conditions: { sunrise: 400, sunset: 1100 }, places: [] });
+    const st = openState(OFFICE, M("10:00"));
+    eq(st.state, "shut", "10:00 on a Sunday at a Mo-Fr place is shut, exactly as before U7");
+    ok(/Sunday/.test(st.label));
+  });
+});

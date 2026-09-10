@@ -540,6 +540,12 @@ function mergePlaces(osm, wv) {
 /* ---------- screen 4: the guide ---------- */
 function open(trip) {
   GUIDE = trip;
+  // A previewed time is a within-session convenience, never a saved trait of
+  // the trip. Opening the app, fresh build or resumed from an earlier tab,
+  // always starts on the real clock; only clicking Preview again should ever
+  // put it back into hypothetical time.
+  GUIDE.previewT = null;
+  GUIDE.previewDow = null;
   init({ config: trip.config, conditions: trip.conditions, places: trip.places });
   ensureDays();
   show("s4");
@@ -548,6 +554,7 @@ function open(trip) {
   buildCats();
   buildSort();
   buildListMode();
+  buildWhen();
   render();
   setView("list");
   clearInterval(window._tick);
@@ -590,6 +597,39 @@ function buildListMode() {
     `<button class="chip" data-mode="all" aria-pressed="${mode === "all"}">All</button>`;
   $$("#listMode .chip").forEach(b => b.onclick = () => {
     GUIDE.listMode = b.dataset.mode; save(GUIDE); buildListMode(); render();
+  });
+}
+
+/* Today, Monday-0 to match engine.js's BASE_DOW and DOW_NAME. */
+const todayDow = () => (new Date().getDay() + 6) % 7;
+
+/* Point-in-time preview (U7): everything render() computes already keys off a
+   single minute `t`, so previewing a time is just handing render() a chosen
+   `t` instead of localMins(). openDays (Mo-Fr etc.) additionally need a
+   chosen weekday, which previewDow() overrides in engine.js for exactly the
+   scope of that render() pass.
+   "Now" is the default and the only state a fresh or resumed guide ever opens
+   into (see open()); a preview chosen here persists across renders and view
+   switches for the rest of this session, same as sortMode/listMode, but is
+   never treated as a lasting trait of the trip itself. */
+function buildWhen() {
+  const active = GUIDE.previewT != null;
+  $("#whenMode").innerHTML =
+    `<button class="chip" data-when="now" aria-pressed="${!active}">Now</button>` +
+    `<button class="chip" data-when="preview" aria-pressed="${active}">Preview a time</button>`;
+  $$("#whenMode .chip").forEach(b => b.onclick = () => {
+    if (b.dataset.when === "now") { GUIDE.previewT = null; GUIDE.previewDow = null; }
+    else if (GUIDE.previewT == null) { GUIDE.previewT = localMins(); GUIDE.previewDow = todayDow(); }
+    save(GUIDE); buildWhen(); render();
+  });
+
+  $("#whenPicker").hidden = !active;
+  if (!active) return;
+  $("#whenTime").value = HM(GUIDE.previewT);
+  $("#whenDays").innerHTML = DOW_NAME.map((n, i) =>
+    `<button class="chip" data-dow="${i}" aria-pressed="${GUIDE.previewDow === i}">${n}</button>`).join("");
+  $$("#whenDays .chip").forEach(b => b.onclick = () => {
+    GUIDE.previewDow = +b.dataset.dow; save(GUIDE); buildWhen(); render();
   });
 }
 
@@ -704,7 +744,16 @@ function sunHeadline(cd, sr, ss, t) {
 }
 
 function render() {
-  const t = localMins();
+  // Previewing hands rankNow/exitState/closingSoon a chosen minute instead of
+  // the real one; they already accept any minute-of-day, so nothing else about
+  // them changes. The weekday override is scoped tightly to this function: set
+  // right before the engine calls that can read openDays, cleared again before
+  // render() returns, so it can never leak into the map, the day view, or the
+  // day builder, which all still want the real weekday every time.
+  const previewing = GUIDE.previewT != null;
+  const t = previewing ? GUIDE.previewT : localMins();
+  if (previewing) previewDow(GUIDE.previewDow);
+
   const cat = ($("#cats .chip[aria-pressed=true]") || { dataset: { c: "all" } }).dataset.c;
   const q = $("#filter").value.trim();
   const r = rankNow(t, { cat, q, town: (GUIDE.townFilter && GUIDE.townFilter !== "all") ? GUIDE.townFilter : undefined });
@@ -713,6 +762,11 @@ function render() {
   $("#clock").textContent = HM(t);
   $("#phase").textContent = r.phase.name;
   $("#phaseLine").textContent = r.phase.line;
+  // The one thing a preview must never risk: reading as the real clock. Say
+  // plainly which day and time is being looked at, right under the clock,
+  // so nobody walks to a place believing it is open right now.
+  $("#whenNote").hidden = !previewing;
+  if (previewing) $("#whenNote").textContent = `previewing ${DOW_FULL[GUIDE.previewDow]} ${HM(t)}`;
 
   const cd = GUIDE.conditions, sr = cd.sunrise, ss = cd.sunset;
   $("#sun").textContent = sunHeadline(cd, sr, ss, t);
@@ -759,6 +813,10 @@ function render() {
     : `${ranked.length} of ${GUIDE.places.length} places nearby fit right now`;
   $$("#list [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
   paintPlanCount();
+  // Release the override now, in the same synchronous pass that set it, so the
+  // map/day/weather redraws the tick interval fires right after this always
+  // see the real weekday regardless of what was just previewed.
+  if (previewing) previewDow(null);
 }
 
 /* ---------- map ---------- */
@@ -1538,6 +1596,13 @@ function setView(v) {
 /* ---------- extras ---------- */
 function wireGuide() {
   $("#filter").addEventListener("input", render);
+  $("#whenTime").addEventListener("change", () => {
+    const v = M($("#whenTime").value);
+    if (v == null) return;               // an emptied time input, nothing to preview yet
+    GUIDE.previewT = v;
+    if (GUIDE.previewDow == null) GUIDE.previewDow = todayDow();
+    save(GUIDE); render();
+  });
   $$("#views .chip").forEach(b => b.onclick = () => {
     $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true");

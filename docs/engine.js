@@ -5,6 +5,13 @@
    ============================================================ */
 let DATA = { places: [], config: {}, conditions: {} };
 let BASE_DOW = 0;
+// A point-in-time preview (U7) needs weekday-restricted hours to resolve against
+// a chosen day rather than the trip's real one, without touching BASE_DOW itself:
+// the day builder and every other view still read BASE_DOW for their own
+// dayOffset math, and a preview must never bleed into that. null means no
+// preview is active, which is the ordinary "now" path and must stay identical
+// to the pre-U7 behaviour.
+let DOW_OVERRIDE = null;
 let CFG = {}, COND = {}, TRIP = {}, PHASES = [], SUNRISE = 390, SUNSET = 1110;
 
 const M  = s => { if (!s) return null; const p = String(s).split(":"); return (+p[0]) * 60 + (+p[1] || 0); };
@@ -181,6 +188,16 @@ function buildPhases() {
 }
 const phaseAt = t => PHASES.find(p => t >= p.from && t < p.to) || PHASES[PHASES.length - 1];
 
+/* Set or clear the weekday openState resolves openDays against. Pass a
+   Monday-0 index to preview that day, or null/undefined to go back to the
+   trip's real weekday. The caller (app.js render(), for the point-in-time
+   preview) is expected to clear this again in the same synchronous pass that
+   set it, the way a lock is released, so it can never leak into a later
+   render of the map, the day view, or the day builder. */
+function previewDow(dow) {
+  DOW_OVERRIDE = (dow == null) ? null : (((dow % 7) + 7) % 7);
+}
+
 const DOW_NAME = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DOW_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -208,7 +225,8 @@ function openState(p, t) {
   // week, so a place shut on Sunday was reported open, confidently, which is the
   // single worst thing this app can do.
   if (Array.isArray(p.openDays) && p.openDays.length && p.openDays.length < 7) {
-    const dow = (((BASE_DOW + dayOffset) % 7) + 7) % 7;
+    const base = DOW_OVERRIDE != null ? DOW_OVERRIDE : BASE_DOW;
+    const dow = (((base + dayOffset) % 7) + 7) % 7;
     if (!p.openDays.includes(dow))
       return { state: "shut", label: "shut on " + DOW_FULL[dow] + "s, open " + daysLabel(p.openDays) };
   }

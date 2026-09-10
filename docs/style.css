@@ -107,6 +107,16 @@ b,strong{color:var(--ink);font-weight:700}
 .tphase{font-size:11px;color:var(--hot);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .tcd{font-size:11.5px;text-align:right;line-height:1.35;color:var(--dim)}
 .tcd b{color:var(--hot);font-variant-numeric:tabular-nums}
+/* The one thing a preview must never let happen is reading as the real clock.
+   Violet ties it to the picker border below, and it sits right under the
+   clock inside the sticky header so it survives scrolling the list. */
+.tprev{font-size:10.5px;color:var(--violet);font-weight:700;margin-top:1px}
+.when-picker{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+ margin:0 0 var(--sp-4);padding:10px 12px;background:var(--violet-bg);
+ border:1px solid var(--violet);border-radius:12px}
+.when-picker input[type="time"]{background:var(--card);border:1px solid var(--line);color:var(--ink);
+ border-radius:10px;padding:9px 10px;font-size:15px;font-family:inherit;flex:0 0 auto}
+.when-picker .chips{margin:0;padding:0;flex:1 1 220px}
 
 /* ---- hero ----
    A fixed dark accent band, the way a brand color would be, on purpose, in both

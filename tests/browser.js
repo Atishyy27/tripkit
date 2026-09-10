@@ -715,6 +715,84 @@ const ok = (cond, what) => {
       ok(true, "no cards rendered from live data this run, Guide/All comparison skipped");
     }
 
+    console.log("\n  a point-in-time preview lets you look at a different time and day (U7)");
+    // Control-only assertions: none of this depends on a place card existing,
+    // so unlike the sort/mode checks above there is nothing here to guard on
+    // live data being thin.
+    const whenInit = await page.evaluate(() => {
+      const now = document.querySelector('#whenMode [data-when="now"]');
+      const preview = document.querySelector('#whenMode [data-when="preview"]');
+      return {
+        hasControl: !!now && !!preview,
+        nowPressed: now && now.getAttribute("aria-pressed"),
+        previewPressed: preview && preview.getAttribute("aria-pressed"),
+        pickerHidden: document.getElementById("whenPicker").hidden,
+        noteHidden: document.getElementById("whenNote").hidden,
+      };
+    });
+    ok(whenInit.hasControl, "a Now / Preview a time control is on the list view");
+    ok(whenInit.nowPressed === "true", `Now is the default (${whenInit.nowPressed})`);
+    ok(whenInit.previewPressed === "false", "Preview starts unselected");
+    ok(whenInit.pickerHidden, "the time/day picker stays hidden until Preview is chosen");
+    ok(whenInit.noteHidden, "no preview marker is shown while on Now");
+
+    await page.click('#whenMode [data-when="preview"]');
+    await page.waitForTimeout(300);
+    const previewOn = await page.evaluate(() => ({
+      previewPressed: document.querySelector('#whenMode [data-when="preview"]').getAttribute("aria-pressed"),
+      pickerHidden: document.getElementById("whenPicker").hidden,
+      noteHidden: document.getElementById("whenNote").hidden,
+      noteText: document.getElementById("whenNote").textContent,
+      dayChips: [...document.querySelectorAll("#whenDays .chip")].length,
+    }));
+    ok(previewOn.previewPressed === "true", "Preview becomes pressed once chosen");
+    ok(!previewOn.pickerHidden, "choosing Preview reveals the time and day picker");
+    ok(!previewOn.noteHidden, "a marker appears the moment a hypothetical time is active");
+    ok(/previewing/i.test(previewOn.noteText),
+       `the marker says outright it is a preview, not the real clock ("${previewOn.noteText}")`);
+    ok(previewOn.dayChips === 7, `all 7 weekdays are offered to preview (${previewOn.dayChips})`);
+
+    console.log("\n  the picker does not cause horizontal body scroll at the 360px mobile floor");
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.waitForTimeout(150);
+    const noHscroll = await page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+    ok(noHscroll, "the page stays within its own width with the preview picker open at 360px");
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    console.log("\n  choosing a time moves the clock line to that hypothetical time, not the real one");
+    await page.fill("#whenTime", "18:00");
+    await page.dispatchEvent("#whenTime", "change");
+    await page.waitForTimeout(300);
+    const at1800 = await page.evaluate(() => ({
+      clock: document.getElementById("clock").textContent,
+      noteText: document.getElementById("whenNote").textContent,
+    }));
+    ok(at1800.clock === "18:00", `the clock line reads the previewed time (got "${at1800.clock}")`);
+    ok(at1800.noteText.includes("18:00"), `the marker names the previewed time ("${at1800.noteText}")`);
+
+    console.log("\n  choosing a day previews that weekday's opening hours");
+    await page.click('#whenDays [data-dow="6"]');   // Sunday
+    await page.waitForTimeout(300);
+    const sunday = await page.evaluate(() => ({
+      dowPressed: document.querySelector('#whenDays [data-dow="6"]').getAttribute("aria-pressed"),
+      noteText: document.getElementById("whenNote").textContent,
+    }));
+    ok(sunday.dowPressed === "true", "the chosen day chip becomes pressed");
+    ok(/Sunday/.test(sunday.noteText), `the marker names the previewed day ("${sunday.noteText}")`);
+
+    console.log("\n  returning to Now clears the preview entirely");
+    await page.click('#whenMode [data-when="now"]');
+    await page.waitForTimeout(300);
+    const backToNow = await page.evaluate(() => ({
+      nowPressed: document.querySelector('#whenMode [data-when="now"]').getAttribute("aria-pressed"),
+      pickerHidden: document.getElementById("whenPicker").hidden,
+      noteHidden: document.getElementById("whenNote").hidden,
+    }));
+    ok(backToNow.nowPressed === "true", "Now can be reselected");
+    ok(backToNow.pickerHidden, "the picker hides again once back on Now");
+    ok(backToNow.noteHidden, "the preview marker disappears once back on Now, so live time is unambiguous again");
+
     console.log("\n  the search radius is adjustable");
     const rad = await page.evaluate(() => ({
       widen: !!document.getElementById("widerBtn"),
