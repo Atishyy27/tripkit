@@ -64,11 +64,13 @@ const ok = (cond, what) => {
   // Counting them as the same thing makes the suite fail for reasons nobody can fix.
   const errors = [];     // real exceptions
   const subres = [];     // failed downloads
+  const ohsomeCalls = [];   // U12: the coverage trend is a static file, this must stay empty for the whole run
   page.on("pageerror", e => errors.push(String(e.message)));
   page.on("console", m => {
     if (m.type() !== "error") return;
     (/(Failed to load resource|net::ERR_)/.test(m.text()) ? subres : errors).push(m.text());
   });
+  page.on("request", req => { if (req.url().includes("ohsome")) ohsomeCalls.push(req.url()); });
 
   try {
     console.log("\n  the page loads");
@@ -941,6 +943,37 @@ const ok = (cond, what) => {
     ok(loc.currency, "the local currency is shown");
     ok(loc.photos > 0, `photos rendered (${loc.photos})`);
 
+    console.log("\n  U12: opening_hours coverage trend, static data only");
+    // Pushkar is the town this whole run just built, and it is one of the five
+    // towns shipped in docs/data/coverage-trend.json, so the trend section
+    // must be showing already, from the committed JSON, with no ohsome call.
+    const trendOn = await page.evaluate(() => ({
+      hasCard: !!document.getElementById("coverageTrend"),
+      loaded: !!(typeof COVERAGE_TREND !== "undefined" && COVERAGE_TREND),
+      text: (document.getElementById("coverageTrend") || {}).textContent || "",
+    }));
+    ok(trendOn.loaded, "the static coverage-trend.json loaded");
+    ok(trendOn.hasCard, "the trend card renders for Pushkar, a town with a real entry");
+    ok(/%/.test(trendOn.text), `the card shows a coverage percentage ("${trendOn.text.slice(0, 60)}")`);
+
+    // A town with no entry in the JSON must render nothing and never touch the
+    // network. Swap the town name in place (no rebuild, no live call needed)
+    // and redraw the same view, then put it back exactly as it was.
+    const trendOff = await page.evaluate(() => {
+      const real = GUIDE.place.name;
+      GUIDE.place.name = "Nowhereistan, a town with no ohsome entry";
+      drawLocal();
+      const gone = !document.getElementById("coverageTrend");
+      GUIDE.place.name = real;
+      drawLocal();
+      const back = !!document.getElementById("coverageTrend");
+      return { gone, back };
+    });
+    ok(trendOff.gone, "an unmapped town shows no trend section at all");
+    ok(trendOff.back, "restoring the real town brings the card back");
+    ok(ohsomeCalls.length === 0,
+       `zero requests to ohsome across the whole run (${ohsomeCalls.length}: ${ohsomeCalls.join(", ")})`);
+
     console.log("\n  the day view works");
     await page.click('#views .chip[data-v="day"]');
     await page.waitForTimeout(400);
@@ -1032,6 +1065,7 @@ const ok = (cond, what) => {
 
     ok(errors.length === 0, "no javascript exceptions after using it" +
        (errors.length ? "\n        " + errors.slice(0, 3).join("\n        ") : ""));
+    ok(ohsomeCalls.length === 0, `U12: still zero ohsome requests after reload (${ohsomeCalls.length})`);
     if (subres.length)
       console.log(`      (${subres.length} third party downloads failed, handled by fallbacks)`);
     const broken = await page.evaluate(() =>

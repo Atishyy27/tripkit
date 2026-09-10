@@ -151,6 +151,65 @@ describe("wikitext cleaning", () => {
   });
 });
 
+describe("U12: opening_hours coverage trend, pure helpers", () => {
+  // The real committed shape, trimmed to the two years the tests below need.
+  const munich = { label: "Munich centre", category: "amenity=restaurant",
+    years: [{ year: 2018, total: 426, withHours: 250, pct: 58.7 },
+            { year: 2026, total: 478, withHours: 412, pct: 86.2 }] };
+  const jaipur = { label: "Jaipur", category: "amenity=restaurant",
+    years: [{ year: 2018, total: 52, withHours: 6, pct: 11.5 },
+            { year: 2026, total: 161, withHours: 14, pct: 8.7 }] };
+  const flatTown = { label: "Steady", category: "amenity=restaurant",
+    years: [{ year: 2018, total: 40, withHours: 20, pct: 50.0 },
+            { year: 2026, total: 44, withHours: 22, pct: 50.5 }] };
+  const trendData = { munich, jaipur, steady: flatTown };
+
+  it("trendFor looks a town up case-insensitively", () => {
+    eq(trendFor(trendData, "Munich"), munich);
+    eq(trendFor(trendData, "MUNICH"), munich);
+    eq(trendFor(trendData, "  munich  "), munich);
+  });
+  it("trendFor returns null for a town with no precomputed entry, never throws", () => {
+    eq(trendFor(trendData, "Nowhereistan"), null);
+    eq(trendFor(trendData, ""), null);
+    eq(trendFor(null, "Munich"), null);
+    eq(trendFor(trendData, null), null);
+  });
+
+  it("Munich, a real double-digit rise, reads as improving", () => {
+    eq(trendDirection(munich.years), "improving");
+  });
+  it("Jaipur, a real fall despite the count tripling, reads as declining", () => {
+    eq(trendDirection(jaipur.years), "declining");
+  });
+  it("a change under 2 points either way reads as flat, not noise dressed as a trend", () => {
+    eq(trendDirection(flatTown.years), "flat");
+  });
+  it("fewer than two usable points is flat rather than a guess", () => {
+    eq(trendDirection([]), "flat");
+    eq(trendDirection([{ year: 2018, pct: 50 }]), "flat");
+    eq(trendDirection([{ year: 2018, pct: null }, { year: 2026, pct: null }]), "flat");
+  });
+
+  it("trendLine states both numbers and the real direction for Munich", () => {
+    const line = trendLine(munich);
+    ok(line.includes("58.7%"), line);
+    ok(line.includes("86.2%"), line);
+    ok(/rose/.test(line), line);
+  });
+  it("trendLine keeps the Jaipur case honest: falling coverage, tripling count, said outright", () => {
+    const line = trendLine(jaipur);
+    ok(/fell/.test(line), line);
+    ok(line.includes("11.5%") && line.includes("8.7%"), line);
+    ok(line.includes("52") && line.includes("161"), `should name both counts: ${line}`);
+    ok(/not keeping pace/.test(line), `should say the quiet part outright: ${line}`);
+  });
+  it("trendLine on a flat town does not claim a rise or a fall", () => {
+    const line = trendLine(flatTown);
+    no(/rose|fell/.test(line), line);
+  });
+});
+
 describe("osm element mapping", () => {
   const els = [
     { type: "node", id: 1, lat: 26.48, lon: 74.55, tags: { name: "Brahma Temple", amenity: "place_of_worship", opening_hours: "Mo-Su 05:30-13:30,15:00-21:00" } },

@@ -1,0 +1,14 @@
+{
+  "attribution": {
+    "url": "https://ohsome.org/copyrights",
+    "text": "© OpenStreetMap contributors"
+  },
+  "apiVersion": "1.10.4",
+  "ratioResult": [
+    { "timestamp": "2018-01-01T00:00:00Z", "value": 426.0, "value2": 250.0, "ratio": 0.586854 },
+    { "timestamp": "2020-01-01T00:00:00Z", "value": 461.0, "value2": 412.0, "ratio": 0.893709 },
+    { "timestamp": "2022-01-01T00:00:00Z", "value": 458.0, "value2": 405.0, "ratio": 0.884279 },
+    { "timestamp": "2024-01-01T00:00:00Z", "value": 459.0, "value2": 395.0, "ratio": 0.860566 },
+    { "timestamp": "2026-01-01T00:00:00Z", "value": 478.0, "value2": 412.0, "ratio": 0.861925 }
+  ]
+}

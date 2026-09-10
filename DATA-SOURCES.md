@@ -265,6 +265,52 @@ field-level check of a real response.
 
 ---
 
+## 7. ohsome, OSM's edit history API (added 2026-09-10, unit U12)
+
+Everything in sections 1 to 6 above is a snapshot of OSM right now, from Overpass. Overpass
+has no memory: it cannot say whether a town's `opening_hours` coverage is getting better or
+worse over time, only what it looks like today. **ohsome** (https://ohsome.org,
+`https://api.ohsome.org`) is built on the full OSM edit history and can answer exactly that
+question. Confirmed live, no key required (2026-09-10):
+
+- Endpoint used: `GET /v1/elements/count/ratio`, with `bboxes`, a `time` range
+  (`2018-01-01/2026-01-01/P2Y` gives 5 evenly spaced snapshots), and two filters, `filter`
+  (the denominator, `amenity=restaurant`) and `filter2` (the numerator,
+  `amenity=restaurant and opening_hours=*`). ohsome divides them into a `ratio` field itself,
+  per timestamp, from the real historical state of OSM at each snapshot, not a live-only
+  count.
+- **Latency is real and must never be asked for during a page load.** The five towns this
+  ships with each answered in 4.5 to 12 seconds; ohsome's own operators warn much longer waits
+  are realistic under load. This is why the trend is a **build-time artifact**:
+  `tools/build_coverage_trend.py` runs it once, by hand, and writes
+  `docs/data/coverage-trend.json`, which the browser reads as a plain static file. The browser
+  never calls ohsome.
+- **A real response quirk, caught by testing against a live capture rather than a guessed
+  shape:** when the denominator is zero at a snapshot (an empty bbox, or a category that did
+  not exist yet), ohsome does not send `-1` or a bare JSON `NaN`, it sends the **JSON string**
+  `"NaN"` for `ratio`. A parser that assumes a number and compares it numerically raises a
+  `TypeError` in Python the first time it hits a genuinely thin town. `shape_years()` in the
+  script checks the type before comparing, and `tests/test_coverage_trend.py` pins this case
+  against a fixture captured from a real empty-ocean bbox query.
+- **The numbers reproduce the claim this unit exists to demonstrate.** Munich centre
+  (`amenity=restaurant`): 58.7% in 2018 to 86.2% in 2026, a real rise. Jaipur (same category,
+  same method): 11.5% in 2018 to 8.7% in 2026, a real fall, while the restaurant count mapped
+  there roughly tripled (52 to 161). Both are quoted straight from the live JSON this script
+  wrote on 2026-09-10, in `docs/data/coverage-trend.json`; neither number was adjusted to fit
+  the brief.
+- **To add a town:** add one entry to the `TOWNS` list in `tools/build_coverage_trend.py`
+  (a `match` key, the plain lowercase town name the browser compares `GUIDE.place.name`
+  against; a `label` for the card; and a bbox in `minLon,minLat,maxLon,maxLat` order, ohsome's
+  own order), then run `python3 tools/build_coverage_trend.py` and commit the regenerated
+  `docs/data/coverage-trend.json`. A town that fails the live call is skipped, not
+  fabricated; the towns that did succeed are still written.
+- **Politeness and scope:** the script runs sequentially with a short pause between towns, and
+  it is explicitly documented as maintainer-run, never wired into CI and never reachable from
+  the browser. This mirrors the Overpass usage policy in section 1.5: a shared, free, keyless
+  API earns a light touch, not a bulk crawl.
+
+---
+
 ## Direct answers
 
 **Could the core dataset be built with NO LLM at all?**

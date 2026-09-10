@@ -1,0 +1,187 @@
+{
+  "munich": {
+    "label": "Munich centre",
+    "bbox": "11.5556,48.1300,11.5956,48.1500",
+    "category": "amenity=restaurant",
+    "years": [
+      {
+        "year": 2018,
+        "total": 426,
+        "withHours": 250,
+        "pct": 58.7
+      },
+      {
+        "year": 2020,
+        "total": 461,
+        "withHours": 412,
+        "pct": 89.4
+      },
+      {
+        "year": 2022,
+        "total": 458,
+        "withHours": 405,
+        "pct": 88.4
+      },
+      {
+        "year": 2024,
+        "total": 459,
+        "withHours": 395,
+        "pct": 86.1
+      },
+      {
+        "year": 2026,
+        "total": 478,
+        "withHours": 412,
+        "pct": 86.2
+      }
+    ]
+  },
+  "lisbon": {
+    "label": "Lisbon centre",
+    "bbox": "-9.1500,38.7050,-9.1200,38.7250",
+    "category": "amenity=restaurant",
+    "years": [
+      {
+        "year": 2018,
+        "total": 431,
+        "withHours": 89,
+        "pct": 20.6
+      },
+      {
+        "year": 2020,
+        "total": 607,
+        "withHours": 155,
+        "pct": 25.5
+      },
+      {
+        "year": 2022,
+        "total": 664,
+        "withHours": 177,
+        "pct": 26.7
+      },
+      {
+        "year": 2024,
+        "total": 798,
+        "withHours": 230,
+        "pct": 28.8
+      },
+      {
+        "year": 2026,
+        "total": 931,
+        "withHours": 286,
+        "pct": 30.7
+      }
+    ]
+  },
+  "pushkar": {
+    "label": "Pushkar",
+    "bbox": "74.5378,26.4739,74.5744,26.5029",
+    "category": "amenity=restaurant",
+    "years": [
+      {
+        "year": 2018,
+        "total": 32,
+        "withHours": 2,
+        "pct": 6.2
+      },
+      {
+        "year": 2020,
+        "total": 45,
+        "withHours": 4,
+        "pct": 8.9
+      },
+      {
+        "year": 2022,
+        "total": 46,
+        "withHours": 4,
+        "pct": 8.7
+      },
+      {
+        "year": 2024,
+        "total": 49,
+        "withHours": 4,
+        "pct": 8.2
+      },
+      {
+        "year": 2026,
+        "total": 51,
+        "withHours": 4,
+        "pct": 7.8
+      }
+    ]
+  },
+  "ajmer": {
+    "label": "Ajmer",
+    "bbox": "74.6100,26.4300,74.6600,26.4750",
+    "category": "amenity=restaurant",
+    "years": [
+      {
+        "year": 2018,
+        "total": 2,
+        "withHours": 0,
+        "pct": 0.0
+      },
+      {
+        "year": 2020,
+        "total": 5,
+        "withHours": 0,
+        "pct": 0.0
+      },
+      {
+        "year": 2022,
+        "total": 5,
+        "withHours": 0,
+        "pct": 0.0
+      },
+      {
+        "year": 2024,
+        "total": 5,
+        "withHours": 0,
+        "pct": 0.0
+      },
+      {
+        "year": 2026,
+        "total": 7,
+        "withHours": 1,
+        "pct": 14.3
+      }
+    ]
+  },
+  "jaipur": {
+    "label": "Jaipur",
+    "bbox": "75.7500,26.8000,75.8700,26.9500",
+    "category": "amenity=restaurant",
+    "years": [
+      {
+        "year": 2018,
+        "total": 52,
+        "withHours": 6,
+        "pct": 11.5
+      },
+      {
+        "year": 2020,
+        "total": 89,
+        "withHours": 7,
+        "pct": 7.9
+      },
+      {
+        "year": 2022,
+        "total": 99,
+        "withHours": 7,
+        "pct": 7.1
+      },
+      {
+        "year": 2024,
+        "total": 112,
+        "withHours": 12,
+        "pct": 10.7
+      },
+      {
+        "year": 2026,
+        "total": 161,
+        "withHours": 14,
+        "pct": 8.7
+      }
+    ]
+  }
+}

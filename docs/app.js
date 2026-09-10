@@ -209,6 +209,27 @@ function track(path, title) {
    SyntaxError that kills the page before a line of it runs. */
 let PLACE = null, GUIDE = null, SHARED_PLAN = null;
 
+/* The opening_hours coverage trend (U12) is a static file, five towns, a few
+   hundred bytes, built ahead of time by tools/build_coverage_trend.py against
+   real ohsome data. It is loaded once, here, and never touched again; nothing
+   in this app calls ohsome. null until the one fetch below resolves (or
+   fails), in which case the trend section on the Local tab simply renders
+   nothing, same as a town with no entry at all. */
+let COVERAGE_TREND = null;
+
+function loadCoverageTrend() {
+  // withTimeout (sources.js) is the one fetch wrapper this app uses everywhere
+  // else; the same 8s cap applies here even though this file is local and
+  // small, so a stuck service worker cannot hang this the way an unbounded
+  // fetch would.
+  withTimeout("./data/coverage-trend.json", {}, 8000).then(r => r.ok ? r.json() : null).then(d => {
+    COVERAGE_TREND = d || null;
+    // Whoever is already looking at the Local tab when this resolves should
+    // see the trend appear without having to switch tabs and back.
+    if (GUIDE && $("#vLocal") && !$("#vLocal").hidden) drawLocal();
+  }).catch(() => { /* no signal, or the file genuinely is not there; either way, show nothing */ });
+}
+
 /* ---------- screen 1: search ---------- */
 /* Two independent timers off the same keystroke, on purpose: `typeaheadTimer`
    is short and cosmetic (Photon suggestions, may fail silently), `searchTimer`
@@ -1737,7 +1758,14 @@ function sunCard() {
 function drawLocal() {
   const el = $("#vLocal");
   const c = GUIDE.country, tr = GUIDE.transit || [], ph = GUIDE.photos || [];
+  const trend = COVERAGE_TREND ? trendFor(COVERAGE_TREND, GUIDE.place.name) : null;
   let html = "";
+  let n = 0;   // section counter; only sections that actually render take a number
+
+  // The coverage trend goes first: it is the most distinctive thing this
+  // guide can show and it is about the town itself, not any one place in it,
+  // so it belongs above the country facts rather than buried under them.
+  if (trend) { n++; html += coverageTrendCard(trend, n); }
 
   if (c) {
     const e = c.emergency || {};
@@ -1758,9 +1786,10 @@ function drawLocal() {
   }
 
   if (tr.length) {
+    n++;
     const byKind = {};
     tr.forEach(x => (byKind[x.kind] = byKind[x.kind] || []).push(x));
-    html += `<h2><span class="n">01</span> Getting around</h2>
+    html += `<h2><span class="n">0${n}</span> Getting around</h2>
       <p class="sub">${tr.length} stops and stations near the centre, from OpenStreetMap.</p>`;
     for (const [kind, list] of Object.entries(byKind).sort((a, b) => b[1].length - a[1].length)) {
       html += `<details><summary>${esc(kind)} (${list.length})</summary>` +
@@ -1771,7 +1800,8 @@ function drawLocal() {
   }
 
   if (ph.length) {
-    html += `<h2><span class="n">0${tr.length ? 2 : 1}</span> What it looks like</h2>
+    n++;
+    html += `<h2><span class="n">0${n}</span> What it looks like</h2>
       <p class="sub">Photographed near here, from Wikimedia Commons.</p>
       <div class="gal">` +
       ph.filter(p => safeUrl(p.thumb)).map(p => `<a href="${esc(safeUrl(p.full) || safeUrl(p.thumb))}" target="_blank" rel="noopener noreferrer">
@@ -1784,6 +1814,46 @@ function drawLocal() {
   if (!html) html = '<div class="state state-empty"><span class="state-icon">🗺</span>' +
     'Nothing extra was available for this place.</div>';
   el.innerHTML = html;
+}
+
+/* One card: is this town's opening_hours coverage getting better mapped over
+   time, worse, or holding steady. Reads only the static, committed JSON
+   (COVERAGE_TREND), never a network call; trendFor/trendDirection/trendLine
+   live in sources.js so they are pure and unit-testable on their own. */
+function coverageTrendCard(entry, n) {
+  const years = (entry.years || []).filter(y => y && typeof y.pct === "number");
+  const dir = trendDirection(years);
+  const cardCls = dir === "improving" ? "ok" : dir === "declining" ? "warn" : "flat";
+  const tagCls = dir === "improving" ? "t-trend-up" : dir === "declining" ? "t-trend-down" : "t-trend-flat";
+  const tagText = dir === "improving" ? "Improving" : dir === "declining" ? "Declining" : "Flat";
+  const barColor = dir === "improving" ? "var(--green)" : dir === "declining" ? "var(--soft-red)" : "var(--dimmer)";
+  const maxPct = Math.max(20, ...years.map(y => y.pct));
+  const bars = years.map(y => {
+    const h = Math.max(4, Math.round((y.pct / maxPct) * 56));
+    return `<div style="flex:1;text-align:center;min-width:0">
+      <div class="tiny" style="font-weight:700;color:var(--ink)">${y.pct}%</div>
+      <div style="height:56px;display:flex;align-items:flex-end;justify-content:center;margin-top:2px">
+        <div style="width:60%;height:${h}px;border-radius:4px 4px 2px 2px;background:${barColor}"></div>
+      </div>
+      <div class="tiny" style="margin-top:2px">${y.year}</div>
+    </div>`;
+  }).join("");
+  const category = (entry.category || "").replace(/^amenity=/, "");
+  return `<div id="coverageTrend">
+    <h2><span class="n">0${n}</span> Is this getting better mapped?</h2>
+    <p class="sub">Measured from OpenStreetMap's own edit history (the ohsome API), not this
+    guide's live data, computed ahead of time rather than in your browser.</p>
+    <div class="card ${cardCls}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h3 style="margin:0">${esc(entry.label || GUIDE.place.name)}, ${esc(category)}</h3>
+        <span class="tag ${tagCls}">${tagText}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:12px">${bars}</div>
+      <p class="sub" style="margin-top:10px">${esc(trendLine(entry))}</p>
+      <p class="tiny" style="margin-top:8px">Share of ${esc(category)} entries carrying a real
+      opening_hours tag, at each snapshot shown, not just the ones open right now.</p>
+    </div>
+  </div>`;
 }
 
 /* ---------- views ---------- */
@@ -1959,6 +2029,7 @@ function wireLandingHero() {
 window.addEventListener("DOMContentLoaded", () => {
   wireLandingHero();
   wireSearch(); wireTimes(); wireGuide();
+  loadCoverageTrend();
   const u = new URLSearchParams(location.search);
   if (u.get("lat") && u.get("lng")) {
     PLACE = { name: u.get("q") || "there", label: u.get("q") || "", lat: +u.get("lat"),

@@ -1031,3 +1031,56 @@ async function attachPhotos(places, commons, onNote) {
     onNote(`Photos: ${named} matched exactly through Wikidata, ${near} from a picture taken within 40 m`);
   return { named, near };
 }
+
+/* ---------------- opening_hours coverage trend (U12) ----------------
+   Overpass only ever sees the present, so it cannot say whether a town's
+   opening_hours coverage is improving or getting worse. That question needs
+   OSM's full edit history, which only the ohsome API can answer, and a
+   single ohsome ratio query is too slow (measured 4.5 to 12 seconds against
+   the towns this ships with, and ohsome's own docs warn of far longer under
+   load) to ever run during a page load. So it never runs here: it is a
+   build-time artifact, produced by tools/build_coverage_trend.py against
+   real ohsome data and committed as docs/data/coverage-trend.json. These
+   three functions are pure and only ever look at that already-fetched JSON;
+   none of them ever calls ohsome, or anything else, from the browser. */
+
+/* Case-insensitive lookup of a town's trend entry. Returns null for any town
+   with no precomputed entry, on purpose: that is the entire contract, a town
+   with no data shows nothing rather than fetching anything live. */
+function trendFor(trendData, townName) {
+  if (!trendData || !townName) return null;
+  const key = String(townName).trim().toLowerCase();
+  return trendData[key] || null;
+}
+
+/* Direction off a series of {year, pct} points, endpoints only. A 2
+   percentage point band around zero counts as flat, so noise in a small
+   sample (a handful of restaurants swinging by one or two) does not read as
+   a confident trend either way. */
+function trendDirection(years) {
+  const pts = (years || []).filter(y => y && typeof y.pct === "number");
+  if (pts.length < 2) return "flat";
+  const diff = pts[pts.length - 1].pct - pts[0].pct;
+  if (diff >= 2) return "improving";
+  if (diff <= -2) return "declining";
+  return "flat";
+}
+
+/* The one plain-language sentence. Deliberately states the honest case too:
+   Jaipur's restaurant count roughly tripled between 2018 and 2026 while its
+   opening_hours coverage fell, and that is worth saying outright rather than
+   only showing a chart and a badge and letting the drop go unremarked. */
+function trendLine(entry) {
+  const years = ((entry && entry.years) || []).filter(y => y && typeof y.pct === "number");
+  if (years.length < 2) return "";
+  const first = years[0], last = years[years.length - 1];
+  const dir = trendDirection(years);
+  let line = dir === "flat"
+    ? `Coverage has stayed close to flat, ${first.pct}% in ${first.year} to ${last.pct}% in ${last.year}.`
+    : `Coverage ${dir === "improving" ? "rose" : "fell"} from ${first.pct}% in ${first.year} to ${last.pct}% in ${last.year}.`;
+  if (first.total > 0 && last.total >= first.total * 1.8) {
+    line += ` The number of restaurants mapped here grew from ${first.total} to ${last.total} over the same years` +
+      (dir !== "improving" ? ", so opening hours are not keeping pace with new places being added." : ".");
+  }
+  return line;
+}

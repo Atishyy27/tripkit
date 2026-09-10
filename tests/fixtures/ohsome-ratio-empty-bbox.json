@@ -1,0 +1,12 @@
+{
+  "attribution": {
+    "url": "https://ohsome.org/copyrights",
+    "text": "© OpenStreetMap contributors"
+  },
+  "apiVersion": "1.10.4",
+  "ratioResult": [
+    { "timestamp": "2018-01-01T00:00:00Z", "value": 0.0, "value2": 0.0, "ratio": "NaN" },
+    { "timestamp": "2022-01-01T00:00:00Z", "value": 0.0, "value2": 0.0, "ratio": "NaN" },
+    { "timestamp": "2026-01-01T00:00:00Z", "value": 0.0, "value2": 0.0, "ratio": "NaN" }
+  ]
+}

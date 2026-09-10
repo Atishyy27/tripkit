@@ -169,6 +169,9 @@ b,strong{color:var(--ink);font-weight:700}
 .t-info{background:var(--info-bg);color:var(--blue)}
 .t-best{background:var(--violet-bg);color:var(--violet)}
 .t-unv{background:var(--muted-bg);color:var(--dimmer)}
+.t-trend-up{background:var(--ok-bg);color:var(--green)}
+.t-trend-down{background:var(--warn-bg);color:var(--soft-red)}
+.t-trend-flat{background:var(--muted-bg);color:var(--dimmer)}
 
 .money{float:right;font-weight:800;font-size:var(--fs-2);color:var(--cool);margin-left:9px;white-space:nowrap}
 .why{font-size:12px;color:var(--hot);font-weight:700;margin-top:5px}
