@@ -84,9 +84,13 @@ jobs:
         run: |
           # The character is written as an escape so this file does not trip its own check.
           DASH=$(printf '\u2014')
+          # Exclude generated (examples, demo), internal plans (planning), and
+          # verbatim captured third-party fixtures (tests/fixtures) whose upstream
+          # text can legitimately contain the character. The prefix alternation
+          # handles GNU grep (paths as ./x) and BSD grep (paths as x) alike.
           if grep -rIn "$DASH" --include="*.py" --include="*.js" --include="*.md" \
                               --include="*.html" --include="*.css" \
-                              . | grep -v "^./examples/" | grep -v "^./demo/"; then
+                              . | grep -vE "(^\./|^)(examples|demo|planning|tests/fixtures)/"; then
             echo "em dashes found, see CONTRIBUTING.md"; exit 1
           fi
           echo "clean"
