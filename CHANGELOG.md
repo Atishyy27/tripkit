@@ -5,6 +5,54 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-09-10
+
+A ground-up visual overhaul and a run of researched features, planned and built
+one unit at a time. The app finally looks like a product, and the guide gained
+real depth.
+
+### Added
+- **Light and dark themes with a persisted toggle.** The app was dark-only; it
+  now defaults to a re-derived light palette, follows the system setting, and
+  toggles both ways, with every component themed correctly.
+- **A photo-first landing.** A full-bleed rotating destination hero (Kyoto,
+  Udaipur, Porto, bundled and optimized, credited to their Wikimedia Commons
+  photographers) with the search over it, an inline blurred first frame for
+  instant paint, and a two-column image-forward card grid on wider screens. The
+  guide's own town photo is now a vivid hero rather than a dim wash.
+- **Preview any time and day.** A control to see what would be open at a chosen
+  time and weekday, ranked for that moment, marked clearly as a preview.
+- **Search ranked by Nominatim importance**, so a prominent place outranks an
+  obscure same-named node, using a signal the app already received and discarded.
+- **Photon typeahead** for live as-you-type town suggestions, augmenting (never
+  replacing) the authoritative resolve, degrading silently on any Photon outage.
+- **Export as KML, GPX and GeoJSON** alongside the calendar, entirely
+  client-side, with the coordinate order tested per format so a place never lands
+  in the ocean.
+- **A coverage trend over time** on the guide: whether a town's opening_hours
+  mapping is improving, built from OSM edit history via a maintainer-run ohsome
+  precompute committed as static data. Munich centre 58.7% to 86.2%; Jaipur flat
+  at single digits while its restaurant count tripled, shown honestly. The
+  browser never calls ohsome.
+
+### Changed
+- **Designed loading, empty and error states** across the screens instead of
+  bare text, with a thin town's empty state pointing at OpenStreetMap.
+- **A Nearest distance sort and a Guide/All mode split** on the list, with
+  distance shown on every row; Best now stays the default so relevance is not
+  lost to proximity.
+- **A buffer-region cache over Overpass** serves a same-point request at an
+  equal-or-smaller radius from memory, cutting calls to the shared instance while
+  a first fetch stays byte-identical to before.
+- **Information density and a token-driven type and spacing scale**, and 22
+  hardcoded dark colours tokenized so the new light theme is coherent.
+
+### Notes
+- A written evaluation of the Postpass, QLever and Sophox data surfaces is on
+  record in DATA-SOURCES.md, verdict defer.
+- The service worker cache is at v18. Everything stays no-backend, no account, no
+  API key, no build step for the app itself, and installable and offline-capable.
+
 ## [0.10.0] - 2026-09-09
 
 The app's one job is telling you what is open right now, and most of the time it was
