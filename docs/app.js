@@ -876,21 +876,29 @@ function card(r, i) {
   const icon = CAT_ICON[p.cat] || "\u{1F4CD}";
   const dim = st.state === "shut";
 
+  // The caption rides on the photo, the same visual language as the town hero
+  // (.dhero) and the landing: a big name and the key meta over a dark gradient,
+  // so each card reads as a photograph first and a data row second. This is the
+  // photo-feed redesign; everything below the image (why, actions) is secondary.
+  const cap = `<div class="pc-cap">
+        <h3>${esc(p.name)}</h3>
+        <div class="pc-meta">${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${price ? `<span class="pc-price">${esc(price)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}</div>
+      </div>`;
+
+  // The glyph sits behind the photo always, so if the image 404s the onerror can
+  // just drop the img and add pc-glyph: the category icon is already there to show
+  // through, and a failed photo degrades to a clean tinted tile with an icon, never
+  // the browser's broken-image placeholder. This matters now that photos rank first.
   const media = safeUrl(p.photo)
-    ? `<div class="pc-img">${badge}<img src="${esc(safeUrl(p.photo))}" loading="lazy" decoding="async"
+    ? `<div class="pc-img">${badge}<span class="pc-icon">${icon}</span><img src="${esc(safeUrl(p.photo))}" loading="lazy" decoding="async"
          alt="${esc(p.name)}" onerror="this.closest('.pc-img').classList.add('pc-glyph');this.remove()">
-       ${p.photoExact ? "" : '<span class="pc-near">nearby</span>'}</div>`
-    : `<div class="pc-img pc-glyph">${badge}<span class="pc-icon">${icon}</span></div>`;
+       ${p.photoExact ? "" : '<span class="pc-near">nearby</span>'}${cap}</div>`
+    : `<div class="pc-img pc-glyph">${badge}<span class="pc-icon">${icon}</span>${cap}</div>`;
 
   return `<article class="pc${i === 0 ? " pc-top" : ""}${dim ? " pc-dim" : ""}" style="--tint:${tint}">
     ${media}
     <div class="pc-body">
-      <div class="pc-head">
-        <h3>${esc(p.name)}</h3>
-        ${price ? `<span class="pc-price">${price}</span>` : ""}
-      </div>
-      <div class="pc-tags">${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${src}</div>
-      ${p.why ? `<p class="pc-why">${esc(p.why).slice(0, 260)}</p>` : ""}
+      ${p.why ? `<p class="pc-why">${esc(p.why).slice(0, 160)}</p>` : ""}
       ${p.warn ? `<p class="pc-warn">\u26A0 ${esc(p.warn)}</p>` : ""}
       ${r.why && r.why.length ? `<div class="why">\u2192 ${esc(r.why[0])}</div>` : ""}
       <div class="btns">
@@ -898,6 +906,7 @@ function card(r, i) {
         <a class="btn g" target="_blank" rel="noopener" href="${o}">${p.loose ? "Find it" : "Walk there"}</a>
         <a class="btn" target="_blank" rel="noopener" href="${g}">Google</a>
         ${safeUrl(p.website) ? `<a class="btn b" target="_blank" rel="noopener noreferrer" href="${esc(safeUrl(p.website))}">Website</a>` : ""}
+        ${src}
       </div>
     </div>
   </article>`;

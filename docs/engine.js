@@ -290,6 +290,13 @@ function score(p, t, phase) {
 
   if ((p.lo === 0 || p.lo === null) && (p.hi === 0 || p.hi === null)) s += 6;
 
+  // The guide is a photo feed now, and a feed that opens on a blank tile reads as
+  // broken. A place carrying its own photograph gets a small nudge, well under the
+  // hour (+42), tag (+13) and open (+12) signals, so images lead the list without a
+  // well-shot but wrong-hour place ever jumping one that is genuinely its hour. A
+  // "nearby" photo (not of this exact place) is trusted less, so it is nudged less.
+  if (p.photo && p.photoExact) s += 8; else if (p.photo) s += 4;
+
   // Open data has no opinion in it. Without that guard an open pharmacy outranks a
   // shut cathedral, which is true and useless.
   if (["practical", "move", "hub", "stay"].indexOf(p.cat) >= 0) s -= 34;

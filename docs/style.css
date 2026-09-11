@@ -149,11 +149,22 @@ b,strong{color:var(--ink);font-weight:700}
 .rank.rn .num{background:var(--bg2);color:var(--dimmer);border:1px solid var(--line)}
 
 /* ---- chips ---- */
-.chips{display:flex;gap:7px;overflow-x:auto;padding:5px 0 var(--sp-4);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:4px 0 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;background:var(--bg2);border:1px solid var(--line);color:var(--dim);
  border-radius:99px;padding:7px 12px;font-size:var(--fs-2);font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 .chip[aria-pressed="true"]{background:var(--hot);border-color:var(--hot);color:#1a0e06}
+
+/* Guide controls: Sort, Guide/All and Now/Preview read as one quiet strip
+   instead of three stacked billboards, so the town photo and the first place
+   are not pushed below the fold by a wall of chips. Each stays its own labelled,
+   clickable group; only the vertical stacking is removed. Groups are divided by
+   a hairline rather than a whole row of their own. */
+.ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:0 2px;margin-bottom:2px}
+.ctrls .chips{width:auto;padding:2px 0;margin:0}
+.ctrls .chips:not(:last-child){margin-right:8px;padding-right:8px;
+ border-right:1px solid var(--line)}
+.ctrls .chip{padding:5px 11px;font-size:var(--fs-1)}
 
 /* ---- badges ----
    Fixed dark text (#1a0e06) on the --hot/--gold accents is kept as-is: both
@@ -308,47 +319,66 @@ ul.tight li{margin-bottom:6px}
    price, tags, why, actions -- sits quieter underneath. #list is the grid: one
    column on a phone, two from 560px, never more, so a card never gets so
    narrow the photo stops meaning anything. */
-#list{display:grid;grid-template-columns:1fr;gap:var(--sp-6)}
-@media(min-width:560px){#list{grid-template-columns:1fr 1fr}}
+/* On a phone the feed breaks the page gutter and runs edge to edge, a continuous
+   stream of photographs the way a maps or stay app does; from 560px it becomes a
+   tidy rounded two-column grid where full-bleed would leave the cards too wide. */
+#list{display:grid;grid-template-columns:1fr;gap:4px;margin:0 -14px}
+@media(min-width:560px){#list{grid-template-columns:1fr 1fr;gap:var(--sp-6);margin:0}}
 
-.pc{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);
- border-radius:18px;overflow:hidden;margin:0;position:relative;
+.pc{position:relative;display:flex;flex-direction:column;background:var(--card);
+ border:1px solid var(--line);border-left:0;border-right:0;border-radius:0;overflow:hidden;margin:0;
  transition:border-color .18s,transform .18s}
-.pc:active{transform:scale(.98)}
-.pc-top{border-color:var(--tint);box-shadow:0 0 0 1px color-mix(in srgb,var(--tint) 30%,transparent)}
-.pc-top:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
- background:linear-gradient(120deg,color-mix(in srgb,var(--tint) 9%,transparent),transparent 55%)}
-.pc-dim{opacity:.6}
+@media(min-width:560px){.pc{border:1px solid var(--line);border-radius:18px}}
+.pc:active{transform:scale(.99)}
+.pc-top{border-color:var(--tint)}
+.pc-top .pc-cap h3{font-size:30px}
+.pc-dim{opacity:.55}
 
-.pc-img{flex:0 0 auto;width:100%;aspect-ratio:4/3;position:relative;background:var(--bg2);overflow:hidden}
-.pc-img img{width:100%;height:100%;object-fit:cover;display:block}
+/* The photo IS the card. It fills a tall tile and the name plus the key meta sit
+   on it over a dark gradient, the same visual language as the town hero (.dhero)
+   and the landing. Everything under the image is secondary chrome. */
+.pc-img{position:relative;width:100%;aspect-ratio:3/2;background:var(--bg2);overflow:hidden}
+.pc-top .pc-img{aspect-ratio:4/3}
+.pc-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pc-img:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(180deg,rgba(13,11,18,0) 34%,rgba(13,11,18,.5) 62%,rgba(13,11,18,.94) 100%)}
 .pc-img.pc-failed img{display:none}
-.pc-img.pc-failed,.pc-glyph{display:flex;align-items:center;justify-content:center;
- background:linear-gradient(150deg,color-mix(in srgb,var(--tint) 22%,var(--bg2)),var(--bg2))}
-.pc-glyph .pc-icon,.pc-failed:after{font-size:44px;line-height:1;opacity:.85}
-.pc-near{position:absolute;right:8px;bottom:8px;font-size:8.5px;font-weight:800;
+.pc-glyph{background:linear-gradient(150deg,color-mix(in srgb,var(--tint) 30%,var(--bg2)),var(--bg2))}
+.pc-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:0;
+ font-size:52px;line-height:1;opacity:.5}
+.pc-near{position:absolute;right:10px;top:10px;z-index:2;font-size:8.5px;font-weight:800;
  letter-spacing:.4px;text-transform:uppercase;background:rgba(13,11,18,.78);
  color:var(--hero-dim);padding:3px 7px;border-radius:99px}
 
-/* The open/closed read: overlaid directly on the photo, always the same fixed
-   dark-glass chip regardless of theme, the same reasoning as .pc-near above --
-   it sits on a photograph, not on a themed card surface, so it needs its own
-   guaranteed contrast rather than a token tuned for --card. */
-.pc-badge{position:absolute;left:8px;top:8px;font-size:10.5px;font-weight:800;
+/* The open/closed read: a fixed dark-glass chip top-left on the photo, its own
+   guaranteed contrast regardless of theme (it sits on a photograph, not on the
+   themed card surface). */
+.pc-badge{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;font-weight:800;
  letter-spacing:.4px;text-transform:uppercase;padding:4px 10px;border-radius:99px;
  backdrop-filter:blur(6px);background:rgba(13,11,18,.6);color:#f4eeff}
-.pc-badge.b-open{background:rgba(20,46,32,.72);color:#7ee0a8}
-.pc-badge.b-soon{background:rgba(51,38,18,.72);color:#ffc857}
-.pc-badge.b-shut{background:rgba(51,24,28,.72);color:#ff9aa2}
+.pc-badge.b-open{background:rgba(20,46,32,.78);color:#7ee0a8}
+.pc-badge.b-soon{background:rgba(51,38,18,.78);color:#ffc857}
+.pc-badge.b-shut{background:rgba(51,24,28,.78);color:#ff9aa2}
 
-.pc-body{flex:1;min-width:0;padding:var(--sp-5)}
-.pc-head{display:flex;align-items:baseline;gap:9px;justify-content:space-between}
-.pc-head h3{font-size:16px;margin:0;line-height:1.25;letter-spacing:-.3px}
-.pc-price{flex:0 0 auto;font-weight:800;font-size:12.5px;color:var(--cool);white-space:nowrap}
-.pc-tags{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:0}
-.pc-why{margin:7px 0 0;font-size:13px;color:var(--dim);line-height:1.5}
+/* the caption, on the image */
+.pc-cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:14px 14px 13px}
+.pc-cap h3{margin:0;font-size:21px;line-height:1.1;letter-spacing:-.6px;
+ color:var(--hero-ink);text-shadow:0 2px 18px rgba(0,0,0,.7)}
+.pc-top .pc-cap h3{font-size:25px}
+.pc-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
+.pc-meta .tag{margin:0;text-transform:none;font-size:11px;letter-spacing:0;border-radius:99px;
+ padding:3px 9px;background:rgba(13,11,18,.6);backdrop-filter:blur(6px);color:var(--hero-dim)}
+.pc-meta .tag.t-unv{color:#ffce8a}
+.pc-cap .pc-price{border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:800;
+ background:rgba(13,11,18,.6);backdrop-filter:blur(6px);color:var(--hot)}
+
+/* under the photo: quieter, the description and the actions */
+.pc-body{padding:11px 13px 12px}
+.pc-why{margin:0;font-size:12.5px;color:var(--dim);line-height:1.5;
+ display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pc-warn{margin:6px 0 0;font-size:11.5px;color:var(--soft-red);line-height:1.45}
-@media(min-width:560px){.pc-head h3{font-size:16.5px}}
+.pc-body .btns{margin-top:9px}
+.pc-body .src-badge{align-self:center;margin-left:2px}
 
 /* ============ destination hero ============
    The town's own photo is now the actual hero of the page, not a dimmed wash

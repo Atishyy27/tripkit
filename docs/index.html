@@ -45,7 +45,7 @@ try {
  "applicationCategory": "TravelApplication",
  "operatingSystem": "Any (runs in a web browser; installable as a Progressive Web App)",
  "browserRequirements": "Requires JavaScript. A town you have already opened works with no signal; searching a new town needs a connection.",
- "softwareVersion": "0.11.2",
+ "softwareVersion": "0.12.0",
  "isAccessibleForFree": true,
  "offers": {
   "@type": "Offer",
@@ -344,13 +344,15 @@ try {
 
     <div id="vList">
       <input class="search" id="filter" type="search" placeholder="Filter by name…" aria-label="Filter" style="margin-bottom:4px">
-      <div class="chips" id="whenMode" aria-label="Now or a chosen time"></div>
+      <div class="ctrls">
+        <div class="chips" id="sortMode" aria-label="Sort"></div>
+        <div class="chips" id="listMode" aria-label="Guide or all"></div>
+        <div class="chips" id="whenMode" aria-label="Now or a chosen time"></div>
+      </div>
       <div class="when-picker" id="whenPicker" hidden>
         <input type="time" id="whenTime" aria-label="Preview time">
         <div class="chips" id="whenDays" aria-label="Preview day of week"></div>
       </div>
-      <div class="chips" id="listMode" aria-label="Guide or all"></div>
-      <div class="chips" id="sortMode" aria-label="Sort"></div>
       <div class="chips" id="cats"></div>
       <p class="tiny" id="count"></p>
       <div id="list"></div>

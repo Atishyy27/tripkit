@@ -5,6 +5,29 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-09-11
+
+### Changed
+- **The guide screen is rebuilt as a full-bleed photo feed.** Each place is now a
+  full-width photograph with its name in large type and its open/closed status set
+  directly on the image, the same visual language as the landing and the town hero,
+  replacing the older boxed card that stacked a small photo over a description
+  paragraph and a row of buttons. On a phone the cards run edge to edge as one
+  continuous stream; from 560px they become a rounded two-column grid. The three
+  filter toggles (sort, guide/all, now/preview) are grouped into one
+  hairline-divided strip instead of three stacked rows.
+- **A place that carries its own photograph ranks slightly higher**, so the feed
+  opens on an image rather than a blank tile. The nudge (+8 for an exact photo, +4
+  for a nearby one) sits well below the hour (+42), tag (+13) and open (+12)
+  signals, so a well-shot place never jumps one that is genuinely its hour; only a
+  roughly-tied place is reordered.
+
+### Fixed
+- **A place whose photo fails to load now degrades to a clean category tile**
+  rather than the browser's broken-image placeholder: the category glyph sits
+  behind every photo, so dropping a 404ing image reveals it. This matters more now
+  that photos rank first.
+
 ## [0.11.2] - 2026-09-11
 
 ### Fixed
