@@ -741,6 +741,7 @@ function open(trip) {
   clearInterval(window._tick);
   window._tick = setInterval(() => {
     render();
+    if (!$("#vNow").hidden) drawNow();
     if (!$("#vMap").hidden) drawMap();
     if (!$("#vDay").hidden) drawDay();
     if (!$("#vWeather").hidden) drawWeather();
@@ -1072,6 +1073,165 @@ function drawDay() {
     <p class="tiny" style="margin:10px 0 0">Sunrise and sunset were calculated on this device
     from the date and your coordinates. Nothing was fetched to work them out, so they are right
     even with no signal.</p>`;
+}
+
+/* ---------- the companion: what to do right now ----------
+
+   The list answers "what is open", the plan answers "what is my day". Neither
+   answers the question you actually have while standing in a street mid-trip:
+   where do I go next, and what happens to the rest if I am running late or a
+   place turned out shut. This view answers only that.
+
+   It owns no new scheduling. It re-runs the same schedule() over the stops you
+   have not yet done, always from this minute, so "running late" is not a mode:
+   the day simply re-times itself from now every time it is drawn (every 30s) or
+   whenever you mark a stop done or skipped. Done and skipped live on the day, so
+   they survive a reload like the plan does. */
+function curDayObj() { ensureDays(); return GUIDE.days[GUIDE.day]; }
+
+function dirLink(p) {
+  return p.loose
+    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
+    : `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B${p.lat}%2C${p.lng}`;
+}
+
+function markStop(id, kind) {       // kind is "done" or "skipped"
+  const d = curDayObj();
+  d.done = Array.isArray(d.done) ? d.done : [];
+  d.skipped = Array.isArray(d.skipped) ? d.skipped : [];
+  const other = kind === "done" ? "skipped" : "done";
+  d[other] = d[other].filter(x => x !== id);     // a stop is done or skipped, never both
+  const i = d[kind].indexOf(id);
+  if (i >= 0) d[kind].splice(i, 1); else d[kind].push(id);
+  track("/now/" + kind);
+  save(GUIDE); drawNow(); render();
+}
+
+function wireNow(d) {
+  $$("#vNow [data-done]").forEach(b => b.onclick = () => markStop(b.dataset.done, "done"));
+  $$("#vNow [data-skip]").forEach(b => b.onclick = () => markStop(b.dataset.skip, "skipped"));
+  $$("#vNow [data-day]").forEach(x => x.onclick = () => switchDay(+x.dataset.day));
+  $$("#vNow [data-addday]").forEach(x => x.onclick = () => addDay());
+  $$("#vNow [data-rmday]").forEach(x => x.onclick = () => removeDay(+x.dataset.rmday));
+  const rr = $("#nowReset");
+  if (rr) rr.onclick = () => { d.done = []; d.skipped = []; save(GUIDE); drawNow(); render(); };
+  const tp = $("#nowToPlan");
+  if (tp) tp.onclick = () => {
+    $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === "plan")));
+    setView("plan");
+  };
+}
+
+function drawNow() {
+  const el = $("#vNow");
+  if (!el || !GUIDE) return;
+  const d = curDayObj();
+  const done = new Set(Array.isArray(d.done) ? d.done : []);
+  const skipped = new Set(Array.isArray(d.skipped) ? d.skipped : []);
+  const picks = planPlaces();          // this day's picks, in plan order
+  const t = localMins();
+
+  // Nothing planned today: this view has nothing to carry you through, so it
+  // points at the day builder and offers one genuinely-open thing meanwhile,
+  // rather than sitting empty.
+  if (!picks.length) {
+    const top = (rankNow(t, {}).list || [])[0];
+    const o = top ? dirLink(top.p) : "";       // we build this link, scheme fixed to https
+    el.innerHTML = dayTabs() + `<div class="card hi">
+      <h3>Nothing planned for ${esc((d.label || "today").toLowerCase())} yet</h3>
+      <p class="sub">This carries you through a day you have picked: where to head now, what is
+      after it, and when to start back. Build a day or add places from the list and it appears
+      here.</p>
+      <div class="btns" style="margin-top:10px"><button class="btn o" id="nowToPlan">Build my day</button></div>
+    </div>` + (top ? `<div class="card">
+      <h3>Open right now</h3>
+      <p class="sub"><b>${esc(top.p.name)}</b> suits this hour nearby.${top.why && top.why[0] ? " " + esc(top.why[0]) + "." : ""}</p>
+      <div class="btns" style="margin-top:8px">
+        <a class="btn g" target="_blank" rel="noopener" href="${o}">${top.p.loose ? "Find it" : "Walk there"}</a>
+        <button class="btn o" data-pick="${esc(top.p.id)}">+ add to day</button>
+      </div></div>` : "");
+    $$("#vNow [data-pick]").forEach(b => b.onclick = () => togglePick(b.dataset.pick));
+    wireNow(d);
+    return;
+  }
+
+  const remaining = picks.filter(p => !done.has(p.id) && !skipped.has(p.id));
+  const doneCount = picks.filter(p => done.has(p.id)).length;
+
+  if (!remaining.length) {
+    el.innerHTML = dayTabs() + `<div class="card ok">
+      <h3>That is the day</h3>
+      <p class="sub">${doneCount ? `${doneCount} done` : "Every stop handled"}${skipped.size ? `, ${skipped.size} skipped` : ""}.
+      Nothing left on ${esc((d.label || "today").toLowerCase())}.</p>
+      <div class="btns" style="margin-top:8px"><button class="btn" id="nowReset">Start this day over</button></div>
+    </div>`;
+    wireNow(d);
+    return;
+  }
+
+  // The one piece of real work: re-time the stops you have not done, from now.
+  const s = schedule(remaining, t, { keepOrder: !!GUIDE.manualOrder });
+  const stopRows = s.rows.filter(r => !r.journey);
+  const next = stopRows[0];
+  const after = stopRows[1];
+  const ex = exitState(t);
+
+  const head = next.p;
+  const o = dirLink(head);                    // we build this link, scheme fixed to https
+  const heading = next.arrive > t + 2;
+  const label = (next.state === "unknown")
+    ? "hours are not on the map, so it may be shut"
+    : (openState(head, next.arrive).label || "");
+  const headline = `<div class="card ${next.issues.length ? "warn" : "hi"}">
+    <div class="tiny" style="letter-spacing:.05em;text-transform:uppercase;opacity:.65">${heading ? "Head here next" : "You are due here"}</div>
+    <h3 style="margin:2px 0 4px;font-size:22px">${esc(head.name)}</h3>
+    <p class="sub" style="margin:0">${heading ? `Be there about <b>${HM(next.arrive)}</b>` : "Here now"}${next.walk ? `, ${next.walk} min walk` : ""}. ${dur(next.stay)} here.${label ? " " + esc(label) + "." : ""}</p>
+    ${next.issues.length ? `<p class="pissue" style="margin:6px 0 0">⚠ ${esc(next.issues[0])}</p>` : ""}
+    ${(next.unknowns || []).length ? `<p class="punknown" style="margin:6px 0 0">${esc(next.unknowns[0])}</p>` : ""}
+    <div class="btns" style="margin-top:10px">
+      <a class="btn g" target="_blank" rel="noopener" href="${o}">${head.loose ? "Find it" : "Walk there"}</a>
+      <button class="btn picked" data-done="${esc(head.id)}">✓ done</button>
+      <button class="btn r" data-skip="${esc(head.id)}">skip</button>
+    </div>
+    ${after ? `<p class="tiny" style="margin:10px 0 0">Then <b>${esc(after.p.name)}</b> around ${HM(after.arrive)}.</p>`
+            : `<p class="tiny" style="margin:10px 0 0">Last stop of the day.</p>`}
+  </div>`;
+
+  const exCard = ex.msg ? `<div class="card ${ex.level === "soon" ? "cool" : "warn"}">
+    <h3>${ex.level === "soon" ? "Start heading back soon" : "Time to head back"}</h3>
+    <p class="sub" style="margin:6px 0 0">${esc(ex.msg)}</p></div>` : "";
+
+  const fitNote = s.overruns ? `<div class="card warn">
+    <h3>The rest will not all fit</h3>
+    <p class="sub" style="margin:6px 0 0">From ${HM(t)} the remaining ${remaining.length} stop${remaining.length > 1 ? "s" : ""} run past when you have to leave. Skip one below and it re-times from now.</p></div>` : "";
+
+  // Everything after the headline stop, journeys included so a cross-town hop is
+  // never silently swallowed, each timed from now.
+  let passed = false;
+  const rest = s.rows.map(r => {
+    if (r.journey) return passed ? `<div class="prow journey">
+      <div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+      <div class="pbody"><div class="pname">${esc(r.from.town || "there")} → ${esc(r.to.town || "there")}</div>
+      <div class="tiny">About ${r.mins} minutes between towns.</div></div></div>` : "";
+    if (!passed) { passed = true; return ""; }   // the headline stop, not repeated
+    return `<div class="prow${r.issues.length ? " prow-bad" : ""}">
+      <div class="ptime">${HM(r.arrive)}<span>${HM(r.leave)}</span></div>
+      <div class="pbody">
+        <div class="pname">${esc(r.p.name)}
+          <span style="display:flex;gap:2px;flex:0 0 auto">
+            <button class="btn drop" data-done="${esc(r.p.id)}" title="done">✓</button>
+            <button class="btn" data-skip="${esc(r.p.id)}" title="skip">×</button>
+          </span></div>
+        <div class="tiny">${r.walk ? `${r.walk} min walk. ` : ""}${dur(r.stay)} here.</div>
+        ${r.issues.map(x => `<div class="pissue">⚠ ${esc(x)}</div>`).join("")}
+        ${(r.unknowns || []).map(x => `<div class="punknown">${esc(x)}</div>`).join("")}
+      </div></div>`;
+  }).join("");
+
+  el.innerHTML = dayTabs() + headline + exCard + fitNote +
+    (stopRows.length > 1 ? `<p class="tiny" style="margin:14px 0 4px;opacity:.8">Rest of ${esc((d.label || "today").toLowerCase())}, timed from ${HM(t)}</p><div class="plan">${rest}</div>` : "") +
+    ((doneCount || skipped.size) ? `<p class="tiny" style="margin:12px 0 0">${doneCount} done${skipped.size ? `, ${skipped.size} skipped` : ""}. <button class="btn" id="nowReset" style="padding:3px 8px">reset day</button></p>` : "");
+  wireNow(d);
 }
 
 /* ---------- more than one day ----------
@@ -1952,7 +2112,7 @@ function coverageTrendCard(entry, n) {
 
 /* ---------- views ---------- */
 function setView(v) {
-  const map = { list: "#vList", plan: "#vPlan", map: "#vMap", day: "#vDay",
+  const map = { list: "#vList", now: "#vNow", plan: "#vPlan", map: "#vMap", day: "#vDay",
                 weather: "#vWeather", local: "#vLocal" };
   for (const [k, sel] of Object.entries(map)) { const n = $(sel); if (n) n.hidden = k !== v; }
   if (v === "map") drawMap();
@@ -1960,6 +2120,7 @@ function setView(v) {
   if (v === "weather") drawWeather();
   if (v === "local") drawLocal();
   if (v === "plan") drawPlan();
+  if (v === "now") drawNow();
 }
 
 /* ---------- extras ---------- */
