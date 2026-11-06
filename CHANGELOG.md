@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - Unreleased
+
+### Added
+- **A Now view, for while you are on the trip.** The list says what is open and
+  the plan says what the day is. Neither answers the question you have standing
+  in a street: where do I go next, and what happens to the rest if I am running
+  late or a place turned out shut. Now shows the next stop, the one after it, and
+  when to head back, and re-times the remaining stops from this minute whenever
+  one is marked done or skipped, so running late is not a separate mode. Done and
+  skipped are kept on the day, so they survive a reload. It reuses the existing
+  scheduler rather than adding a second one.
+
 ## [0.12.0] - 2026-09-11
 
 ### Changed
