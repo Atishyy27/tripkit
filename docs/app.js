@@ -737,7 +737,12 @@ function open(trip) {
   buildListMode();
   buildWhen();
   render();
-  setView("list");
+  // Opening a trip that already has a plan for today lands on Now, the one view that
+  // answers what to do this minute; an unplanned guide still opens on the list.
+  const planned = GUIDE.days && GUIDE.days[GUIDE.day] && (GUIDE.days[GUIDE.day].plan || []).length > 0;
+  const startView = planned ? "now" : "list";
+  $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === startView)));
+  setView(startView);
   clearInterval(window._tick);
   window._tick = setInterval(() => {
     render();
