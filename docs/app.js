@@ -840,6 +840,16 @@ const CAT_TINT = {
   practical: "#a99fc4", hub: "#a99fc4"
 };
 
+/* The flow read, one tag: a hub says how many open things sit a short walk away,
+   a dead end says there are none so you do not spend a ride reaching it. A place
+   with 1 or 2 nearby is unremarkable and gets no tag, to keep the row quiet. */
+function flowTag(f) {
+  if (!f || !f.known) return "";
+  if (f.dead) return '<span class="tag t-unv">few open nearby</span>';
+  if (f.hub) return `<span class="tag t-info">${f.count} open nearby</span>`;
+  return "";
+}
+
 function card(r, i) {
   const p = r.p, st = r.st;
   // The open/closed read is the one thing that has to land at a glance, so it
@@ -883,7 +893,7 @@ function card(r, i) {
   // photo-feed redesign; everything below the image (why, actions) is secondary.
   const cap = `<div class="pc-cap">
         <h3>${esc(p.name)}</h3>
-        <div class="pc-meta">${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${price ? `<span class="pc-price">${esc(price)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}</div>
+        <div class="pc-meta">${distTag}${p.dur ? `<span class="tag t-info">${dur(p.dur)}</span>` : ""}${price ? `<span class="pc-price">${esc(price)}</span>` : ""}${p.loose ? '<span class="tag t-unv">pin approx</span>' : ""}${flowTag(r.flow)}</div>
       </div>`;
 
   // The glyph sits behind the photo always, so if the image 404s the onerror can
@@ -982,6 +992,9 @@ function render() {
   if (mode === "guide") ranked = ranked.filter(x => isCurated(x.p));
 
   const top = ranked.slice(0, 40);
+  // Flow is computed only for the cards actually shown, and at the same minute as
+  // their open/closed state, so the tag never disagrees with the badge above it.
+  top.forEach(x => { x.flow = onwardFlow(x.p, t); });
   // Two very different reasons the list can be empty get two very different
   // messages: a curated-only guide with nothing written yet points at the All
   // toggle already sitting right there; a town that genuinely has almost

@@ -395,6 +395,34 @@ function walkMinutes(a, b) {
   return Math.max(3, Math.round((m * 1.35) / WALK_METRES_PER_MIN));
 }
 
+const FLOW_RADIUS_MIN = 15;   // reachable in a short walk counts as onward flow
+const FLOW_HUB_MIN = 3;       // this many open options nearby makes a place a hub
+
+/* Does this place lead somewhere, or is it a dead end not worth a ride to reach?
+   Counts the other places that are plausibly open and within a short walk. Chores
+   (transit, lodging, practical) are not "something to do next", so they never
+   count. open or closing is live now; unknown hours might be open, so a thin map
+   never gets a place wrongly called a dead end; soon and shut do not count. A place
+   with no real coordinates cannot be measured and returns known:false rather than a
+   false dead end. */
+function onwardFlow(place, t) {
+  if (!place || place.lat == null || place.loose) return { known: false, count: 0, near: [] };
+  const near = [];
+  for (const q of (DATA.places || [])) {
+    if (!q || q.id === place.id || q.lat == null || q.loose) continue;
+    if (["practical", "move", "hub", "stay"].indexOf(q.cat) >= 0) continue;
+    // a cheap box prefilter before the walk maths: 15 min is about 830m straight line
+    if (Math.abs(q.lat - place.lat) > 0.02 || Math.abs(q.lng - place.lng) > 0.025) continue;
+    const w = walkMinutes(place, q);
+    if (w > FLOW_RADIUS_MIN) continue;
+    const st = openState(q, t).state;
+    if (st === "open" || st === "closing" || st === "unknown") near.push({ p: q, walk: w });
+  }
+  near.sort((a, b) => a.walk - b.walk);
+  return { known: true, count: near.length, hub: near.length >= FLOW_HUB_MIN,
+           dead: near.length === 0, near: near.slice(0, 5) };
+}
+
 /* Order the picks so the day flows.
 
    Time leads, walking follows. A first attempt used nearest neighbour with a mild

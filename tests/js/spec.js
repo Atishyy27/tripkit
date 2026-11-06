@@ -761,4 +761,58 @@ describe("the page loads as a browser would", () => {
   });
 });
 
+describe("engine: onwardFlow (the flow graph, hub vs dead end)", () => {
+  const base = { config: { tzOffsetMinutes: 0, arrive: 0, depart: 1439, multiDay: true },
+                 conditions: { sunrise: 360, sunset: 1080, polar: null } };
+  const mk = (id, lat, lng, open, close, cat) =>
+    ({ id, name: id, lat, lng, open, close, cat: cat || "view", dur: 30 });
+  const set = places => init(Object.assign({}, base, { places }));
+  const NOON = 720;
+
+  it("flags a hub when several open places sit a short walk away", () => {
+    const ps = [mk("a", 26.000, 75.000, "09:00", "18:00"), mk("b", 26.001, 75.000, "09:00", "18:00"),
+                mk("c", 26.000, 75.001, "09:00", "18:00"), mk("d", 26.001, 75.001, "09:00", "18:00")];
+    set(ps);
+    const f = onwardFlow(ps[0], NOON);
+    ok(f.known && f.hub, `expected a hub, got count ${f.count}`);
+  });
+
+  it("flags a dead end when the only places near are shut now", () => {
+    // neighbours are close but open 18:00 to 22:00, so shut at noon
+    const ps = [mk("a", 26.000, 75.000, "09:00", "18:00"), mk("n1", 26.001, 75.000, "18:00", "22:00"),
+                mk("n2", 26.000, 75.001, "18:00", "22:00")];
+    set(ps);
+    ok(onwardFlow(ps[0], NOON).dead, "shut neighbours must not count as onward flow");
+  });
+
+  it("does not count chores (transit, lodging, practical) as onward flow", () => {
+    const ps = [mk("v", 26.000, 75.000, "09:00", "18:00"), mk("bus", 26.0005, 75.000, "00:00", "23:59", "move"),
+                mk("hotel", 26.000, 75.0005, "00:00", "23:59", "stay"), mk("prac", 26.0005, 75.0005, "00:00", "23:59", "practical")];
+    set(ps);
+    eq(onwardFlow(ps[0], NOON).count, 0, "a chore is not something to do next");
+  });
+
+  it("returns known:false for a loose pin it cannot measure", () => {
+    const ps = [Object.assign(mk("loose", 26, 75, "09:00", "18:00"), { loose: true }),
+                mk("x", 26.001, 75, "09:00", "18:00")];
+    set(ps);
+    eq(onwardFlow(ps[0], NOON).known, false, "a loose pin must not become a false dead end");
+  });
+
+  it("excludes places beyond a short walk", () => {
+    // about 1.6 km north, over 15 minutes on foot
+    const ps = [mk("a", 26.0000, 75, "09:00", "18:00"), mk("b", 26.0145, 75, "09:00", "18:00"),
+                mk("c", 26.0150, 75, "09:00", "18:00"), mk("d", 26.0155, 75, "09:00", "18:00")];
+    set(ps);
+    ok(onwardFlow(ps[0], NOON).dead, "places beyond a short walk must not count");
+  });
+
+  it("surfaces a hub as a count tag and a dead end as a quiet one", () => {
+    ok(/open nearby/.test(flowTag({ known: true, hub: true, count: 4 })), "a hub shows a count tag");
+    ok(/few open nearby/.test(flowTag({ known: true, dead: true, count: 0 })), "a dead end shows a quiet tag");
+    eq(flowTag({ known: true, count: 2 }), "", "1 or 2 nearby is unremarkable and gets no tag");
+    eq(flowTag({ known: false }), "", "unmeasurable flow shows nothing");
+  });
+});
+
 report();
