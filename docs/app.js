@@ -1110,9 +1110,9 @@ function markStop(id, kind) {       // kind is "done" or "skipped"
 function wireNow(d) {
   $$("#vNow [data-done]").forEach(b => b.onclick = () => markStop(b.dataset.done, "done"));
   $$("#vNow [data-skip]").forEach(b => b.onclick = () => markStop(b.dataset.skip, "skipped"));
-  $$("#vNow [data-day]").forEach(x => x.onclick = () => switchDay(+x.dataset.day));
-  $$("#vNow [data-addday]").forEach(x => x.onclick = () => addDay());
-  $$("#vNow [data-rmday]").forEach(x => x.onclick = () => removeDay(+x.dataset.rmday));
+  $$("#vNow [data-day]").forEach(x => x.onclick = () => { switchDay(+x.dataset.day); drawNow(); });
+  $$("#vNow [data-addday]").forEach(x => x.onclick = () => { addDay(); drawNow(); });
+  $$("#vNow [data-rmday]").forEach(x => x.onclick = () => { removeDay(+x.dataset.rmday); drawNow(); });
   const rr = $("#nowReset");
   if (rr) rr.onclick = () => { d.done = []; d.skipped = []; save(GUIDE); drawNow(); render(); };
   const tp = $("#nowToPlan");
@@ -1157,11 +1157,14 @@ function drawNow() {
 
   const remaining = picks.filter(p => !done.has(p.id) && !skipped.has(p.id));
   const doneCount = picks.filter(p => done.has(p.id)).length;
+  // Count only stops still in the plan: a stop removed after being skipped must
+  // not keep inflating the tally.
+  const skippedCount = picks.filter(p => skipped.has(p.id)).length;
 
   if (!remaining.length) {
     el.innerHTML = dayTabs() + `<div class="card ok">
       <h3>That is the day</h3>
-      <p class="sub">${doneCount ? `${doneCount} done` : "Every stop handled"}${skipped.size ? `, ${skipped.size} skipped` : ""}.
+      <p class="sub">${doneCount ? `${doneCount} done` : "Every stop handled"}${skippedCount ? `, ${skippedCount} skipped` : ""}.
       Nothing left on ${esc((d.label || "today").toLowerCase())}.</p>
       <div class="btns" style="margin-top:8px"><button class="btn" id="nowReset">Start this day over</button></div>
     </div>`;
@@ -1230,7 +1233,7 @@ function drawNow() {
 
   el.innerHTML = dayTabs() + headline + exCard + fitNote +
     (stopRows.length > 1 ? `<p class="tiny" style="margin:14px 0 4px;opacity:.8">Rest of ${esc((d.label || "today").toLowerCase())}, timed from ${HM(t)}</p><div class="plan">${rest}</div>` : "") +
-    ((doneCount || skipped.size) ? `<p class="tiny" style="margin:12px 0 0">${doneCount} done${skipped.size ? `, ${skipped.size} skipped` : ""}. <button class="btn" id="nowReset" style="padding:3px 8px">reset day</button></p>` : "");
+    ((doneCount || skippedCount) ? `<p class="tiny" style="margin:12px 0 0">${doneCount} done${skippedCount ? `, ${skippedCount} skipped` : ""}. <button class="btn" id="nowReset" style="padding:3px 8px">reset day</button></p>` : "");
   wireNow(d);
 }
 
