@@ -1113,8 +1113,26 @@ function dirLink(p) {
     : `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B${p.lat}%2C${p.lng}`;
 }
 
+/* Done and skipped describe one real day. A trip reopened on a later date would
+   otherwise open on "That is the day" with every stop already handled, so marks
+   carry the trip-local date they were made on and are dropped once it passes. */
+function tripDate() {
+  const n = new Date(), off = CFG.tzOffsetMinutes || 0;
+  const t = new Date(n.getTime() + n.getTimezoneOffset() * 60000 + off * 60000);
+  const p2 = x => String(x).padStart(2, "0");
+  return `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+}
+
+function expireMarks(d) {
+  if (!d.markedOn || d.markedOn === tripDate()) return false;
+  d.done = []; d.skipped = []; d.markedOn = null;
+  return true;
+}
+
 function markStop(id, kind) {       // kind is "done" or "skipped"
   const d = curDayObj();
+  expireMarks(d);
+  d.markedOn = tripDate();
   d.done = Array.isArray(d.done) ? d.done : [];
   d.skipped = Array.isArray(d.skipped) ? d.skipped : [];
   const other = kind === "done" ? "skipped" : "done";
@@ -1132,7 +1150,7 @@ function wireNow(d) {
   $$("#vNow [data-addday]").forEach(x => x.onclick = () => { addDay(); drawNow(); });
   $$("#vNow [data-rmday]").forEach(x => x.onclick = () => { removeDay(+x.dataset.rmday); drawNow(); });
   const rr = $("#nowReset");
-  if (rr) rr.onclick = () => { d.done = []; d.skipped = []; save(GUIDE); drawNow(); render(); };
+  if (rr) rr.onclick = () => { d.done = []; d.skipped = []; d.markedOn = null; save(GUIDE); drawNow(); render(); };
   const tp = $("#nowToPlan");
   if (tp) tp.onclick = () => {
     $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === "plan")));
@@ -1144,6 +1162,7 @@ function drawNow() {
   const el = $("#vNow");
   if (!el || !GUIDE) return;
   const d = curDayObj();
+  if (expireMarks(d)) save(GUIDE);
   const done = new Set(Array.isArray(d.done) ? d.done : []);
   const skipped = new Set(Array.isArray(d.skipped) ? d.skipped : []);
   const picks = planPlaces();          // this day's picks, in plan order
@@ -1430,6 +1449,11 @@ function togglePick(id) {
   track(i >= 0 ? "/plan/removed" : "/plan/added");
   if (i >= 0) GUIDE.plan.splice(i, 1); else GUIDE.plan.push(id);
   syncDay();
+  if (i >= 0) {            // a stop that leaves the plan takes its mark with it
+    const d = curDayObj();
+    if (Array.isArray(d.done)) d.done = d.done.filter(x => x !== id);
+    if (Array.isArray(d.skipped)) d.skipped = d.skipped.filter(x => x !== id);
+  }
   save(GUIDE);
   render();
   paintPlanCount();
