@@ -529,7 +529,7 @@ function schedule(picks, startMins, opts) {
     const unknowns = [];
     if (st.state === "shut") issues.push(`shut at ${HM(arrive)}, ${st.label}`);
     if (st.state === "soon") issues.push(`does not open until ${p.open}`);
-    if (st.state === "unknown") unknowns.push("nobody has recorded its hours, so this could be shut");
+    if (st.state === "unknown") unknowns.push("nobody has recorded its hours, so this could be shut. Ask a local before you go");
     if (p.close && M(p.close) > M(p.open || "00:00") && leave > M(p.close))
       issues.push(`you would still be there after it closes at ${p.close}`);
     if (leave > hardEnd) issues.push("this runs past when you have to leave");
