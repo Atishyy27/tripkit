@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node tests/js/run.js",
     "test:browser": "node tests/browser.js",
+    "test:now": "node tests/now-dom.js",
     "test:live": "node docs/e2e.js"
   },
   "devDependencies": { "playwright": "^1.49.0" }
