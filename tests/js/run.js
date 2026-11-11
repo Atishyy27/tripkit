@@ -31,10 +31,12 @@ const regressions = fs.readFileSync(path.join(__dirname, "regressions.js"), "utf
 // the security suite checks app.js itself, so it has to be loaded too
 const appSrc = fs.readFileSync(path.join(DOCS, "app.js"), "utf8")
   .replace(/window\.addEventListener\("DOMContentLoaded"[\s\S]*?\n\}\);\s*$/, "");
+const surveySrc = fs.readFileSync(path.join(DOCS, "survey.js"), "utf8");
+const surveyTests = fs.readFileSync(path.join(__dirname, "survey.js"), "utf8");
 const body = fs.readFileSync(path.join(__dirname, "spec.js"), "utf8");
 
 const out = path.join(os.tmpdir(), "tripkit-js-tests-" + process.pid + ".js");
-fs.writeFileSync(out, [shims, sources, appSrc, security, regressions, body].join("\n;\n"));
+fs.writeFileSync(out, [shims, sources, surveySrc, appSrc, security, regressions, surveyTests, body].join("\n;\n"));
 try {
   execFileSync(process.execPath, [out, ...process.argv.slice(2)], { stdio: "inherit" });
 } catch (e) {
