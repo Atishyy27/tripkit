@@ -1107,6 +1107,8 @@ function drawDay() {
    they survive a reload like the plan does. */
 function curDayObj() { ensureDays(); return GUIDE.days[GUIDE.day]; }
 
+function inr(n) { return "₹" + Math.round(n).toLocaleString("en-IN"); }
+
 function dirLink(p) {
   return p.loose
     ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(p.name + ", " + (p.town || GUIDE.place.name))}`
