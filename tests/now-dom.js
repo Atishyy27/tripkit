@@ -136,7 +136,7 @@ function trip(day) {
     await ctx.close();
 
     console.log("\n  a trip dated in the future opens on its plan, not Now");
-    const future = trip(); future.startDate = "2026-09-20";
+    const future = trip({ plan: ["a"] }); future.startDate = "2026-09-20";
     ({ ctx, page } = await fresh(future));
     ok(await page.locator("#vPlan").isVisible(), "the plan view is showing");
     ok(await page.locator('#views [data-v="plan"]').getAttribute("aria-pressed") === "true", "the Plan chip is pressed");
