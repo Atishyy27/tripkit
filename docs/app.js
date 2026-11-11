@@ -1148,6 +1148,7 @@ function markStop(id, kind) {       // kind is "done" or "skipped"
   if (i >= 0) d[kind].splice(i, 1); else d[kind].push(id);
   track("/now/" + kind);
   save(GUIDE); drawNow(); render();
+  if (typeof tkSurvey !== "undefined") tkSurvey.maybe(d.done.length);   // survey.js
 }
 
 function wireNow(d) {
