@@ -135,6 +135,19 @@ function trip(day) {
     ok(d.markedOn === "2026-09-17", `a mark is stamped with the trip-local date, not UTC (${d.markedOn})`);
     await ctx.close();
 
+    console.log("\n  a session past midnight still belongs to the evening before");
+    ({ ctx, page } = await fresh(trip({ done: ["a"], skipped: [], markedOn: "2026-09-16" }), "2026-09-17T01:30:00Z"));
+    ok(/Bravo Ghat/.test(await head(page)), "marks from before midnight are kept at 01:30");
+    await page.click("#vNow [data-done]");
+    d = await saved(page);
+    ok(d.markedOn === "2026-09-16", `a mark at 01:30 is stamped with the evening's date (${d.markedOn})`);
+    ok(d.done.join() === "a,b", `earlier marks survive a new one (${d.done})`);
+    await ctx.close();
+
+    ({ ctx, page } = await fresh(trip({ done: ["a", "b"], skipped: ["c"], markedOn: "2026-09-16" }), "2026-09-17T04:30:00Z"));
+    ok(/Alpha Temple/.test(await head(page)), "from 04:00 the new day starts clean");
+    await ctx.close();
+
     console.log("\n  removing a marked stop from the plan drops its mark");
     ({ ctx, page } = await fresh(trip({ done: ["a"], skipped: ["b"], markedOn: "2026-09-16" })));
     await page.evaluate(() => { togglePick("a"); togglePick("b"); });
