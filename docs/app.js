@@ -738,9 +738,11 @@ function open(trip) {
   buildWhen();
   render();
   // Opening a trip that already has a plan for today lands on Now, the one view that
-  // answers what to do this minute; an unplanned guide still opens on the list.
+  // answers what to do this minute. A trip dated in the future opens on its plan, and
+  // an unplanned guide still opens on the list.
   const planned = GUIDE.days && GUIDE.days[GUIDE.day] && (GUIDE.days[GUIDE.day].plan || []).length > 0;
-  const startView = planned ? "now" : "list";
+  const upcoming = GUIDE.startDate && GUIDE.startDate > tripDate();
+  const startView = planned ? (upcoming ? "plan" : "now") : "list";
   $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === startView)));
   setView(startView);
   clearInterval(window._tick);

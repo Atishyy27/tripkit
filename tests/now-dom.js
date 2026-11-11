@@ -135,6 +135,18 @@ function trip(day) {
     ok(d.markedOn === "2026-09-17", `a mark is stamped with the trip-local date, not UTC (${d.markedOn})`);
     await ctx.close();
 
+    console.log("\n  a trip dated in the future opens on its plan, not Now");
+    const future = trip(); future.startDate = "2026-09-20";
+    ({ ctx, page } = await fresh(future));
+    ok(await page.locator("#vPlan").isVisible(), "the plan view is showing");
+    ok(await page.locator('#views [data-v="plan"]').getAttribute("aria-pressed") === "true", "the Plan chip is pressed");
+    await ctx.close();
+
+    const today = trip(); today.startDate = "2026-09-16";
+    ({ ctx, page } = await fresh(today));
+    ok(await page.locator("#vNow").isVisible(), "a trip dated today opens on Now");
+    await ctx.close();
+
     console.log("\n  a session past midnight still belongs to the evening before");
     ({ ctx, page } = await fresh(trip({ done: ["a"], skipped: [], markedOn: "2026-09-16" }), "2026-09-17T01:30:00Z"));
     ok(/Bravo Ghat/.test(await head(page)), "marks from before midnight are kept at 01:30");
