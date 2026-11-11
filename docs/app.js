@@ -1116,9 +1116,12 @@ function dirLink(p) {
 /* Done and skipped describe one real day. A trip reopened on a later date would
    otherwise open on "That is the day" with every stop already handled, so marks
    carry the trip-local date they were made on and are dropped once it passes. */
+const DAY_ROLLOVER = 240;   // a night out belongs to the day it started on until 04:00
+
 function tripDate() {
   const n = new Date(), off = CFG.tzOffsetMinutes || 0;
-  const t = new Date(n.getTime() + n.getTimezoneOffset() * 60000 + off * 60000);
+  let t = new Date(n.getTime() + n.getTimezoneOffset() * 60000 + off * 60000);
+  if (t.getHours() * 60 + t.getMinutes() < DAY_ROLLOVER) t = new Date(t.getTime() - 86400000);
   const p2 = x => String(x).padStart(2, "0");
   return `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
 }
