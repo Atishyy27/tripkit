@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, "review/**"]
   pull_request:
   workflow_dispatch:
 
@@ -68,6 +68,8 @@ jobs:
         # This job exists because the app shipped completely dead twice in one day
         # while every asset returned 200 and every other job was green. Nothing was
         # loading the page assembled.
+      - name: the Now view, in a real browser, no network
+        run: node tests/now-dom.js
 
   syntax:
     name: syntax and house style
@@ -94,3 +96,24 @@ jobs:
             echo "em dashes found, see CONTRIBUTING.md"; exit 1
           fi
           echo "clean"
+
+  review-shots:
+    name: before and after screenshots (review branches only)
+    if: startsWith(github.ref, 'refs/heads/review/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: the docs folder as it is on main
+        run: |
+          mkdir before-docs
+          git archive origin/main docs | tar -x -C before-docs --strip-components=1
+      - run: npm i -D playwright --no-save
+      - run: npx playwright install --with-deps chromium
+      - run: BEFORE_DIR="$PWD/before-docs" node tests/review-shots.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: review-shots
+          path: docs/review-2026-11-25/
