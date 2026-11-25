@@ -3,3 +3,5 @@
 - study: read README, ci.yml, traffic-snapshot.yml, app.js boot/search/build/open, sources.js overpass and weather, engine.js clock use; handout at cnc/work/arch/tripkit.md
 - product pass: first-run path walked from code, findings F1 to F5, four references
 - plan: docs/review-2026-11-25.md written, top 3 chosen; stopped at the plan gate, no code
+- build: cherry-picked finding-6 and survey branches (-x), tz from weather, parallel sources, ci trigger for review/**; CI run 45681859602 all 7 jobs green, 247 node tests, 179 browser, 29 now-dom; shots and timing committed
+- review round 1: started
