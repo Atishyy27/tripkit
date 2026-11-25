@@ -15,6 +15,21 @@ function describe(name, fn) {
   fn();
 }
 
+const pending = [];
+/* An async test. Output is printed when it settles; report() waits for all of them. */
+function itAsync(what, fn) {
+  const label = suite;
+  pending.push(Promise.resolve().then(fn).then(() => {
+    pass++;
+    console.log("    \x1b[32m\u2713\x1b[0m " + label + ": " + what);
+  }, e => {
+    fail++;
+    failures.push({ suite: label, what, err: e });
+    console.log("    \x1b[31m\u2717\x1b[0m " + label + ": " + what);
+    console.log("      \x1b[2m" + String(e.message).split("\n").join("\n      ") + "\x1b[0m");
+  }));
+}
+
 function it(what, fn) {
   try {
     fn();
@@ -49,6 +64,10 @@ function throws(fn, matching, note) {
 }
 
 function report() {
+  return Promise.all(pending).then(finishReport);
+}
+
+function finishReport() {
   console.log("");
   if (fail) {
     console.log(`  \x1b[31m${fail} failed\x1b[0m, ${pass} passed`);
@@ -65,4 +84,4 @@ function loadScripts(dir, names) {
   return src;
 }
 
-module.exports = { describe, it, eq, ok, no, near, throws, report, loadScripts };
+module.exports = { describe, it, itAsync, eq, ok, no, near, throws, report, loadScripts };

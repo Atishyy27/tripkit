@@ -263,6 +263,13 @@ function guessTz(lat, lng, cc) {
   return tzOffsetFor(cc, lng, new Date());
 }
 
+/* The weather answer carries the destination's real offset in seconds. Null when
+   the fallback weather source answered, which does not carry one. */
+function tzMinutesFromWeather(wx) {
+  const sec = wx && wx.tzOffsetSeconds;
+  return Number.isFinite(sec) && Math.abs(sec) <= 14 * 3600 ? Math.round(sec / 60) : null;
+}
+
 /* ---------- counting, without following anyone ----------
 
    Off unless ANALYTICS is given an endpoint. When it is on, what leaves this
@@ -426,13 +433,27 @@ async function doSearch(q) {
   }
 }
 
+function showTz(tz) {
+  $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
+  $("#tz").value = tz;
+  $("#tz").dataset.guess = String(tz);
+}
+
+/* True while the box still holds what we filled in, so a number the person typed
+   or a saved or shared one is never replaced by a lookup. */
+const tzUntouched = () => $("#tz").value === $("#tz").dataset.guess;
+
 function pick(p) {
   PLACE = p;
   const tz = guessTz(p.lat, p.lng, p.countryCode);
   $("#destName").textContent = p.name;
   $("#destSub").textContent = p.label;
-  $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
-  $("#tz").value = tz;
+  showTz(tz);
+  // The weather answer knows the real offset; swap it in unless the person has typed one.
+  getWeather(p.lat, p.lng, () => {}).then(w => {
+    const real = tzMinutesFromWeather(w && w.value);
+    if (real != null && PLACE === p && tzUntouched()) showTz(real);
+  }).catch(() => {});
   $("#arrive").value = "09:00";
   $("#depart").value = "21:00";
   const suggested = radiusFor(p);
@@ -493,7 +514,9 @@ async function openCached(hit) {
   track("/cache/reused");
   const t = hit.trip;
   // The hours the user just chose win over the ones saved with the cached trip.
-  const tz = +$("#tz").value;
+  // A saved offset stands unless the person changed the box; the box may still hold a
+  // guess if the weather answer has not landed yet.
+  const tz = tzUntouched() && t.config.tzOffsetMinutes != null ? t.config.tzOffsetMinutes : +$("#tz").value;
   t.config.tzOffsetMinutes = tz;
   t.config.arrive = M($("#arrive").value || "09:00");
   t.config.depart = M($("#depart").value || "21:00");
@@ -557,87 +580,124 @@ async function build() {
   }
 }
 
+/* The sources the build calls. Tests and dev set a global TK_SOURCES to swap in
+   canned answers; with it unset these are the real network calls, the default. */
+function sourcesInUse() {
+  if (typeof TK_SOURCES !== "undefined" && TK_SOURCES) return TK_SOURCES;
+  return { overpass, wikivoyage, wikivoyageSearch, getWeather, getAir, getCountry,
+           getTransit, getPhotos, attachPhotos };
+}
+
+/* Fetch OpenStreetMap, Wikivoyage and the live group together, then merge. Each
+   branch keeps its own notes so the list reads OSM, then Wikivoyage, then live,
+   exactly as it did when they ran one after another. */
+async function gatherSources(place, r, S, ui) {
+  const osmNotes = [], wvNotes = [], liveNotes = [];
+  let finished = 0;
+  const tick = () => ui.progress(10 + 26 * (++finished));
+
+  const osmP = (async () => {
+    let places = [];
+    ui.step("stOsm", "now", `asking OpenStreetMap, ${(r / 1000).toFixed(1)} km around the centre…`);
+    try {
+      const els = await S.overpass(place.lat, place.lng, r, m => osmNotes.push(m));
+      const all = osmToPlaces(els, place.name.toLowerCase());
+      const cap = capPlaces(all, 1200);
+      places = cap.kept;
+      const withHours = places.filter(p => p.open).length;
+      ui.step("stOsm", "done",
+        `${all.length} places found, keeping ${places.length}${cap.dropped ? ` (dropped ${cap.dropped} least useful, mostly banks and bus stops)` : ""}, ${withHours} with opening hours`);
+      if (cap.dropped) osmNotes.push(`${place.name} is big: ${all.length} mapped places came back and the ${cap.dropped} least useful were dropped so this fits on a phone. Nothing with a description or opening hours was removed first.`);
+    } catch (e) {
+      ui.step("stOsm", "fail", `OpenStreetMap unavailable: ${e.message}`);
+      osmNotes.push("No OpenStreetMap data. The guide will be thin.");
+    }
+    tick();
+    return places;
+  })();
+
+  const wvP = (async () => {
+    ui.step("stWv", "now", "looking for a Wikivoyage guide…");
+    const out = { listings: [], intro: "", cautions: [], wvTitle: null };
+    try {
+      let art = null;
+      try { art = await S.wikivoyage(place.name); }
+      catch (e) {
+        const cands = await S.wikivoyageSearch(place.name + (place.country ? " " + place.country : ""));
+        if (cands.length) art = await S.wikivoyage(cands[0]);
+      }
+      if (art) {
+        out.wvTitle = art.title;
+        out.listings = parseListings(art.wikitext, place.name.toLowerCase());
+        out.intro = introOf(art.wikitext);
+        out.cautions = cautionsOf(art.wikitext);
+        ui.step("stWv", "done", `“${art.title}”, ${out.listings.length} listings written by travellers`);
+      } else {
+        ui.step("stWv", "fail", "no Wikivoyage article for this place");
+        wvNotes.push("No Wikivoyage guide exists here, so descriptions come only from map data.");
+      }
+    } catch (e) {
+      ui.step("stWv", "fail", "Wikivoyage unavailable: " + e.message);
+    }
+    tick();
+    return out;
+  })();
+
+  const liveP = (async () => {
+    ui.step("stLive", "now", "weather, air, transport, photos…");
+    const [wx, air, country, transit, photos] = await Promise.all([
+      S.getWeather(place.lat, place.lng, m => liveNotes.push(m)),
+      S.getAir(place.lat, place.lng, m => liveNotes.push(m)),
+      S.getCountry(place.countryCode, m => liveNotes.push(m)),
+      S.getTransit(place.lat, place.lng, Math.min(r, 4000), m => liveNotes.push(m)),
+      S.getPhotos(place.lat, place.lng, Math.min(r, 6000), m => liveNotes.push(m)),
+    ]);
+    const got = [
+      wx.value && `weather (${wx.source})`,
+      air.value && "air quality",
+      country.value && "country facts",
+      transit.value && `${transit.value.length} transport stops`,
+      photos.value && `${photos.value.length} photos`,
+    ].filter(Boolean);
+    ui.step("stLive", got.length ? "done" : "fail",
+            got.length ? got.join(", ") : "none of these answered, the guide still works without them");
+    tick();
+    return { wx, air, country, transit, photos };
+  })();
+
+  const [osmPlaces, wv, live] = await Promise.all([osmP, wvP, liveP]);
+  const places = wv.wvTitle ? mergePlaces(osmPlaces, wv.listings) : osmPlaces;
+  if (live.photos.value && live.photos.value.length) {
+    await S.attachPhotos(places, live.photos.value, m => liveNotes.push(m));
+  }
+  return { places, intro: wv.intro, cautions: wv.cautions, wvTitle: wv.wvTitle,
+           notes: [...osmNotes, ...wvNotes, ...liveNotes], ...live };
+}
+
 async function runBuild() {
   show("s3");
   ["stGeo", "stOsm", "stWv", "stLive", "stSun", "stDone"].forEach(i => step(i, "", null));
   const notes = [];
 
-  const tz = +$("#tz").value;
+  let tz = +$("#tz").value;
   const arrive = $("#arrive").value || "09:00";
   const depart = $("#depart").value || "21:00";
 
   step("stGeo", "done", `${PLACE.name}, ${PLACE.lat.toFixed(4)}, ${PLACE.lng.toFixed(4)}`);
   progress(10);
 
-  /* --- OpenStreetMap --- */
-  let places = [];
+  /* The three sources do not depend on each other, so they run together and the
+     build takes as long as the slowest one rather than the sum of all three. */
   const r = (+($("#radius") || {}).value) || radiusFor(PLACE);
-  step("stOsm", "now", `asking OpenStreetMap, ${(r / 1000).toFixed(1)} km around the centre…`);
-  try {
-    const els = await overpass(PLACE.lat, PLACE.lng, r, m => notes.push(m));
-    const all = osmToPlaces(els, PLACE.name.toLowerCase());
-    const cap = capPlaces(all, 1200);
-    places = cap.kept;
-    const withHours = places.filter(p => p.open).length;
-    step("stOsm", "done",
-      `${all.length} places found, keeping ${places.length}${cap.dropped ? ` (dropped ${cap.dropped} least useful, mostly banks and bus stops)` : ""}, ${withHours} with opening hours`);
-    if (cap.dropped) notes.push(`${PLACE.name} is big: ${all.length} mapped places came back and the ${cap.dropped} least useful were dropped so this fits on a phone. Nothing with a description or opening hours was removed first.`);
-  } catch (e) {
-    step("stOsm", "fail", `OpenStreetMap unavailable: ${e.message}`);
-    notes.push("No OpenStreetMap data. The guide will be thin.");
-  }
-  progress(50);
+  const g = await gatherSources(PLACE, r, sourcesInUse(), { step, progress });
+  const { places, intro, cautions, wvTitle, wx, air, country, transit, photos } = g;
+  notes.push(...g.notes);
 
-  /* --- Wikivoyage --- */
-  step("stWv", "now", "looking for a Wikivoyage guide…");
-  let intro = "", cautions = [], wvTitle = null, wvCount = 0;
-  try {
-    let art = null;
-    try { art = await wikivoyage(PLACE.name); }
-    catch (e) {
-      const cands = await wikivoyageSearch(PLACE.name + (PLACE.country ? " " + PLACE.country : ""));
-      if (cands.length) art = await wikivoyage(cands[0]);
-    }
-    if (art) {
-      wvTitle = art.title;
-      const listings = parseListings(art.wikitext, PLACE.name.toLowerCase());
-      wvCount = listings.length;
-      intro = introOf(art.wikitext);
-      cautions = cautionsOf(art.wikitext);
-      places = mergePlaces(places, listings);
-      step("stWv", "done", `“${art.title}”, ${listings.length} listings written by travellers`);
-    } else {
-      step("stWv", "fail", "no Wikivoyage article for this place");
-      notes.push("No Wikivoyage guide exists here, so descriptions come only from map data.");
-    }
-  } catch (e) {
-    step("stWv", "fail", "Wikivoyage unavailable: " + e.message);
-  }
-  progress(80);
+  // The weather answer carries the destination's real offset. It beats the table
+  // guess, unless the person typed their own into the box.
+  const real = tzMinutesFromWeather(wx.value);
+  if (real != null && tzUntouched()) { tz = real; showTz(real); }
 
-  /* --- everything else, in parallel, each with its own fallback chain --- */
-  step("stLive", "now", "weather, air, transport, photos…");
-  const R = r;
-  const [wx, air, country, transit, photos] = await Promise.all([
-    getWeather(PLACE.lat, PLACE.lng, m => notes.push(m)),
-    getAir(PLACE.lat, PLACE.lng, m => notes.push(m)),
-    getCountry(PLACE.countryCode, m => notes.push(m)),
-    getTransit(PLACE.lat, PLACE.lng, Math.min(R, 4000), m => notes.push(m)),
-    getPhotos(PLACE.lat, PLACE.lng, Math.min(R, 6000), m => notes.push(m)),
-  ]);
-  if (photos.value && photos.value.length) {
-    await attachPhotos(places, photos.value, m => notes.push(m));
-  }
-  const got = [
-    wx.value && `weather (${wx.source})`,
-    air.value && "air quality",
-    country.value && "country facts",
-    transit.value && `${transit.value.length} transport stops`,
-    photos.value && `${photos.value.length} photos`,
-  ].filter(Boolean);
-  step("stLive", got.length ? "done" : "fail",
-       got.length ? got.join(", ") : "none of these answered, the guide still works without them");
-  progress(88);
 
   /* --- sun, computed here --- */
   step("stSun", "now", "computing the sun…");
@@ -738,9 +798,11 @@ function open(trip) {
   buildWhen();
   render();
   // Opening a trip that already has a plan for today lands on Now, the one view that
-  // answers what to do this minute; an unplanned guide still opens on the list.
+  // answers what to do this minute. A trip dated in the future opens on its plan, and
+  // an unplanned guide still opens on the list.
   const planned = GUIDE.days && GUIDE.days[GUIDE.day] && (GUIDE.days[GUIDE.day].plan || []).length > 0;
-  const startView = planned ? "now" : "list";
+  const upcoming = GUIDE.startDate && GUIDE.startDate > tripDate();
+  const startView = planned ? (upcoming ? "plan" : "now") : "list";
   $$("#views .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === startView)));
   setView(startView);
   clearInterval(window._tick);
@@ -1118,9 +1180,12 @@ function dirLink(p) {
 /* Done and skipped describe one real day. A trip reopened on a later date would
    otherwise open on "That is the day" with every stop already handled, so marks
    carry the trip-local date they were made on and are dropped once it passes. */
+const DAY_ROLLOVER = 240;   // a night out belongs to the day it started on until 04:00
+
 function tripDate() {
   const n = new Date(), off = CFG.tzOffsetMinutes || 0;
-  const t = new Date(n.getTime() + n.getTimezoneOffset() * 60000 + off * 60000);
+  let t = new Date(n.getTime() + n.getTimezoneOffset() * 60000 + off * 60000);
+  if (t.getHours() * 60 + t.getMinutes() < DAY_ROLLOVER) t = new Date(t.getTime() - 86400000);
   const p2 = x => String(x).padStart(2, "0");
   return `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
 }
@@ -1143,6 +1208,7 @@ function markStop(id, kind) {       // kind is "done" or "skipped"
   if (i >= 0) d[kind].splice(i, 1); else d[kind].push(id);
   track("/now/" + kind);
   save(GUIDE); drawNow(); render();
+  if (typeof tkSurvey !== "undefined") tkSurvey.maybe(d.done.length);   // survey.js
 }
 
 function wireNow(d) {
@@ -1700,11 +1766,7 @@ function drawPlan() {
    Times are written as local wall clock with no timezone, which is deliberate.
    A stop at 13:00 in Pushkar should read 13:00 in your calendar whatever your
    phone thinks the timezone is, and floating times are how the format says that. */
-function todayISO() {
-  const d = new Date(), off = CFG.tzOffsetMinutes || 0;
-  const l = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
-  return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
-}
+function todayISO() { return tripDate(); }
 
 function icsTime(mins, dayOffset) {
   // Anchored to the trip's own date, not to whatever day the export button was
