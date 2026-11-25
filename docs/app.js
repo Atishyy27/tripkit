@@ -263,6 +263,13 @@ function guessTz(lat, lng, cc) {
   return tzOffsetFor(cc, lng, new Date());
 }
 
+/* The weather answer carries the destination's real offset in seconds. Null when
+   the fallback weather source answered, which does not carry one. */
+function tzMinutesFromWeather(wx) {
+  const sec = wx && wx.tzOffsetSeconds;
+  return Number.isFinite(sec) && Math.abs(sec) <= 14 * 3600 ? Math.round(sec / 60) : null;
+}
+
 /* ---------- counting, without following anyone ----------
 
    Off unless ANALYTICS is given an endpoint. When it is on, what leaves this
@@ -426,13 +433,23 @@ async function doSearch(q) {
   }
 }
 
+function showTz(tz) {
+  $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
+  $("#tz").value = tz;
+}
+
 function pick(p) {
   PLACE = p;
   const tz = guessTz(p.lat, p.lng, p.countryCode);
   $("#destName").textContent = p.name;
   $("#destSub").textContent = p.label;
-  $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
-  $("#tz").value = tz;
+  showTz(tz);
+  delete $("#tz").dataset.edited;
+  // The weather answer knows the real offset; swap it in unless the person has typed one.
+  getWeather(p.lat, p.lng, () => {}).then(w => {
+    const real = tzMinutesFromWeather(w && w.value);
+    if (real != null && PLACE === p && $("#tz").dataset.edited !== "1") showTz(real);
+  }).catch(() => {});
   $("#arrive").value = "09:00";
   $("#depart").value = "21:00";
   const suggested = radiusFor(p);
@@ -479,6 +496,7 @@ function updateRadius() {
 
 function wireTimes() {
   $("#radius").addEventListener("input", updateRadius);
+  $("#tz").addEventListener("input", () => { $("#tz").dataset.edited = "1"; });
   $("#nowBtn").onclick = () => {
     const off = +$("#tz").value;
     const d = new Date();
@@ -562,7 +580,7 @@ async function runBuild() {
   ["stGeo", "stOsm", "stWv", "stLive", "stSun", "stDone"].forEach(i => step(i, "", null));
   const notes = [];
 
-  const tz = +$("#tz").value;
+  let tz = +$("#tz").value;
   const arrive = $("#arrive").value || "09:00";
   const depart = $("#depart").value || "21:00";
 
@@ -638,6 +656,11 @@ async function runBuild() {
   step("stLive", got.length ? "done" : "fail",
        got.length ? got.join(", ") : "none of these answered, the guide still works without them");
   progress(88);
+
+  // The weather answer carries the destination's real offset. It beats the table
+  // guess, unless the person typed their own into the box.
+  const real = tzMinutesFromWeather(wx.value);
+  if (real != null && $("#tz").dataset.edited !== "1") tz = real;
 
   /* --- sun, computed here --- */
   step("stSun", "now", "computing the sun…");
