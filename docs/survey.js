@@ -30,7 +30,7 @@ function surveyAsk() {
   box.className = "card";
   box.setAttribute("role", "dialog");
   box.setAttribute("aria-label", "One question");
-  box.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;max-width:420px;margin:0 auto;z-index:950";
+  box.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(var(--nav, 62px) + 52px);max-width:420px;margin:0 auto;z-index:950";
 
   const q = document.createElement("p");
   q.style.margin = "0 0 10px";

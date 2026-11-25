@@ -436,7 +436,12 @@ async function doSearch(q) {
 function showTz(tz) {
   $("#tzGuess").textContent = (tz >= 0 ? "+" : "") + (tz / 60).toFixed(2).replace(/\.00$/, "").replace(/\.50$/, ".5");
   $("#tz").value = tz;
+  $("#tz").dataset.guess = String(tz);
 }
+
+/* True while the box still holds what we filled in, so a number the person typed
+   or a saved or shared one is never replaced by a lookup. */
+const tzUntouched = () => $("#tz").value === $("#tz").dataset.guess;
 
 function pick(p) {
   PLACE = p;
@@ -444,11 +449,10 @@ function pick(p) {
   $("#destName").textContent = p.name;
   $("#destSub").textContent = p.label;
   showTz(tz);
-  delete $("#tz").dataset.edited;
   // The weather answer knows the real offset; swap it in unless the person has typed one.
   getWeather(p.lat, p.lng, () => {}).then(w => {
     const real = tzMinutesFromWeather(w && w.value);
-    if (real != null && PLACE === p && $("#tz").dataset.edited !== "1") showTz(real);
+    if (real != null && PLACE === p && tzUntouched()) showTz(real);
   }).catch(() => {});
   $("#arrive").value = "09:00";
   $("#depart").value = "21:00";
@@ -496,7 +500,6 @@ function updateRadius() {
 
 function wireTimes() {
   $("#radius").addEventListener("input", updateRadius);
-  $("#tz").addEventListener("input", () => { $("#tz").dataset.edited = "1"; });
   $("#nowBtn").onclick = () => {
     const off = +$("#tz").value;
     const d = new Date();
@@ -511,7 +514,9 @@ async function openCached(hit) {
   track("/cache/reused");
   const t = hit.trip;
   // The hours the user just chose win over the ones saved with the cached trip.
-  const tz = +$("#tz").value;
+  // A saved offset stands unless the person changed the box; the box may still hold a
+  // guess if the weather answer has not landed yet.
+  const tz = tzUntouched() && t.config.tzOffsetMinutes != null ? t.config.tzOffsetMinutes : +$("#tz").value;
   t.config.tzOffsetMinutes = tz;
   t.config.arrive = M($("#arrive").value || "09:00");
   t.config.depart = M($("#depart").value || "21:00");
@@ -691,7 +696,7 @@ async function runBuild() {
   // The weather answer carries the destination's real offset. It beats the table
   // guess, unless the person typed their own into the box.
   const real = tzMinutesFromWeather(wx.value);
-  if (real != null && $("#tz").dataset.edited !== "1") tz = real;
+  if (real != null && tzUntouched()) { tz = real; showTz(real); }
 
 
   /* --- sun, computed here --- */
@@ -1761,11 +1766,7 @@ function drawPlan() {
    Times are written as local wall clock with no timezone, which is deliberate.
    A stop at 13:00 in Pushkar should read 13:00 in your calendar whatever your
    phone thinks the timezone is, and floating times are how the format says that. */
-function todayISO() {
-  const d = new Date(), off = CFG.tzOffsetMinutes || 0;
-  const l = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + off * 60000);
-  return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
-}
+function todayISO() { return tripDate(); }
 
 function icsTime(mins, dayOffset) {
   // Anchored to the trip's own date, not to whatever day the export button was
