@@ -14,7 +14,7 @@ global.localStorage = { _d: {}, getItem(k) { return this._d[k] == null ? null : 
 global.document = { querySelector: () => null, querySelectorAll: () => [],
                     body: { insertAdjacentHTML() {} }, getElementById: () => null };
 const H = require(${JSON.stringify(path.join(__dirname, "harness.js"))});
-const { describe, it, eq, ok, no, near, throws, report } = H;
+const { describe, it, itAsync, eq, ok, no, near, throws, report } = H;
 // the concatenated file lives in a temp dir, so hand it the real paths
 const DOCS_DIR = ${JSON.stringify(DOCS)};
 `;
@@ -33,11 +33,12 @@ const appSrc = fs.readFileSync(path.join(DOCS, "app.js"), "utf8")
   .replace(/window\.addEventListener\("DOMContentLoaded"[\s\S]*?\n\}\);\s*$/, "");
 const surveySrc = fs.readFileSync(path.join(DOCS, "survey.js"), "utf8");
 const surveyTests = fs.readFileSync(path.join(__dirname, "survey.js"), "utf8");
+const mockSrc = fs.readFileSync(path.join(ROOT, "tests", "mocks", "sources.js"), "utf8");
 const buildTests = fs.readFileSync(path.join(__dirname, "build.js"), "utf8");
 const body = fs.readFileSync(path.join(__dirname, "spec.js"), "utf8");
 
 const out = path.join(os.tmpdir(), "tripkit-js-tests-" + process.pid + ".js");
-fs.writeFileSync(out, [shims, sources, surveySrc, appSrc, security, regressions, surveyTests, buildTests, body].join("\n;\n"));
+fs.writeFileSync(out, [shims, sources, surveySrc, appSrc, security, regressions, surveyTests, mockSrc, buildTests, body].join("\n;\n"));
 try {
   execFileSync(process.execPath, [out, ...process.argv.slice(2)], { stdio: "inherit" });
 } catch (e) {
